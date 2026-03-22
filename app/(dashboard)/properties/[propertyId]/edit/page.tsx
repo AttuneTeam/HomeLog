@@ -44,6 +44,7 @@ export default async function EditPropertyPage({ params }: Props) {
           purchase_date: property.purchase_date ?? "",
           purchase_price: property.purchase_price?.toString() ?? "",
           notes: property.notes ?? "",
+          property_type: property.property_type ?? "investment",
         }}
       />
     </div>

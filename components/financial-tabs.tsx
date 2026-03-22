@@ -11,6 +11,7 @@ interface Property {
   state: string | null
   purchase_date: string | null
   purchase_price: number | null
+  property_type: string
   renovations: {
     id: string
     name: string
@@ -34,8 +35,7 @@ interface Props {
   properties: Property[]
   financialYearStartMonth: number
   financialYearStartDay: number
-  savedRoiInputs: RoiInputs | null
-  currentFyRepairs: number
+  roiInputsByPropertyId: Record<string, RoiInputs>
 }
 
 export function FinancialTabs({
@@ -43,9 +43,12 @@ export function FinancialTabs({
   properties,
   financialYearStartMonth,
   financialYearStartDay,
-  savedRoiInputs,
-  currentFyRepairs,
+  roiInputsByPropertyId,
 }: Props) {
+  const investmentProperties = properties.filter(
+    (p) => p.property_type !== "primary_residence"
+  )
+
   return (
     <div>
       <div className="px-6 pt-6">
@@ -66,8 +69,10 @@ export function FinancialTabs({
           <TabsContent value="calculator" className="py-6">
             <RoiCalculator
               userId={userId}
-              initialInputs={savedRoiInputs}
-              actualFyRepairs={currentFyRepairs}
+              properties={investmentProperties}
+              roiInputsByPropertyId={roiInputsByPropertyId}
+              financialYearStartMonth={financialYearStartMonth}
+              financialYearStartDay={financialYearStartDay}
             />
           </TabsContent>
         </Tabs>

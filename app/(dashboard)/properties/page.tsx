@@ -47,7 +47,12 @@ export default async function PropertiesPage() {
             <Link key={property.id} href={`/properties/${property.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{property.address}</CardTitle>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base">{property.address}</CardTitle>
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${property.property_type === "primary_residence" ? "bg-violet-100 text-violet-800" : "bg-emerald-100 text-emerald-800"}`}>
+                      {property.property_type === "primary_residence" ? "Primary" : "Investment"}
+                    </span>
+                  </div>
                   {(property.suburb || property.state) && (
                     <CardDescription className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />

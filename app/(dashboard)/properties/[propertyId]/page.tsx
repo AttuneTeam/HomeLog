@@ -83,14 +83,19 @@ export default async function PropertyDetailPage({ params }: Props) {
             <span>/</span>
           </div>
           <h1 className="text-2xl font-bold">{property.address}</h1>
-          {(property.suburb || property.state) && (
-            <p className="text-muted-foreground flex items-center gap-1 mt-1 text-sm">
-              <MapPin className="h-3.5 w-3.5" />
-              {[property.suburb, property.state, property.postcode]
-                .filter(Boolean)
-                .join(", ")}
-            </p>
-          )}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {(property.suburb || property.state) && (
+              <p className="text-muted-foreground flex items-center gap-1 text-sm">
+                <MapPin className="h-3.5 w-3.5" />
+                {[property.suburb, property.state, property.postcode]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            )}
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${property.property_type === "primary_residence" ? "bg-violet-100 text-violet-800" : "bg-emerald-100 text-emerald-800"}`}>
+              {property.property_type === "primary_residence" ? "Primary Residence" : "Investment"}
+            </span>
+          </div>
         </div>
         <div className="flex gap-2 shrink-0">
           <ButtonLink

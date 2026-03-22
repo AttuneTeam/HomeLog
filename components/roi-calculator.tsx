@@ -303,25 +303,86 @@ function PositionRow({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+interface InvestmentProperty {
+  id: string;
+  address: string;
+  purchase_price: number | null;
+  renovations: {
+    claimable: boolean;
+    classification: string;
+    expenses: {
+      amount: number;
+      expense_date: string;
+      classification_override: string | null;
+    }[];
+  }[];
+}
+
 interface Props {
   userId: string;
-  initialInputs: RoiInputs | null;
-  actualFyRepairs: number;
+  properties: InvestmentProperty[];
+  roiInputsByPropertyId: Record<string, RoiInputs>;
+  financialYearStartMonth: number;
+  financialYearStartDay: number;
+}
+
+function getFyStart(month: number, day: number): Date {
+  const today = new Date();
+  const m = today.getMonth() + 1;
+  const fyYear =
+    m > month || (m === month && today.getDate() >= day)
+      ? today.getFullYear()
+      : today.getFullYear() - 1;
+  return new Date(fyYear, month - 1, day);
 }
 
 export function RoiCalculator({
   userId,
-  initialInputs,
-  actualFyRepairs,
+  properties,
+  roiInputsByPropertyId,
+  financialYearStartMonth,
+  financialYearStartDay,
 }: Props) {
-  const [inputs, setInputs] = useState<RoiInputs>(() => ({
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    properties[0]?.id ?? null
+  );
+
+  const initialInputs = selectedPropertyId
+    ? (roiInputsByPropertyId[selectedPropertyId] ?? null)
+    : null;
+
+  // Auto-populate purchase_price from property if no saved inputs yet
+  const selectedProperty = properties.find((p) => p.id === selectedPropertyId) ?? null;
+  const seedInputs: RoiInputs = {
     ...DEFAULTS,
     ...(initialInputs ?? {}),
-  }));
+    ...(initialInputs === null && selectedProperty?.purchase_price
+      ? { purchase_price: selectedProperty.purchase_price }
+      : {}),
+  };
+
+  const [inputs, setInputs] = useState<RoiInputs>(seedInputs);
   const [saveState, setSaveState] = useState<SaveState>(
     initialInputs ? "clean" : "dirty",
   );
   const supabase = createClient();
+
+  // Recompute actualFyRepairs for the selected property from tracked expenses
+  const actualFyRepairs = useMemo(() => {
+    if (!selectedProperty) return 0;
+    const fyStart = getFyStart(financialYearStartMonth, financialYearStartDay);
+    const today = new Date();
+    return selectedProperty.renovations
+      .filter((r) => r.claimable !== false)
+      .flatMap((r) =>
+        r.expenses.filter((e) => {
+          const d = new Date(e.expense_date);
+          const effClass = e.classification_override ?? r.classification;
+          return effClass === "repair" && d >= fyStart && d <= today;
+        })
+      )
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  }, [selectedProperty, financialYearStartMonth, financialYearStartDay]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -334,14 +395,29 @@ export function RoiCalculator({
     setSaveState("dirty");
   }, []);
 
+  const handlePropertyChange = useCallback((propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    const saved = roiInputsByPropertyId[propertyId] ?? null;
+    const prop = properties.find((p) => p.id === propertyId) ?? null;
+    setInputs({
+      ...DEFAULTS,
+      ...(saved ?? {}),
+      ...(saved === null && prop?.purchase_price
+        ? { purchase_price: prop.purchase_price }
+        : {}),
+    });
+    setSaveState(saved ? "clean" : "dirty");
+  }, [roiInputsByPropertyId, properties]);
+
   const handleSave = useCallback(async () => {
+    if (!selectedPropertyId) return;
     setSaveState("saving");
     await supabase
       .from("roi_calculator_inputs")
-      .upsert({ user_id: userId, ...inputs }, { onConflict: "user_id" });
+      .upsert({ property_id: selectedPropertyId, ...inputs }, { onConflict: "property_id" });
     setSaveState("saved");
     setTimeout(() => setSaveState("clean"), 2500);
-  }, [supabase, userId, inputs]);
+  }, [supabase, selectedPropertyId, inputs]);
 
   const field = useCallback(
     (f: keyof RoiInputs) => ({
@@ -521,8 +597,37 @@ export function RoiCalculator({
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // Empty state — no investment properties
+  if (properties.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+        <TrendingUp className="h-10 w-10 text-muted-foreground/40" />
+        <p className="font-medium">No investment properties yet</p>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Mark a property as <strong>Investment</strong> on its edit page to analyse it here.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Property selector */}
+      <div className="flex items-center gap-3">
+        <label className="text-sm font-medium whitespace-nowrap">Analysing:</label>
+        <select
+          value={selectedPropertyId ?? ""}
+          onChange={(e) => handlePropertyChange(e.target.value)}
+          className="flex h-9 w-full max-w-sm rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {properties.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.address}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Disclaimer */}
       <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-4 text-sm text-amber-800 dark:text-amber-300">
         <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />

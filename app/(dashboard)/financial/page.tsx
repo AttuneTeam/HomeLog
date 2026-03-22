@@ -8,7 +8,7 @@ export default async function FinancialPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  const [{ data: profile }, { data: properties }, { data: roiRow }] = await Promise.all([
+  const [{ data: profile }, { data: properties }] = await Promise.all([
     supabase
       .from("profiles")
       .select("financial_year_start_month, financial_year_start_day")
@@ -17,64 +17,51 @@ export default async function FinancialPage() {
     supabase
       .from("properties")
       .select(`
-        id, address, suburb, state, purchase_date, purchase_price,
+        id, address, suburb, state, purchase_date, purchase_price, property_type,
         renovations(
           id, name, classification, status, start_date, end_date, claimable,
           expenses(id, amount, expense_date, category, classification_override)
         )
       `)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("roi_calculator_inputs")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle(),
   ])
 
-  // Compute current FY repair total from tracked expenses
   const fyMonth = profile?.financial_year_start_month ?? 7
   const fyDay = profile?.financial_year_start_day ?? 1
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth() + 1
-  const fyStartYear =
-    month > fyMonth || (month === fyMonth && today.getDate() >= fyDay) ? year : year - 1
-  const fyStart = new Date(fyStartYear, fyMonth - 1, fyDay)
 
-  const currentFyRepairs = (properties ?? [])
-    .flatMap((p) =>
-      p.renovations
-        .filter((r) => r.claimable !== false)
-        .flatMap((r) =>
-        r.expenses.filter((e) => {
-          const d = new Date(e.expense_date)
-          const effClass = e.classification_override ?? r.classification
-          return effClass === "repair" && d >= fyStart && d <= today
-        })
-      )
-    )
-    .reduce((sum, e) => sum + Number(e.amount), 0)
+  // Fetch ROI inputs for all investment properties
+  const investmentPropertyIds = (properties ?? [])
+    .filter((p) => p.property_type !== "primary_residence")
+    .map((p) => p.id)
 
-  const savedRoiInputs: RoiInputs | null = roiRow
-    ? {
-        purchase_price: roiRow.purchase_price,
-        stamp_duty: roiRow.stamp_duty,
-        legal_fees: roiRow.legal_fees,
-        capital_growth_rate: roiRow.capital_growth_rate,
-        weekly_rent: roiRow.weekly_rent,
-        management_fee_rate: roiRow.management_fee_rate,
-        council_rates: roiRow.council_rates,
-        insurance: roiRow.insurance,
-        maintenance: roiRow.maintenance,
-        loan_amount: roiRow.loan_amount,
-        interest_rate: roiRow.interest_rate,
-        loan_term: roiRow.loan_term,
-        div43_depreciation: roiRow.div43_depreciation,
-        div40_depreciation: roiRow.div40_depreciation,
-        marginal_tax_rate: roiRow.marginal_tax_rate,
-        annual_household_income: roiRow.annual_household_income,
-      }
-    : null
+  const { data: roiRows } = investmentPropertyIds.length
+    ? await supabase
+        .from("roi_calculator_inputs")
+        .select("*")
+        .in("property_id", investmentPropertyIds)
+    : { data: [] }
+
+  const roiInputsByPropertyId: Record<string, RoiInputs> = {}
+  for (const row of roiRows ?? []) {
+    roiInputsByPropertyId[row.property_id] = {
+      purchase_price: row.purchase_price,
+      stamp_duty: row.stamp_duty,
+      legal_fees: row.legal_fees,
+      capital_growth_rate: row.capital_growth_rate,
+      weekly_rent: row.weekly_rent,
+      management_fee_rate: row.management_fee_rate,
+      council_rates: row.council_rates,
+      insurance: row.insurance,
+      maintenance: row.maintenance,
+      loan_amount: row.loan_amount,
+      interest_rate: row.interest_rate,
+      loan_term: row.loan_term,
+      div43_depreciation: row.div43_depreciation,
+      div40_depreciation: row.div40_depreciation,
+      marginal_tax_rate: row.marginal_tax_rate,
+      annual_household_income: row.annual_household_income,
+    }
+  }
 
   return (
     <FinancialTabs
@@ -82,8 +69,7 @@ export default async function FinancialPage() {
       properties={properties ?? []}
       financialYearStartMonth={fyMonth}
       financialYearStartDay={fyDay}
-      savedRoiInputs={savedRoiInputs}
-      currentFyRepairs={currentFyRepairs}
+      roiInputsByPropertyId={roiInputsByPropertyId}
     />
   )
 }
