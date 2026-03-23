@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { embed, generateObject } from 'ai'
-import { embeddingModel } from '@/lib/ai/openai-client'
-import { classificationModel } from '@/lib/ai/openai-client'
+import { embeddingModel, classificationModel } from '@/lib/ai/openai-client'
 import { aiClassificationSchema } from '@/lib/ai/classification-schema'
+import { getClassifyPrompt } from '@/app/api/classify/prompt/classify-prompt'
 
 interface RouteParams {
   params: Promise<{ expenseId: string }>
-}
-
-function derivePropertyStatus(purchaseDate: string | null, expenseDate: string): string {
-  if (!purchaseDate) return 'established investment property'
-  const purchase = new Date(purchaseDate)
-  const expense = new Date(expenseDate)
-  const monthsDiff = (expense.getTime() - purchase.getTime()) / (1000 * 60 * 60 * 24 * 30)
-  return monthsDiff <= 12
-    ? 'recently acquired (potential initial repair — TR 97/23 applies)'
-    : 'established investment property'
 }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
@@ -34,7 +24,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const { data: expense } = await supabase
     .from('expenses')
     .select(`
-      id, description, category, supplier, amount, expense_date, raw_text,
+      id, description, category, supplier, amount, expense_date, raw_text, context_notes,
       renovations (
         name, classification,
         properties ( address, suburb, state, purchase_date )
@@ -76,33 +66,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     .map((r: { ruling_ref: string; chunk_text: string }) => `[${r.ruling_ref}]\n${r.chunk_text}`)
     .join('\n\n')
 
-  const propertyStatus = derivePropertyStatus(
-    property?.purchase_date ?? null,
-    expense.expense_date
-  )
-
-  const prompt = `You are a Property Tax Intelligence Engine specialising in Australian ATO compliance. Classify the property expenditure below.
-
-RETRIEVED ATO RULINGS (use these as your primary authority):
-${rulingsContext || 'No specific rulings retrieved — use general ATO principles.'}
-
-EXPENSE DATA:
-- Date: ${expense.expense_date}
-- Description: ${expense.description ?? '(not provided)'}
-- Category: ${expense.category}
-- Supplier: ${expense.supplier ?? '(not provided)'}
-- Amount: $${expense.amount}
-- Property: ${property ? `${property.address}, ${property.suburb ?? ''} ${property.state ?? ''}`.trim() : '(unknown)'}
-- Property status: ${propertyStatus}
-${expense.raw_text ? `- Extracted invoice text:\n${expense.raw_text.slice(0, 1000)}` : ''}
-
-TASK:
-1. Apply the Entirety Test: does the work restore the item to its former state, or does it improve/extend it?
-2. Check for environmental protection activities (s 40-755 ITAA 1997) if relevant.
-3. Classify as one of: "Immediate Deduction", "Capital Works (Div 43)", or "Plant & Equipment (Div 40)".
-4. Provide a concise deduction strategy and cite the specific ruling reference.
-5. Set environmental_flag true only if the work involves environmental protection (asbestos, contamination, etc.).
-6. Set confidence_score between 0 and 1.`
+  const prompt = getClassifyPrompt({ expense, property, rulingsContext })
 
   // Generate structured classification
   let classificationResult

@@ -27,6 +27,7 @@ interface AiClassification {
 interface Props {
   expenseId: string;
   existingClassification: AiClassification | null;
+  contextNotes?: string | null;
 }
 
 const BADGE_STYLES: Record<Classification, string> = {
@@ -46,6 +47,7 @@ const STEP_MESSAGES: Partial<Record<Step, string>> = {
 export function AiTaxClassificationPanel({
   expenseId,
   existingClassification,
+  contextNotes,
 }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(
@@ -146,6 +148,14 @@ export function AiTaxClassificationPanel({
           <div className="flex items-start gap-2 text-sm text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {/* Context notes */}
+        {contextNotes && (
+          <div className="rounded-md bg-muted px-3 py-2.5 text-sm">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Additional context provided</p>
+            <p className="text-muted-foreground">{contextNotes}</p>
           </div>
         )}
 

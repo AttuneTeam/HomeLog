@@ -168,6 +168,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
       <AiTaxClassificationPanel
         expenseId={expenseId}
         existingClassification={aiClassification ?? null}
+        contextNotes={expense.context_notes ?? null}
       />
 
       {invoiceUrl && (

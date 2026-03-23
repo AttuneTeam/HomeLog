@@ -35,7 +35,7 @@ const schema = z.object({
   supplier: z.string().optional(),
   abn: z.string().optional(),
   classification_override: z.enum(["repair", "capital_improvement", "initial_repair", "inherit"]),
-  notes: z.string().optional(),
+  context_notes: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -45,7 +45,7 @@ interface ExpenseFormProps {
   propertyId: string
   renovationClassification: string
   userId: string
-  defaultValues?: Partial<FormValues> & { id?: string; invoice_path?: string | null; abn?: string | null; gst_amount?: number | null }
+  defaultValues?: Partial<FormValues> & { id?: string; invoice_path?: string | null; abn?: string | null; gst_amount?: number | null; context_notes?: string | null }
 }
 
 export function ExpenseForm({ renovationId, propertyId, renovationClassification, userId, defaultValues }: ExpenseFormProps) {
@@ -67,7 +67,7 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
       supplier: defaultValues?.supplier ?? "",
       abn: defaultValues?.abn ?? "",
       classification_override: (defaultValues?.classification_override as "repair" | "capital_improvement" | "initial_repair") ?? "inherit",
-      notes: defaultValues?.notes ?? "",
+      context_notes: defaultValues?.context_notes ?? "",
     },
   })
 
@@ -105,6 +105,7 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
       abn: values.abn || null,
       invoice_path: invoicePath,
       classification_override: values.classification_override === "inherit" ? null : values.classification_override,
+      context_notes: values.context_notes || null,
     }
 
     if (isEdit) {
@@ -283,6 +284,20 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
               </button>
             )}
           </div>
+          {/* AI context notes */}
+          <div className="space-y-1.5">
+            <Label htmlFor="context_notes">Additional context for AI classification</Label>
+            <p className="text-xs text-muted-foreground">
+              Anything not captured in the invoice — e.g. why the work was done, what condition the item was in, or whether it was damaged before works began.
+            </p>
+            <Textarea
+              id="context_notes"
+              placeholder="e.g. Asbestos sheeting on garage was damaged and required removal. Replacement with blueboard was necessary as the structure could not be left exposed."
+              rows={3}
+              {...register("context_notes")}
+            />
+          </div>
+
         </CardContent>
         <CardFooter className="gap-3">
           <Button type="submit" disabled={loading}>
