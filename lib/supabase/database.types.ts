@@ -16,6 +16,28 @@ export type ExpenseCategory =
   | "fixtures"
   | "other";
 
+export type PropertyFile = {
+  id: string;
+  property_id: string;
+  storage_path: string;
+  display_name: string | null;
+  created_at: string;
+};
+
+export type RentalPeriod = {
+  id: string;
+  property_id: string;
+  start_date: string;
+  end_date: string | null;
+  weekly_rent: number;
+  management_company: string | null;
+  agent_name: string | null;
+  management_fee_pct: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -330,6 +352,81 @@ export interface Database {
             columns: ["expense_id"];
             isOneToOne: false;
             referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_files: {
+        Row: {
+          id: string;
+          property_id: string;
+          storage_path: string;
+          display_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          storage_path: string;
+          display_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          display_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_files_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rental_periods: {
+        Row: {
+          id: string;
+          property_id: string;
+          start_date: string;
+          end_date: string | null;
+          weekly_rent: number;
+          management_company: string | null;
+          agent_name: string | null;
+          management_fee_pct: number | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          start_date: string;
+          end_date?: string | null;
+          weekly_rent: number;
+          management_company?: string | null;
+          agent_name?: string | null;
+          management_fee_pct?: number | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          start_date?: string;
+          end_date?: string | null;
+          weekly_rent?: number;
+          management_company?: string | null;
+          agent_name?: string | null;
+          management_fee_pct?: number | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rental_periods_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];

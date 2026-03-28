@@ -15,6 +15,8 @@ import {
   FileBarChart,
 } from "lucide-react";
 import { DeletePropertyButton } from "@/components/delete-property-button";
+import { PropertyFilesSection } from "@/components/property-files-section";
+import { RentalPeriodsSection } from "@/components/rental-periods-section";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -36,11 +38,27 @@ export default async function PropertyDetailPage({ params }: Props) {
 
   if (!property) notFound();
 
-  const { data: renovations } = await supabase
-    .from("renovations")
-    .select("*, expenses(amount, classification_override)")
-    .eq("property_id", propertyId)
-    .order("start_date", { ascending: false });
+  const [
+    { data: renovations },
+    { data: propertyFiles },
+    { data: rentalPeriods },
+  ] = await Promise.all([
+    supabase
+      .from("renovations")
+      .select("*, expenses(amount, classification_override)")
+      .eq("property_id", propertyId)
+      .order("start_date", { ascending: false }),
+    supabase
+      .from("property_files")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("rental_periods")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("start_date", { ascending: true }),
+  ]);
 
   const totalSpend =
     renovations?.reduce((sum, r) => {
@@ -54,7 +72,7 @@ export default async function PropertyDetailPage({ params }: Props) {
 
   const capitalTotal =
     renovations?.reduce((sum, r) => {
-      if (r.claimable === false) return sum
+      if (r.claimable === false) return sum;
       const rTotal =
         r.expenses?.reduce(
           (
@@ -92,8 +110,12 @@ export default async function PropertyDetailPage({ params }: Props) {
                   .join(", ")}
               </p>
             )}
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${property.property_type === "primary_residence" ? "bg-violet-100 text-violet-800" : "bg-emerald-100 text-emerald-800"}`}>
-              {property.property_type === "primary_residence" ? "Primary Residence" : "Investment"}
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${property.property_type === "primary_residence" ? "bg-violet-100 text-violet-800" : "bg-emerald-100 text-emerald-800"}`}
+            >
+              {property.property_type === "primary_residence"
+                ? "Primary Residence"
+                : "Investment"}
             </span>
           </div>
         </div>
@@ -121,7 +143,7 @@ export default async function PropertyDetailPage({ params }: Props) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               Purchased
@@ -132,7 +154,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <DollarSign className="h-3 w-3" />
               Purchase price
@@ -143,7 +165,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Wrench className="h-3 w-3" />
               Total spend
@@ -152,7 +174,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground">Adjusted cost base</p>
             <p className="font-semibold mt-1">
               {formatCurrency(adjustedCostBase)}
@@ -161,6 +183,21 @@ export default async function PropertyDetailPage({ params }: Props) {
         </Card>
       </div>
 
+      {/* Files */}
+      <Separator />
+      <PropertyFilesSection
+        propertyId={propertyId}
+        userId={user.id}
+        initialFiles={propertyFiles ?? []}
+      />
+
+      {/* Rental Periods */}
+      <Separator />
+      <RentalPeriodsSection
+        propertyId={propertyId}
+        initialPeriods={rentalPeriods ?? []}
+      />
+
       {/* Renovations */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -168,6 +205,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           <ButtonLink
             href={`/properties/${propertyId}/renovations/new`}
             size="sm"
+            variant="outline"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Add renovation
@@ -293,7 +331,9 @@ function ClassificationBadge({ classification }: { classification: string }) {
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours}`}
     >
-      {classificationLabel(classification as "repair" | "capital_improvement" | "initial_repair")}
+      {classificationLabel(
+        classification as "repair" | "capital_improvement" | "initial_repair",
+      )}
     </span>
   );
 }
