@@ -287,11 +287,11 @@ export function RentalPeriodsSection({
                 className="rounded-lg border bg-white overflow-hidden"
               >
                 {/* Collapsed / summary row */}
-                <div className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors">
+                <div className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted/30 transition-colors">
                   <Button
                     type="button"
-                    variant="outline"
-                    size="icon"
+                    variant="ghost"
+                    size="icon-sm"
                     className="flex items-center gap-1 shrink-0"
                     onClick={() => setExpandedId(isExpanded ? null : period.id)}
                   >
@@ -340,33 +340,6 @@ export function RentalPeriodsSection({
                         {period.notes}
                       </p>
                     )}
-                  </div>
-
-                  <div className="flex gap-1 mt-3 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEdit(period);
-                      }}
-                    >
-                      <Pencil className="h-3.5 w-3.5 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      disabled={deletingId === period.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmDeletePeriod(period);
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />
-                      Remove
-                    </Button>
                   </div>
                 </div>
 
@@ -419,6 +392,32 @@ export function RentalPeriodsSection({
                           </p>
                         </div>
                       )}
+                    </div>
+                    <div className="flex gap-1 mt-3 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(period);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={deletingId === period.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeletePeriod(period);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 )}

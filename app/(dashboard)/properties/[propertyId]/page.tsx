@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
 import {
@@ -231,57 +232,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             </ButtonLink>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {renovations.map((renovation) => {
-              const rTotal =
-                renovation.expenses?.reduce(
-                  (s: number, e: { amount: number }) => s + Number(e.amount),
-                  0,
-                ) ?? 0;
-              return (
-                <Link
-                  key={renovation.id}
-                  href={`/properties/${propertyId}/renovations/${renovation.id}`}
-                >
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="flex items-center gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium truncate">
-                            {renovation.name}
-                          </span>
-                          <StatusBadge status={renovation.status} />
-                          <ClassificationBadge
-                            classification={renovation.classification}
-                          />
-                        </div>
-                        {renovation.contractor && (
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            Contractor: {renovation.contractor}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDate(renovation.start_date)}
-                          {renovation.end_date
-                            ? ` → ${formatDate(renovation.end_date)}`
-                            : ""}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-semibold">
-                          {formatCurrency(rTotal)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {renovation.expenses?.length ?? 0} expense
-                          {renovation.expenses?.length !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
+          <RenovationTabs renovations={renovations} propertyId={propertyId} />
         )}
       </div>
 
@@ -300,25 +251,120 @@ export default async function PropertyDetailPage({ params }: Props) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    planned: "bg-muted text-muted-foreground",
-    in_progress: "bg-blue-100 text-blue-800",
-    completed: "bg-green-100 text-green-800",
+function RenovationTabs({
+  renovations,
+  propertyId,
+}: {
+  renovations: Array<{
+    id: string;
+    name: string;
+    status: string;
+    classification: string;
+    start_date: string | null;
+    end_date: string | null;
+    expenses?: Array<{ amount: number }>;
+  }>;
+  propertyId: string;
+}) {
+  const byStatus = {
+    planned: renovations.filter((r) => r.status === "planned"),
+    in_progress: renovations.filter((r) => r.status === "in_progress"),
+    completed: renovations.filter((r) => r.status === "completed"),
   };
-  const labels: Record<string, string> = {
-    planned: "Planned",
-    in_progress: "In progress",
-    completed: "Completed",
-  };
+
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${map[status] ?? ""}`}
-    >
-      {labels[status] ?? status}
-    </span>
+    <Tabs defaultValue="planned">
+      <TabsList variant="line">
+        {(
+          [
+            { value: "planned", label: "Planned" },
+            { value: "in_progress", label: "In Progress" },
+            { value: "completed", label: "Completed" },
+          ] as const
+        ).map(({ value, label }) => (
+          <TabsTrigger key={value} value={value}>
+            {label}
+            {byStatus[value].length > 0 && (
+              <span className="ml-1 text-xs text-muted-foreground">
+                ({byStatus[value].length})
+              </span>
+            )}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+
+      {(["planned", "in_progress", "completed"] as const).map((status) => (
+        <TabsContent key={status} value={status} className="mt-4">
+          {byStatus[status].length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              No {status.replace("_", " ")} renovations
+            </p>
+          ) : (
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                      Renovation
+                    </th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
+                      Dates
+                    </th>
+                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
+                      Classification
+                    </th>
+                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
+                      Cost
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {byStatus[status].map((renovation) => {
+                    const total =
+                      renovation.expenses?.reduce(
+                        (s, e) => s + Number(e.amount),
+                        0,
+                      ) ?? 0;
+                    return (
+                      <tr
+                        key={renovation.id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/properties/${propertyId}/renovations/${renovation.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {renovation.name}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                          {formatDate(renovation.start_date)}
+                          {renovation.end_date
+                            ? ` → ${formatDate(renovation.end_date)}`
+                            : ""}
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <ClassificationBadge
+                            classification={renovation.classification}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium tabular-nums">
+                          {formatCurrency(total)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
+
 
 function ClassificationBadge({ classification }: { classification: string }) {
   const colours =
