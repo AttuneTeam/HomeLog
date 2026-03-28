@@ -48,8 +48,6 @@ export default async function EditRenovationPage({ params }: Props) {
           name: renovation.name,
           description: renovation.description ?? "",
           contractor: renovation.contractor ?? "",
-          start_date: renovation.start_date ?? "",
-          end_date: renovation.end_date ?? "",
           status: renovation.status,
           classification: renovation.classification,
           notes: renovation.notes ?? "",

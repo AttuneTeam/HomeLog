@@ -40,6 +40,10 @@ export default async function RenovationDetailPage({ params }: Props) {
 
   const totalSpend = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0
 
+  const expenseDates = expenses?.map((e) => e.expense_date).filter(Boolean) ?? []
+  const inferredStartDate = expenseDates.length ? expenseDates.reduce((a, b) => (a < b ? a : b)) : null
+  const inferredEndDate = expenseDates.length ? expenseDates.reduce((a, b) => (a > b ? a : b)) : null
+
   const statusLabels: Record<string, string> = { planned: "Planned", in_progress: "In progress", completed: "Completed" }
   const statusColors: Record<string, string> = {
     planned: "bg-muted text-muted-foreground",
@@ -85,8 +89,8 @@ export default async function RenovationDetailPage({ params }: Props) {
 
       {/* Meta */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">Start date</p><p className="font-medium mt-1">{formatDate(renovation.start_date)}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">End date</p><p className="font-medium mt-1">{formatDate(renovation.end_date)}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">Start date</p><p className="font-medium mt-1">{formatDate(inferredStartDate)}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">End date</p><p className="font-medium mt-1">{formatDate(inferredEndDate)}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">Contractor</p><p className="font-medium mt-1">{renovation.contractor ?? "—"}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-sm"><p className="text-xs text-muted-foreground">Total spend</p><p className="font-semibold mt-1">{formatCurrency(totalSpend)}</p></CardContent></Card>
       </div>

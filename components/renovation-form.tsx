@@ -19,8 +19,6 @@ const schema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   contractor: z.string().optional(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
   status: z.enum(["planned", "in_progress", "completed"]),
   classification: z.enum(["repair", "capital_improvement"]),
   notes: z.string().optional(),
@@ -45,8 +43,6 @@ export function RenovationForm({ propertyId, defaultValues }: RenovationFormProp
       name: defaultValues?.name ?? "",
       description: defaultValues?.description ?? "",
       contractor: defaultValues?.contractor ?? "",
-      start_date: defaultValues?.start_date ?? "",
-      end_date: defaultValues?.end_date ?? "",
       status: defaultValues?.status ?? "planned",
       classification: defaultValues?.classification ?? "repair",
       notes: defaultValues?.notes ?? "",
@@ -66,8 +62,6 @@ export function RenovationForm({ propertyId, defaultValues }: RenovationFormProp
       name: values.name,
       description: values.description || null,
       contractor: values.contractor || null,
-      start_date: values.start_date || null,
-      end_date: values.end_date || null,
       status: values.status,
       classification: values.classification,
       notes: values.notes || null,
@@ -189,17 +183,6 @@ export function RenovationForm({ propertyId, defaultValues }: RenovationFormProp
           <div className="space-y-1.5">
             <Label htmlFor="contractor">Contractor / supplier</Label>
             <Input id="contractor" placeholder="ABC Builders" {...register("contractor")} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="start_date">Start date</Label>
-              <Input id="start_date" type="date" {...register("start_date")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="end_date">End date</Label>
-              <Input id="end_date" type="date" {...register("end_date")} />
-            </div>
           </div>
 
           <div className="space-y-1.5">
