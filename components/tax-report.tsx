@@ -2,8 +2,15 @@
 
 import { useCallback, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
-import { AlertTriangle, Download, ExternalLink, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
+import { AlertTriangle, ChevronDown, Download, ExternalLink, FileText, Sheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report-pdf";
 import { TaxReportDocument } from "@/components/tax-report-pdf";
@@ -177,6 +184,7 @@ export function TaxReport({ data }: { data: TaxReportData }) {
     data;
 
   const [downloading, setDownloading] = useState(false);
+  const [xlsxDownloading, setXlsxDownloading] = useState(false);
 
   const purchasePrice = property.purchase_price ?? 0;
   const stampDuty = roiInputs?.stamp_duty ?? 0;
@@ -197,6 +205,98 @@ export function TaxReport({ data }: { data: TaxReportData }) {
   ]
     .filter(Boolean)
     .join(", ");
+
+  const handleExcelDownload = useCallback(() => {
+    setXlsxDownloading(true);
+    try {
+      // Combine all expenses regardless of classification
+      const all = [...repairs, ...initialRepairs, ...capitalImprovements];
+
+      // Group by renovation_name, preserving first-seen order
+      const groups = new Map<string, TaxExpense[]>();
+      for (const e of all) {
+        const key = e.renovation_name ?? "Unknown";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(e);
+      }
+
+      // Sort groups by completion date (latest expense date) ascending
+      const sortedGroups = Array.from(groups.entries()).sort(([, a], [, b]) => {
+        const maxA = a.reduce((m, e) => (e.expense_date > m ? e.expense_date : m), a[0].expense_date);
+        const maxB = b.reduce((m, e) => (e.expense_date > m ? e.expense_date : m), b[0].expense_date);
+        return maxA.localeCompare(maxB);
+      });
+
+      // Build AOA rows — one row per renovation group
+      type Row = (string | number)[];
+      const rows: Row[] = [["Completion Date", "Description", "Supplier", "Ex-GST", "GST", "Total"]];
+
+      for (const [renovationName, expenses] of sortedGroups) {
+        // Completion date = latest expense date in the group
+        const maxDate = expenses.reduce(
+          (m, e) => (e.expense_date > m ? e.expense_date : m),
+          expenses[0].expense_date
+        );
+
+        // Description cell: renovation title + line break + renovation description
+        const renovationDesc = expenses[0]?.renovation_description ?? null;
+        const descriptionCell =
+          renovationName + (renovationDesc ? "\n" + renovationDesc : "");
+
+        // Supplier: first non-null value in the group
+        const supplier = expenses.find((e) => e.supplier)?.supplier ?? "";
+
+        // Sum amounts
+        let sumExGst = 0;
+        let sumGst = 0;
+        let sumTotal = 0;
+        for (const e of expenses) {
+          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
+          sumExGst += exGst;
+          sumGst += e.gst_amount ?? 0;
+          sumTotal += e.amount;
+        }
+
+        rows.push([formatDate(maxDate), descriptionCell, supplier, sumExGst, sumGst, sumTotal]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Column widths
+      ws["!cols"] = [
+        { wch: 16 }, // Completion Date
+        { wch: 40 }, // Description
+        { wch: 22 }, // Supplier
+        { wch: 12 }, // Ex-GST
+        { wch: 10 }, // GST
+        { wch: 12 }, // Total
+      ];
+
+      // Apply currency format and wrap text to data rows
+      const currencyFmt = '"$"#,##0.00';
+      const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+      for (let r = 1; r <= range.e.r; r++) {
+        // Wrap text in Description column so multi-line content is visible
+        const descRef = XLSX.utils.encode_cell({ r, c: 1 });
+        if (ws[descRef]) {
+          ws[descRef].s = { alignment: { wrapText: true, vertical: "top" } };
+        }
+        // Currency format for Ex-GST, GST, Total columns
+        for (let c = 3; c <= 5; c++) {
+          const cellRef = XLSX.utils.encode_cell({ r, c });
+          if (ws[cellRef] && typeof ws[cellRef].v === "number") {
+            ws[cellRef].z = currencyFmt;
+          }
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+      XLSX.writeFile(wb, `expenses-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.xlsx`, { cellStyles: true });
+    } finally {
+      setXlsxDownloading(false);
+    }
+  }, [repairs, initialRepairs, capitalImprovements, property.address]);
 
   const handleDownload = useCallback(async () => {
     setDownloading(true);
@@ -224,10 +324,25 @@ export function TaxReport({ data }: { data: TaxReportData }) {
             Generated {generatedAt}
           </p>
         </div>
-        <Button onClick={handleDownload} disabled={downloading} className="shrink-0">
-          <Download className="h-4 w-4 mr-1.5" />
-          {downloading ? "Generating PDF…" : "Download PDF"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button disabled={downloading || xlsxDownloading}>
+              <Download className="h-4 w-4 mr-1.5" />
+              {downloading ? "Generating PDF…" : xlsxDownloading ? "Generating…" : "Download"}
+              <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExcelDownload} disabled={xlsxDownloading}>
+              <Sheet className="h-4 w-4" />
+              Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDownload} disabled={downloading}>
+              <FileText className="h-4 w-4" />
+              PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Disclaimer */}

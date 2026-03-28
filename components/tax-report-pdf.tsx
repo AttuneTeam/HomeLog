@@ -23,6 +23,7 @@ export interface TaxExpense {
   classification: string;
   invoice_url: string | null;
   renovation_name: string;
+  renovation_description: string | null;
 }
 
 export interface TaxReportData {

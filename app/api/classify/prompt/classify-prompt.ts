@@ -49,7 +49,6 @@ RETRIEVED ATO RULINGS (use these as your primary authority):
 ${rulingsContext || "No specific rulings retrieved — use general ATO principles."}
 
 EXPENSE DATA:
-- Date: ${expense.expense_date}
 - Description: ${expense.description ?? "(not provided)"}
 - Category: ${expense.category}
 - Supplier: ${expense.supplier ?? "(not provided)"}

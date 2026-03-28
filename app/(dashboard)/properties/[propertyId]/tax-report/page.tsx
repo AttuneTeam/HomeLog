@@ -26,13 +26,14 @@ export default async function TaxReportPage({ params }: Props) {
 
   if (!property) notFound();
 
-  // Fetch renovations with all expense fields
+  // Fetch renovations with all expense fields (exclude non-claimable)
   const { data: renovations } = await supabase
     .from("renovations")
     .select(
-      "id, name, classification, expenses(id, expense_date, supplier, abn, category, amount, gst_amount, description, invoice_path, classification_override)",
+      "id, name, description, classification, claimable, expenses(id, expense_date, supplier, abn, category, amount, gst_amount, description, invoice_path, classification_override)",
     )
     .eq("property_id", propertyId)
+    .eq("claimable", true)
     .order("start_date", { ascending: true });
 
   // Fetch ROI calculator inputs (stamp duty, weekly rent, depreciation)
@@ -75,6 +76,7 @@ export default async function TaxReportPage({ params }: Props) {
         classification: effectiveClassification,
         invoice_url,
         renovation_name: renovation.name,
+        renovation_description: (renovation as { description?: string | null }).description ?? null,
       };
 
       if (effectiveClassification === "capital_improvement") {
