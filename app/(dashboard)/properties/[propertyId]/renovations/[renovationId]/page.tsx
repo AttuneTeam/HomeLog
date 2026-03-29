@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils"
 import { Plus, Pencil, Receipt } from "lucide-react"
 import { DeleteRenovationButton } from "@/components/delete-renovation-button"
+import { RenovationQuotesSection } from "@/components/renovation-quotes-section"
 
 interface Props {
   params: Promise<{ propertyId: string; renovationId: string }>
@@ -37,6 +38,12 @@ export default async function RenovationDetailPage({ params }: Props) {
     .select("*")
     .eq("renovation_id", renovationId)
     .order("expense_date", { ascending: false })
+
+  const { data: quotes } = await supabase
+    .from("renovation_quotes")
+    .select("*, quote_ai_classifications(*)")
+    .eq("renovation_id", renovationId)
+    .order("created_at", { ascending: false })
 
   const totalSpend = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0
 
@@ -156,6 +163,14 @@ export default async function RenovationDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Quotes */}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <RenovationQuotesSection
+        renovationId={renovationId}
+        userId={user.id}
+        initialQuotes={(quotes ?? []) as any}
+      />
 
       {(renovation.description || renovation.notes) && (
         <>
