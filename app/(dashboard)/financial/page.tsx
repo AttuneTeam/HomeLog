@@ -1,12 +1,14 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { FinancialTabs } from "@/components/financial-tabs"
-import type { RoiInputs } from "@/components/roi-calculator"
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { FinancialTabs } from "@/components/financial-tabs";
+import type { RoiInputs } from "@/components/roi-calculator";
 
 export default async function FinancialPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const [{ data: profile }, { data: properties }] = await Promise.all([
     supabase
@@ -16,32 +18,34 @@ export default async function FinancialPage() {
       .single(),
     supabase
       .from("properties")
-      .select(`
+      .select(
+        `
         id, address, suburb, state, purchase_date, purchase_price, property_type,
         renovations(
           id, name, classification, status, start_date, end_date, claimable,
           expenses(id, amount, expense_date, category, classification_override)
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false }),
-  ])
+  ]);
 
-  const fyMonth = profile?.financial_year_start_month ?? 7
-  const fyDay = profile?.financial_year_start_day ?? 1
+  const fyMonth = profile?.financial_year_start_month ?? 7;
+  const fyDay = profile?.financial_year_start_day ?? 1;
 
   // Fetch ROI inputs for all investment properties
   const investmentPropertyIds = (properties ?? [])
     .filter((p) => p.property_type !== "primary_residence")
-    .map((p) => p.id)
+    .map((p) => p.id);
 
   const { data: roiRows } = investmentPropertyIds.length
     ? await supabase
         .from("roi_calculator_inputs")
         .select("*")
         .in("property_id", investmentPropertyIds)
-    : { data: [] }
+    : { data: [] };
 
-  const roiInputsByPropertyId: Record<string, RoiInputs> = {}
+  const roiInputsByPropertyId: Record<string, RoiInputs> = {};
   for (const row of roiRows ?? []) {
     roiInputsByPropertyId[row.property_id] = {
       purchase_price: row.purchase_price,
@@ -60,7 +64,7 @@ export default async function FinancialPage() {
       div40_depreciation: row.div40_depreciation,
       marginal_tax_rate: row.marginal_tax_rate,
       annual_household_income: row.annual_household_income,
-    }
+    };
   }
 
   return (
@@ -71,5 +75,5 @@ export default async function FinancialPage() {
       financialYearStartDay={fyDay}
       roiInputsByPropertyId={roiInputsByPropertyId}
     />
-  )
+  );
 }

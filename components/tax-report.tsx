@@ -325,12 +325,10 @@ export function TaxReport({ data }: { data: TaxReportData }) {
           </p>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button disabled={downloading || xlsxDownloading}>
-              <Download className="h-4 w-4 mr-1.5" />
-              {downloading ? "Generating PDF…" : xlsxDownloading ? "Generating…" : "Download"}
-              <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
-            </Button>
+          <DropdownMenuTrigger render={<Button disabled={downloading || xlsxDownloading} />}>
+            <Download className="h-4 w-4 mr-1.5" />
+            {downloading ? "Generating PDF…" : xlsxDownloading ? "Generating…" : "Download"}
+            <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleExcelDownload} disabled={xlsxDownloading}>

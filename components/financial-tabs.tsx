@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FinancialPositionView } from "@/components/financial-position-view"
-import { RoiCalculator, type RoiInputs } from "@/components/roi-calculator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FinancialPositionView } from "@/components/financial-position-view";
+import { RoiCalculator, type RoiInputs } from "@/components/roi-calculator";
 
 interface Property {
-  id: string
-  address: string
-  suburb: string | null
-  state: string | null
-  purchase_date: string | null
-  purchase_price: number | null
-  property_type: string
+  id: string;
+  address: string;
+  suburb: string | null;
+  state: string | null;
+  purchase_date: string | null;
+  purchase_price: number | null;
+  property_type: string;
   renovations: {
-    id: string
-    name: string
-    classification: "repair" | "capital_improvement"
-    status: string
-    start_date: string | null
-    end_date: string | null
-    claimable: boolean
+    id: string;
+    name: string;
+    classification: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    claimable: boolean | null;
     expenses: {
-      id: string
-      amount: number
-      expense_date: string
-      category: string
-      classification_override: "repair" | "capital_improvement" | null
-    }[]
-  }[]
+      id: string;
+      amount: number;
+      expense_date: string;
+      category: string;
+      classification_override: string | null;
+    }[];
+  }[];
 }
 
 interface Props {
-  userId: string
-  properties: Property[]
-  financialYearStartMonth: number
-  financialYearStartDay: number
-  roiInputsByPropertyId: Record<string, RoiInputs>
+  userId: string;
+  properties: Property[];
+  financialYearStartMonth: number;
+  financialYearStartDay: number;
+  roiInputsByPropertyId: Record<string, RoiInputs>;
 }
 
 export function FinancialTabs({
@@ -46,8 +46,8 @@ export function FinancialTabs({
   roiInputsByPropertyId,
 }: Props) {
   const investmentProperties = properties.filter(
-    (p) => p.property_type !== "primary_residence"
-  )
+    (p) => p.property_type !== "primary_residence",
+  );
 
   return (
     <div>
@@ -78,5 +78,5 @@ export function FinancialTabs({
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

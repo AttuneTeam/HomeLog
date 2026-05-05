@@ -308,7 +308,7 @@ interface InvestmentProperty {
   address: string;
   purchase_price: number | null;
   renovations: {
-    claimable: boolean;
+    claimable: boolean | null;
     classification: string;
     expenses: {
       amount: number;
@@ -414,7 +414,7 @@ export function RoiCalculator({
     setSaveState("saving");
     await supabase
       .from("roi_calculator_inputs")
-      .upsert({ property_id: selectedPropertyId, ...inputs }, { onConflict: "property_id" });
+      .upsert({ user_id: userId, property_id: selectedPropertyId, ...inputs }, { onConflict: "property_id" });
     setSaveState("saved");
     setTimeout(() => setSaveState("clean"), 2500);
   }, [supabase, selectedPropertyId, inputs]);

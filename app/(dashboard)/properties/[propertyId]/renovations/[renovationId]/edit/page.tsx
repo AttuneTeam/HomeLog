@@ -49,7 +49,7 @@ export default async function EditRenovationPage({ params }: Props) {
           description: renovation.description ?? "",
           contractor: renovation.contractor ?? "",
           status: renovation.status,
-          classification: renovation.classification,
+          classification: renovation.classification as "repair" | "capital_improvement",
           notes: renovation.notes ?? "",
           claimable: renovation.claimable ?? true,
         }}

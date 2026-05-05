@@ -24,7 +24,7 @@ interface Renovation {
   status: string
   start_date: string | null
   end_date: string | null
-  claimable: boolean
+  claimable: boolean | null
   expenses: Expense[]
 }
 

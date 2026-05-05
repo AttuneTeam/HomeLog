@@ -77,6 +77,7 @@ export interface Database {
           postcode: string | null;
           purchase_date: string | null;
           purchase_price: number | null;
+          property_type: string;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -125,6 +126,7 @@ export interface Database {
           end_date: string | null;
           status: RenovationStatus;
           classification: Classification;
+          claimable: boolean | null;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -139,6 +141,7 @@ export interface Database {
           end_date?: string | null;
           status?: RenovationStatus;
           classification: Classification;
+          claimable?: boolean | null;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -151,6 +154,7 @@ export interface Database {
           end_date?: string | null;
           status?: RenovationStatus;
           classification?: Classification;
+          claimable?: boolean | null;
           notes?: string | null;
           updated_at?: string;
         };
@@ -184,9 +188,11 @@ export interface Database {
           marginal_tax_rate: number | null;
           annual_household_income: number | null;
           updated_at: string;
+          property_id: string;
         };
         Insert: {
           user_id: string;
+          property_id?: string;
           purchase_price?: number | null;
           stamp_duty?: number | null;
           legal_fees?: number | null;
@@ -206,6 +212,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          property_id?: string;
           purchase_price?: number | null;
           stamp_duty?: number | null;
           legal_fees?: number | null;
@@ -427,6 +434,88 @@ export interface Database {
             columns: ["property_id"];
             isOneToOne: false;
             referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      renovation_quotes: {
+        Row: {
+          id: string;
+          renovation_id: string;
+          title: string;
+          description: string | null;
+          total_cost: number | null;
+          contractor: string | null;
+          file_path: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          renovation_id: string;
+          title: string;
+          description?: string | null;
+          total_cost?: number | null;
+          contractor?: string | null;
+          file_path?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          total_cost?: number | null;
+          contractor?: string | null;
+          file_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "renovation_quotes_renovation_id_fkey";
+            columns: ["renovation_id"];
+            isOneToOne: false;
+            referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quote_ai_classifications: {
+        Row: {
+          id: string;
+          quote_id: string;
+          classification: AiTaxClassification;
+          deduction_strategy: string;
+          legal_citation: string;
+          environmental_flag: boolean;
+          confidence_score: number;
+          model_used: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          quote_id: string;
+          classification: AiTaxClassification;
+          deduction_strategy: string;
+          legal_citation: string;
+          environmental_flag?: boolean;
+          confidence_score: number;
+          model_used?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          classification?: AiTaxClassification;
+          deduction_strategy?: string;
+          legal_citation?: string;
+          environmental_flag?: boolean;
+          confidence_score?: number;
+          model_used?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quote_ai_classifications_quote_id_fkey";
+            columns: ["quote_id"];
+            isOneToOne: true;
+            referencedRelation: "renovation_quotes";
             referencedColumns: ["id"];
           },
         ];
