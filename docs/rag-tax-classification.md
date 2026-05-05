@@ -102,26 +102,27 @@ Before the system can classify expenses, it needs a pre-seeded vector database o
 **Script:** `scripts/seed-ato-rulings.ts`
 **Command:** `npm run seed:ato`
 
-| # | Action | Technology |
-|---|--------|-----------|
-| 0a | Define ruling corpus | 7 ATO rulings hand-curated as structured TypeScript objects |
-| 0b | Chunk each ruling body | `lib/ai/chunk-text.ts` — paragraph/sentence-aware splitter, max 900 chars with 100-char overlap |
-| 0c | Batch embed all chunks | Vercel AI SDK `embedMany()` → OpenAI `text-embedding-3-small` → 1536-dim float vectors |
-| 0d | Upsert into database | `ato_rulings_embeddings` table with HNSW index for fast cosine similarity search |
+| #   | Action                 | Technology                                                                                      |
+| --- | ---------------------- | ----------------------------------------------------------------------------------------------- |
+| 0a  | Define ruling corpus   | 7 ATO rulings hand-curated as structured TypeScript objects                                     |
+| 0b  | Chunk each ruling body | `lib/ai/chunk-text.ts` — paragraph/sentence-aware splitter, max 900 chars with 100-char overlap |
+| 0c  | Batch embed all chunks | Vercel AI SDK `embedMany()` → OpenAI `text-embedding-3-small` → 1536-dim float vectors          |
+| 0d  | Upsert into database   | `ato_rulings_embeddings` table with HNSW index for fast cosine similarity search                |
 
 **ATO Rulings Seeded:**
 
-| Ruling | Subject |
-|--------|---------|
-| `TR 97/23` | Repairs vs. capital — the foundational ruling. Defines the repair test, initial repairs, and the entirety principle |
-| `TR 2021/5` | Division 43 capital works — 2.5%/4% rates, eligible construction expenditure |
-| `TR 2020/1` | Division 40 plant & equipment — effective life, depreciation methods, post-2017 restrictions |
-| `IT 180` | The Entirety Principle — when replacing a whole asset is capital not a repair |
-| `ATO PS LA 2003/8` | Initial repairs — pre-existing defects at acquisition are non-deductible |
-| `TD 2023/1` | Instant asset write-off — $20k threshold, eligibility, why it doesn't apply to passive investors |
-| `TR 2023/1` | Environmental protection activities — asbestos, lead paint, s 40-755 ITAA 1997 |
+| Ruling             | Subject                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `TR 97/23`         | Repairs vs. capital — the foundational ruling. Defines the repair test, initial repairs, and the entirety principle |
+| `TR 2021/5`        | Division 43 capital works — 2.5%/4% rates, eligible construction expenditure                                        |
+| `TR 2020/1`        | Division 40 plant & equipment — effective life, depreciation methods, post-2017 restrictions                        |
+| `IT 180`           | The Entirety Principle — when replacing a whole asset is capital not a repair                                       |
+| `ATO PS LA 2003/8` | Initial repairs — pre-existing defects at acquisition are non-deductible                                            |
+| `TD 2023/1`        | Instant asset write-off — $20k threshold, eligibility, why it doesn't apply to passive investors                    |
+| `TR 2023/1`        | Environmental protection activities — asbestos, lead paint, s 40-755 ITAA 1997                                      |
 
 > **Further reading:**
+>
 > - [ATO: Repairs, maintenance, and capital expenditure](https://www.ato.gov.au/individuals-and-families/investments-and-assets/residential-rental-properties/rental-expenses-you-can-claim/repairs-maintenance-and-capital-expenditure)
 > - [Taxation Ruling TR 97/23 (full text)](https://www.ato.gov.au/law/view/document?docid=TXR/TR9723/NAT/ATO/00001)
 > - [Division 43 Capital Works — ATO](https://www.ato.gov.au/businesses-and-organisations/income-deductions-and-concessions/depreciation-and-capital-allowances/general-depreciation-rules/capital-works-deductions)
@@ -134,17 +135,18 @@ The user fills in the expense form and attaches an invoice file. This is the exi
 
 **File:** `components/expense-form.tsx`
 
-| # | Action | Technology |
-|---|--------|-----------|
-| 1a | User selects invoice file | React file input, drag-and-drop |
-| 1b | Upload to object storage | Supabase Storage JS client — `storage.from('invoices').upload()` |
-| 1c | Store file path in DB | `expenses.invoice_path` (e.g., `{userId}/{renovationId}/{timestamp}.pdf`) |
-| 1d | Redirect to expense detail | Next.js `router.push()` — now redirects to the expense detail page so the AI panel is immediately visible |
+| #   | Action                     | Technology                                                                                                |
+| --- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 1a  | User selects invoice file  | React file input, drag-and-drop                                                                           |
+| 1b  | Upload to object storage   | Supabase Storage JS client — `storage.from('invoices').upload()`                                          |
+| 1c  | Store file path in DB      | `expenses.invoice_path` (e.g., `{userId}/{renovationId}/{timestamp}.pdf`)                                 |
+| 1d  | Redirect to expense detail | Next.js `router.push()` — now redirects to the expense detail page so the AI panel is immediately visible |
 
 **Storage path format:** `{user_id}/{renovation_id}/{timestamp}.{ext}`
 **Accepted formats:** PDF, JPG, JPEG, PNG, WebP, HEIC
 
 > **Further reading:**
+>
 > - [Supabase Storage docs](https://supabase.com/docs/guides/storage)
 > - [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 
@@ -167,6 +169,7 @@ createClient()  ← uses Supabase SSR cookies (user session)
 The expense is fetched through the user's session client. Supabase Row Level Security (RLS) ensures the query returns `null` if the authenticated user does not own the expense via the property ownership chain (`expenses → renovations → properties → user_id`).
 
 > **Further reading:**
+>
 > - [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 
 #### 2b. File Download from Storage
@@ -174,7 +177,7 @@ The expense is fetched through the user's session client. Supabase Row Level Sec
 The file is downloaded server-side using a Supabase service role client (bypasses storage RLS policies that are user-scoped) and converted to a `Buffer`:
 
 ```ts
-adminSupabase.storage.from('invoices').download(expense.invoice_path)
+adminSupabase.storage.from("invoices").download(expense.invoice_path);
 // → Blob → ArrayBuffer → Buffer
 ```
 
@@ -185,23 +188,36 @@ adminSupabase.storage.from('invoices').download(expense.invoice_path)
 Two paths based on MIME type detected from the file extension:
 
 **PDF path — `pdf-parse`:**
+
 ```ts
-import pdfParse from 'pdf-parse/lib/pdf-parse.js'
-const result = await pdfParse(buffer)
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+const result = await pdfParse(buffer);
 // → result.text (string)
 ```
+
 `pdf-parse` is a pure Node.js wrapper around Mozilla's [PDF.js](https://mozilla.github.io/pdf.js/). It runs entirely server-side with no external API calls. It's imported via the deep path to avoid its self-test file-read at module load time. The `next.config.ts` excludes it from the Next.js bundle via `serverExternalPackages`.
 
 **Image path — Claude Vision:**
+
 ```ts
 generateText({
-  model: anthropic('claude-sonnet-4-6'),
-  messages: [{ role: 'user', content: [{ type: 'image', image: dataUrl }, { type: 'text', text: 'Extract all text...' }] }]
-})
+  model: anthropic("claude-sonnet-4-6"),
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "image", image: dataUrl },
+        { type: "text", text: "Extract all text..." },
+      ],
+    },
+  ],
+});
 ```
+
 The image buffer is base64-encoded and passed as a data URL to Claude's multimodal API. This produces significantly higher quality OCR than Tesseract for invoice layouts (structured tables, varying fonts, handwriting).
 
 > **Further reading:**
+>
 > - [pdf-parse on npm](https://www.npmjs.com/package/pdf-parse)
 > - [Vercel AI SDK: generateText](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-text)
 > - [Anthropic: Vision capabilities](https://docs.anthropic.com/en/docs/build-with-claude/vision)
@@ -211,11 +227,13 @@ The image buffer is base64-encoded and passed as a data URL to Claude's multimod
 **File:** `lib/ai/chunk-text.ts`
 
 The extracted raw text is split into overlapping chunks before embedding. This ensures:
+
 - No single chunk exceeds the embedding model's token limit
 - Semantic context is preserved across chunk boundaries via overlap
 - Multiple chunks from the same invoice can each independently match ATO rulings
 
 **Strategy:**
+
 1. Split on paragraph breaks (`\n\n`) first
 2. If a paragraph exceeds 800 chars, split further at sentence boundaries (`. `)
 3. Hard-cut at 800 chars if a single sentence is too long
@@ -224,6 +242,7 @@ The extracted raw text is split into overlapping chunks before embedding. This e
 For typical invoices (< 2000 chars of text), this produces 1–3 chunks.
 
 > **Further reading:**
+>
 > - [Chunking strategies for RAG — Pinecone](https://www.pinecone.io/learn/chunking-strategies/)
 > - [Anthropic: Contextual Retrieval](https://www.anthropic.com/research/contextual-retrieval)
 
@@ -232,23 +251,24 @@ For typical invoices (< 2000 chars of text), this produces 1–3 chunks.
 **File:** `lib/ai/openai-client.ts`
 
 ```ts
-import { embedMany } from 'ai'
+import { embedMany } from "ai";
 const { embeddings } = await embedMany({
-  model: openai.embedding('text-embedding-3-small'),
-  values: chunks,  // string[]
-})
+  model: openai.embedding("text-embedding-3-small"),
+  values: chunks, // string[]
+});
 // embeddings: number[][] — one 1536-dim vector per chunk
 ```
 
 `text-embedding-3-small` produces 1536-dimensional float vectors. It is OpenAI's most cost-efficient embedding model with strong semantic search performance.
 
-| Model | Dimensions | Cost | Notes |
-|-------|-----------|------|-------|
-| `text-embedding-3-small` | 1536 | ~$0.02/1M tokens | Used here — good balance |
-| `text-embedding-3-large` | 3072 | ~$0.13/1M tokens | Higher accuracy, more expensive |
-| `text-embedding-ada-002` | 1536 | ~$0.10/1M tokens | Legacy, worse performance |
+| Model                    | Dimensions | Cost             | Notes                           |
+| ------------------------ | ---------- | ---------------- | ------------------------------- |
+| `text-embedding-3-small` | 1536       | ~$0.02/1M tokens | Used here — good balance        |
+| `text-embedding-3-large` | 3072       | ~$0.13/1M tokens | Higher accuracy, more expensive |
+| `text-embedding-ada-002` | 1536       | ~$0.10/1M tokens | Legacy, worse performance       |
 
 > **Further reading:**
+>
 > - [OpenAI Embeddings guide](https://platform.openai.com/docs/guides/embeddings)
 > - [Vercel AI SDK: embedMany](https://sdk.vercel.ai/docs/reference/ai-sdk-core/embed-many)
 > - [text-embedding-3-small announcement](https://openai.com/blog/new-embedding-models-and-api-updates)
@@ -286,7 +306,9 @@ const queryString = [
   expense.category,
   expense.supplier,
   expense.raw_text?.slice(0, 500),
-].filter(Boolean).join(' ')
+]
+  .filter(Boolean)
+  .join(" ");
 ```
 
 This query string represents the "question" being asked of the knowledge base: "which ATO rulings are relevant to this expense?"
@@ -297,9 +319,9 @@ The query string is embedded using the same model as the stored chunks, ensuring
 
 ```ts
 const { embedding: queryEmbedding } = await embed({
-  model: embeddingModel,  // text-embedding-3-small
+  model: embeddingModel, // text-embedding-3-small
   value: queryString,
-})
+});
 ```
 
 #### 3c. Similarity Search (pgvector)
@@ -307,11 +329,11 @@ const { embedding: queryEmbedding } = await embed({
 The query vector is passed to a PostgreSQL function that returns the top-5 most semantically similar ATO ruling chunks:
 
 ```ts
-supabase.rpc('match_ato_rulings', {
-  query_embedding: queryEmbedding,  // number[1536]
+supabase.rpc("match_ato_rulings", {
+  query_embedding: queryEmbedding, // number[1536]
   match_count: 5,
-  match_threshold: 0.3,            // cosine similarity threshold
-})
+  match_threshold: 0.3, // cosine similarity threshold
+});
 ```
 
 The RPC function uses the `<=>` operator (cosine distance) on the HNSW index:
@@ -324,14 +346,15 @@ The RPC function uses the `<=>` operator (cosine distance) on the HNSW index:
 
 **Why HNSW over IVFFlat?**
 
-| Index | Recall | Speed | Maintenance |
-|-------|--------|-------|-------------|
-| HNSW | Higher | Faster at query time | No `REINDEX` needed after inserts |
-| IVFFlat | Lower | Slower | Requires `lists` tuning + `REINDEX` |
+| Index   | Recall | Speed                | Maintenance                         |
+| ------- | ------ | -------------------- | ----------------------------------- |
+| HNSW    | Higher | Faster at query time | No `REINDEX` needed after inserts   |
+| IVFFlat | Lower  | Slower               | Requires `lists` tuning + `REINDEX` |
 
 HNSW is preferred for production workloads with continuous inserts.
 
 > **Further reading:**
+>
 > - [pgvector documentation](https://github.com/pgvector/pgvector)
 > - [Supabase: pgvector and vector similarity](https://supabase.com/docs/guides/ai/vector-columns)
 > - [HNSW vs IVFFlat — Supabase blog](https://supabase.com/blog/increase-performance-pgvector-hnsw)
@@ -374,6 +397,7 @@ EXPENSE DATA:
 Grounding the LLM with retrieved ruling chunks is the core RAG technique: the model's answer is anchored to specific, verifiable legal text rather than relying solely on its training data.
 
 > **Further reading:**
+>
 > - [What is RAG? — AWS](https://aws.amazon.com/what-is/retrieval-augmented-generation/)
 > - [Anthropic: Building effective RAG systems](https://docs.anthropic.com/en/docs/build-with-claude/retrieval-augmented-generation-rag)
 > - [RAG vs. Fine-tuning — Pinecone](https://www.pinecone.io/learn/rag-vs-fine-tuning/)
@@ -386,30 +410,32 @@ The Vercel AI SDK's `generateObject` forces Claude to return a structured JSON o
 
 ```ts
 const { object } = await generateObject({
-  model: anthropic('claude-sonnet-4-6'),
-  schema: aiClassificationSchema,  // Zod schema
+  model: anthropic("claude-sonnet-4-6"),
+  schema: aiClassificationSchema, // Zod schema
   prompt,
-})
+});
 ```
 
 **Zod schema:**
+
 ```ts
 z.object({
   classification: z.enum([
-    'Immediate Deduction',
-    'Capital Works (Div 43)',
-    'Plant & Equipment (Div 40)',
+    "Immediate Deduction",
+    "Capital Works (Div 43)",
+    "Plant & Equipment (Div 40)",
   ]),
-  deduction_strategy: z.string(),      // human-readable explanation
-  legal_citation: z.string(),          // specific ruling reference
-  environmental_flag: z.boolean(),     // s 40-755 applicability
+  deduction_strategy: z.string(), // human-readable explanation
+  legal_citation: z.string(), // specific ruling reference
+  environmental_flag: z.boolean(), // s 40-755 applicability
   confidence_score: z.number().min(0).max(1),
-})
+});
 ```
 
 `generateObject` uses Claude's [tool use / structured output](https://docs.anthropic.com/en/docs/build-with-claude/tool-use) capability internally to guarantee schema compliance without requiring prompt engineering workarounds.
 
 > **Further reading:**
+>
 > - [Vercel AI SDK: generateObject](https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-object)
 > - [Anthropic: Tool use (structured output)](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 > - [Zod documentation](https://zod.dev)
@@ -455,21 +481,22 @@ The panel calls the two API routes in sequence, updating a `step` state between 
 
 ```ts
 // Step 1
-setStep('extracting')    // "Extracting invoice text..."
-await fetch('/api/extract/' + expenseId, { method: 'POST' })
+setStep("extracting"); // "Extracting invoice text..."
+await fetch("/api/extract/" + expenseId, { method: "POST" });
 
 // Step 2
-setStep('classifying')   // "Retrieving ATO rulings & classifying..."
-await fetch('/api/classify/' + expenseId, { method: 'POST' })
+setStep("classifying"); // "Retrieving ATO rulings & classifying..."
+await fetch("/api/classify/" + expenseId, { method: "POST" });
 
 // Done
-setStep('done')
-router.refresh()         // re-runs the Server Component to load from DB
+setStep("done");
+router.refresh(); // re-runs the Server Component to load from DB
 ```
 
 This two-step design keeps each request under Vercel Hobby's 10-second function timeout.
 
 > **Further reading:**
+>
 > - [Next.js Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
 > - [Next.js Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
 > - [Vercel function timeouts](https://vercel.com/docs/functions/runtimes#max-duration)
@@ -478,20 +505,20 @@ This two-step design keeps each request under Vercel Hobby's 10-second function 
 
 ## Technology Stack Summary
 
-| Layer | Technology | Role |
-|-------|-----------|------|
-| Frontend | Next.js 16 App Router + React 19 | Server Components, Route Handlers, client UI |
-| UI Components | shadcn/ui + Tailwind CSS | Card, Badge, Button components |
-| Auth & DB | Supabase (PostgreSQL) | Auth, RLS, row storage, RPC functions |
-| File Storage | Supabase Storage | Invoice file upload and download |
-| Vector DB | pgvector (PostgreSQL extension) | HNSW-indexed 1536-dim vector columns |
-| Embedding Model | OpenAI `text-embedding-3-small` | Converts text to semantic vectors |
-| OCR (PDF) | `pdf-parse` (Mozilla PDF.js wrapper) | Pure Node.js text extraction from PDFs |
-| OCR (Images) | Claude Vision (`claude-sonnet-4-6`) | Multimodal invoice text extraction |
-| LLM | Anthropic Claude `claude-sonnet-4-6` | Tax classification reasoning |
-| AI SDK | Vercel AI SDK (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`) | Unified interface for embed, generateObject |
-| Schema Validation | Zod | Structured output schema enforcement |
-| Deployment | Vercel (Hobby plan) | Serverless Node.js functions, 10s timeout |
+| Layer             | Technology                                                  | Role                                         |
+| ----------------- | ----------------------------------------------------------- | -------------------------------------------- |
+| Frontend          | Next.js 16 App Router + React 19                            | Server Components, Route Handlers, client UI |
+| UI Components     | shadcn/ui + Tailwind CSS                                    | Card, Badge, Button components               |
+| Auth & DB         | Supabase (PostgreSQL)                                       | Auth, RLS, row storage, RPC functions        |
+| File Storage      | Supabase Storage                                            | Invoice file upload and download             |
+| Vector DB         | pgvector (PostgreSQL extension)                             | HNSW-indexed 1536-dim vector columns         |
+| Embedding Model   | OpenAI `text-embedding-3-small`                             | Converts text to semantic vectors            |
+| OCR (PDF)         | `pdf-parse` (Mozilla PDF.js wrapper)                        | Pure Node.js text extraction from PDFs       |
+| OCR (Images)      | Claude Vision (`claude-sonnet-4-6`)                         | Multimodal invoice text extraction           |
+| LLM               | Anthropic Claude `claude-sonnet-4-6`                        | Tax classification reasoning                 |
+| AI SDK            | Vercel AI SDK (`ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai`) | Unified interface for embed, generateObject  |
+| Schema Validation | Zod                                                         | Structured output schema enforcement         |
+| Deployment        | Vercel (Hobby plan)                                         | Serverless Node.js functions, 10s timeout    |
 
 ---
 
@@ -610,9 +637,6 @@ OPENAI_API_KEY=sk-...           # text-embedding-3-small
 ANTHROPIC_API_KEY=sk-ant-...    # claude-sonnet-4-6
 SUPABASE_SERVICE_ROLE_KEY=...   # server-side writes bypassing RLS
 
-# Already present
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
 ---
