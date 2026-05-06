@@ -174,7 +174,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       environmental_flag: classificationResult.environmental_flag,
       confidence_score: classificationResult.confidence_score,
       raw_response: classificationResult,
-      model_used: "gpt-4o-mini",
+      model_used: "gpt-5.5",
       ato_chunks_used: (rulings ?? []).map(
         (r: { ruling_ref: string }) => r.ruling_ref,
       ),

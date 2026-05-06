@@ -101,7 +101,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
             .filter(Boolean)
             .join(" — "),
           supplier: quote.contractor ?? "(not provided)",
-          amount: quote.total_cost != null ? String(quote.total_cost) : "(not provided)",
+          amount:
+            quote.total_cost != null
+              ? String(quote.total_cost)
+              : "(not provided)",
           address: property
             ? `${property.address}, ${property.suburb ?? ""} ${property.state ?? ""}`.trim()
             : "(unknown)",
@@ -159,10 +162,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  await admin
-    .from("quote_ai_classifications")
-    .delete()
-    .eq("quote_id", quoteId);
+  await admin.from("quote_ai_classifications").delete().eq("quote_id", quoteId);
 
   const { error: insertError } = await admin
     .from("quote_ai_classifications")
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       legal_citation: classificationResult.legal_citation,
       environmental_flag: classificationResult.environmental_flag,
       confidence_score: classificationResult.confidence_score,
-      model_used: "gpt-4o-mini",
+      model_used: "gpt-5.5",
     });
 
   if (insertError) {
