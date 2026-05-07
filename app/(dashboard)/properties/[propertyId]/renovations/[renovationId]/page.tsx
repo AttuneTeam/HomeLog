@@ -89,6 +89,14 @@ export default async function RenovationDetailPage({ params }: Props) {
             <span>{renovation.name}</span>
           </div>
           <h1 className="text-2xl font-bold">{renovation.name}</h1>
+          {renovation.description && (
+            <div>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {renovation.description}
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[renovation.status]}`}
@@ -245,18 +253,6 @@ export default async function RenovationDetailPage({ params }: Props) {
         userId={user.id}
         initialQuotes={(quotes ?? []) as any}
       />
-
-      {renovation.description && (
-        <>
-          <Separator />
-          <div>
-            <h3 className="text-sm font-medium mb-1.5">Description</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {renovation.description}
-            </p>
-          </div>
-        </>
-      )}
     </div>
   );
 }
