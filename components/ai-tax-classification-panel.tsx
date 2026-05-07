@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Leaf, AlertCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Step = "idle" | "extracting" | "classifying" | "done" | "error";
 
@@ -13,6 +20,8 @@ type Classification =
   | "Immediate Deduction"
   | "Capital Works (Div 43)"
   | "Plant & Equipment (Div 40)";
+
+type ManualClassification = "Immediate Repair" | "Repair" | "Capital Works";
 
 interface AiClassification {
   classification: Classification;
@@ -27,6 +36,8 @@ interface AiClassification {
 interface Props {
   expenseId: string;
   existingClassification: AiClassification | null;
+  existingManualClassification?: ManualClassification | null;
+  hasExtractedText?: boolean;
   contextNotes?: string | null;
 }
 
@@ -41,25 +52,53 @@ const STEP_MESSAGES: Partial<Record<Step, string>> = {
   classifying: "Retrieving ATO rulings & classifying...",
 };
 
-export function AiTaxClassificationPanel({ expenseId, existingClassification, contextNotes }: Props) {
+const AI_TO_MANUAL: Record<Classification, ManualClassification> = {
+  "Immediate Deduction": "Immediate Repair",
+  "Capital Works (Div 43)": "Capital Works",
+  "Plant & Equipment (Div 40)": "Capital Works",
+};
+
+const MANUAL_OPTIONS: ManualClassification[] = [
+  "Immediate Repair",
+  "Repair",
+  "Capital Works",
+];
+
+export function AiTaxClassificationPanel({
+  expenseId,
+  existingClassification,
+  existingManualClassification,
+  hasExtractedText = false,
+  contextNotes,
+}: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(existingClassification ? "done" : "idle");
   const [result, setResult] = useState<AiClassification | null>(existingClassification);
   const [error, setError] = useState<string | null>(null);
+  const [textExtracted, setTextExtracted] = useState(hasExtractedText);
+  const [manualClassification, setManualClassification] = useState<ManualClassification | "">(
+    existingManualClassification ??
+      (existingClassification ? AI_TO_MANUAL[existingClassification.classification] : "")
+  );
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLoading = step === "extracting" || step === "classifying";
   const hasResult = step === "done" && result;
 
   async function handleClassify() {
-    setStep("extracting");
     setError(null);
 
-    const r1 = await fetch(`/api/extract/${expenseId}`, { method: "POST" });
-    if (!r1.ok) {
-      const json = await r1.json().catch(() => ({}));
-      setError(json.error ?? "Invoice extraction failed. Make sure an invoice is attached.");
-      setStep("error");
-      return;
+    if (!textExtracted) {
+      setStep("extracting");
+      const r1 = await fetch(`/api/extract/${expenseId}`, { method: "POST" });
+      if (!r1.ok) {
+        const json = await r1.json().catch(() => ({}));
+        setError(json.error ?? "Invoice extraction failed. Make sure an invoice is attached.");
+        setStep("error");
+        return;
+      }
+      setTextExtracted(true);
     }
 
     setStep("classifying");
@@ -72,9 +111,39 @@ export function AiTaxClassificationPanel({ expenseId, existingClassification, co
       return;
     }
 
+    const aiClassification: Classification = json.classification.classification;
+    const mapped = AI_TO_MANUAL[aiClassification];
+
     setResult({ ...json.classification, created_at: new Date().toISOString(), model_used: "gpt-5.5" });
+    setManualClassification(mapped);
     setStep("done");
-    router.refresh();
+    await saveManual(mapped);
+  }
+
+  async function saveManual(value: ManualClassification) {
+    setSaveState("saving");
+    try {
+      const r = await fetch(`/api/expenses/${expenseId}/manual-classification`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classification: value }),
+      });
+      if (r.ok) {
+        setSaveState("saved");
+        router.refresh();
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => setSaveState("idle"), 2000);
+      } else {
+        setSaveState("error");
+      }
+    } catch {
+      setSaveState("error");
+    }
+  }
+
+  function handleManualChange(v: ManualClassification) {
+    setManualClassification(v);
+    saveManual(v);
   }
 
   const confidencePct = result ? Math.round(result.confidence_score * 100) : 0;
@@ -121,7 +190,31 @@ export function AiTaxClassificationPanel({ expenseId, existingClassification, co
           </div>
         )}
 
-        {step === "idle" && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Manual Classification</p>
+            {saveState === "saving" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            {saveState === "saved" && <span className="text-xs text-green-600">Saved</span>}
+            {saveState === "error" && <span className="text-xs text-destructive">Failed to save</span>}
+          </div>
+          <Select
+            value={manualClassification}
+            onValueChange={(v) => handleManualChange(v as ManualClassification)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select classification..." />
+            </SelectTrigger>
+            <SelectContent>
+              {MANUAL_OPTIONS.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {step === "idle" && !manualClassification && (
           <p className="text-sm text-muted-foreground">
             Click &ldquo;Classify with AI&rdquo; to analyse this expense against ATO rulings and determine its tax treatment.
           </p>

@@ -46,7 +46,7 @@ export default async function PropertyDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from("renovations")
-      .select("*, expenses(amount, classification_override)")
+      .select("*, expenses(amount, manual_classification)")
       .eq("property_id", propertyId)
       .order("start_date", { ascending: false }),
     supabase
@@ -78,10 +78,10 @@ export default async function PropertyDetailPage({ params }: Props) {
         r.expenses?.reduce(
           (
             s: number,
-            e: { amount: number; classification_override: string | null },
+            e: { amount: number; manual_classification: string | null },
           ) => {
-            const cls = e.classification_override;
-            return cls === "capital_improvement" ? s + Number(e.amount) : s;
+            const cls = e.manual_classification;
+            return cls === "Capital Works" ? s + Number(e.amount) : s;
           },
           0,
         ) ?? 0;

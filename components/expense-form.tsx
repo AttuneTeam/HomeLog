@@ -30,7 +30,7 @@ interface ExpenseFormProps {
   renovationId: string;
   propertyId: string;
   userId: string;
-  defaultValues?: Partial<FormValues> & {
+  defaultValues?: Omit<Partial<FormValues>, "gst_amount"> & {
     id?: string;
     invoice_path?: string | null;
     abn?: string | null;

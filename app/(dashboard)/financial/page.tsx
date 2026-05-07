@@ -23,7 +23,7 @@ export default async function FinancialPage() {
         id, address, suburb, state, purchase_date, purchase_price, property_type,
         renovations(
           id, name, classification, status, start_date, end_date, claimable,
-          expenses(id, amount, expense_date, category, classification_override)
+          expenses(id, amount, expense_date, category, manual_classification)
         )
       `,
       )

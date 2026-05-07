@@ -2,6 +2,10 @@ export type Classification =
   | "repair"
   | "capital_improvement"
   | "initial_repair";
+export type ManualTaxClassification =
+  | "Immediate Repair"
+  | "Repair"
+  | "Capital Works";
 export type AiTaxClassification =
   | "Immediate Deduction"
   | "Capital Works (Div 43)"
@@ -252,7 +256,7 @@ export interface Database {
           supplier: string | null;
           invoice_path: string | null;
           context_notes: string | null;
-          classification_override: Classification | null;
+          manual_classification: ManualTaxClassification | null;
           raw_text: string | null;
           abn: string | null;
           gst_amount: number | null;
@@ -269,7 +273,7 @@ export interface Database {
           supplier?: string | null;
           invoice_path?: string | null;
           context_notes: string | null;
-          classification_override?: Classification | null;
+          manual_classification?: ManualTaxClassification | null;
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
@@ -284,7 +288,7 @@ export interface Database {
           supplier?: string | null;
           invoice_path?: string | null;
           context_notes?: string | null;
-          classification_override?: Classification | null;
+          manual_classification?: ManualTaxClassification | null;
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
