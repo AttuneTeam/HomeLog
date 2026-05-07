@@ -12,8 +12,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 import { TrendingUp, Home } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { calculateStampDuty } from "@/lib/stamp-duty"
 
 const schema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -22,6 +30,7 @@ const schema = z.object({
   postcode: z.string().optional(),
   purchase_date: z.string().optional(),
   purchase_price: z.string().optional(),
+  stamp_duty: z.string().optional(),
   notes: z.string().optional(),
   property_type: z.enum(["investment", "primary_residence"]),
 })
@@ -30,7 +39,7 @@ type FormValues = z.infer<typeof schema>
 
 interface PropertyFormProps {
   userId: string
-  defaultValues?: Partial<FormValues> & { id?: string; property_type?: string }
+  defaultValues?: Partial<FormValues> & { id?: string; property_type?: string; stamp_duty?: string }
 }
 
 export function PropertyForm({ userId, defaultValues }: PropertyFormProps) {
@@ -47,12 +56,21 @@ export function PropertyForm({ userId, defaultValues }: PropertyFormProps) {
       postcode: defaultValues?.postcode ?? "",
       purchase_date: defaultValues?.purchase_date ?? "",
       purchase_price: defaultValues?.purchase_price ?? "",
+      stamp_duty: defaultValues?.stamp_duty ?? "",
       notes: defaultValues?.notes ?? "",
       property_type: (defaultValues?.property_type as "investment" | "primary_residence") ?? "investment",
     },
   })
 
   const propertyType = watch("property_type")
+  const watchedState = watch("state")
+  const watchedPrice = watch("purchase_price")
+
+  const stampDuty = calculateStampDuty(
+    watchedState ?? "",
+    parseFloat(watchedPrice ?? "0") || 0,
+    propertyType,
+  )
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -65,6 +83,7 @@ export function PropertyForm({ userId, defaultValues }: PropertyFormProps) {
       postcode: values.postcode || null,
       purchase_date: values.purchase_date || null,
       purchase_price: values.purchase_price ? parseFloat(values.purchase_price) : null,
+      stamp_duty: values.stamp_duty ? parseFloat(values.stamp_duty) : null,
       notes: values.notes || null,
       property_type: values.property_type,
     }
@@ -139,7 +158,19 @@ export function PropertyForm({ userId, defaultValues }: PropertyFormProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="state">State</Label>
-              <Input id="state" placeholder="VIC" {...register("state")} />
+              <Select
+                value={watchedState ?? ""}
+                onValueChange={(v) => setValue("state", v ?? undefined, { shouldValidate: true })}
+              >
+                <SelectTrigger id="state" className="w-full">
+                  <SelectValue placeholder="State…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"].map((code) => (
+                    <SelectItem key={code} value={code}>{code}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="postcode">Postcode</Label>
@@ -155,6 +186,38 @@ export function PropertyForm({ userId, defaultValues }: PropertyFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="purchase_price">Purchase price ($)</Label>
               <Input id="purchase_price" type="number" step="0.01" placeholder="500000" {...register("purchase_price")} />
+            </div>
+          </div>
+
+          {stampDuty !== null && (
+            <div className="flex items-center justify-between rounded-lg border border-muted bg-muted/40 px-4 py-3 text-sm">
+              <span className="text-muted-foreground">Estimated stamp duty</span>
+              <span className="font-semibold tabular-nums">{formatCurrency(stampDuty)}</span>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="stamp_duty">Stamp duty paid ($)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="stamp_duty"
+                type="number"
+                step="0.01"
+                placeholder="0"
+                className="flex-1"
+                {...register("stamp_duty")}
+              />
+              {stampDuty !== null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setValue("stamp_duty", String(stampDuty))}
+                >
+                  Use estimate
+                </Button>
+              )}
             </div>
           </div>
 

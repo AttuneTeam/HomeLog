@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, calcTotalSpend } from "@/lib/utils";
 import {
   Plus,
   Pencil,
@@ -63,19 +63,11 @@ export default async function PropertyDetailPage({ params }: Props) {
       .order("start_date", { ascending: true }),
   ]);
 
-  const totalSpend =
-    renovations?.reduce((sum, r) => {
-      const rTotal =
-        r.expenses?.reduce(
-          (s: number, e: { amount: number }) => s + Number(e.amount),
-          0,
-        ) ?? 0;
-      return sum + rTotal;
-    }, 0) ?? 0;
+  const totalSpend = calcTotalSpend(renovations ?? []);
 
   const capitalTotal =
     renovations?.reduce((sum, r) => {
-      if (r.claimable === false) return sum;
+      if (r.status === "planned" || r.claimable === false) return sum;
       const rTotal =
         r.expenses?.reduce(
           (
@@ -90,7 +82,8 @@ export default async function PropertyDetailPage({ params }: Props) {
       return sum + rTotal;
     }, 0) ?? 0;
 
-  const adjustedCostBase = (property.purchase_price ?? 0) + capitalTotal;
+  const adjustedCostBase =
+    (property.purchase_price ?? 0) + (property.stamp_duty ?? 0) + capitalTotal;
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
