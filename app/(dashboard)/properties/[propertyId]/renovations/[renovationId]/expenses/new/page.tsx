@@ -15,7 +15,7 @@ export default async function NewExpensePage({ params }: Props) {
 
   const { data: renovation } = await supabase
     .from("renovations")
-    .select("name, classification")
+    .select("name")
     .eq("id", renovationId)
     .single()
 
@@ -40,14 +40,10 @@ export default async function NewExpensePage({ params }: Props) {
           <span>New expense</span>
         </div>
         <h1 className="text-2xl font-bold">Add expense</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Default classification: <strong>{renovation.classification === "capital_improvement" ? "Capital Improvement" : "Repair"}</strong> (inherited from renovation — override below if needed)
-        </p>
       </div>
       <ExpenseForm
         renovationId={renovationId}
         propertyId={propertyId}
-        renovationClassification={renovation.classification}
         userId={user.id}
       />
     </div>

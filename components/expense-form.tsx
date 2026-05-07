@@ -12,29 +12,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { Upload, X, FileText, Wrench, TrendingUp, ShieldAlert } from "lucide-react"
-
-const CATEGORIES = [
-  { value: "labour", label: "Labour" },
-  { value: "materials", label: "Materials" },
-  { value: "permits", label: "Permits" },
-  { value: "professional_fees", label: "Professional fees" },
-  { value: "appliances", label: "Appliances" },
-  { value: "fixtures", label: "Fixtures" },
-  { value: "other", label: "Other" },
-] as const
 
 const schema = z.object({
   amount: z.string().min(1, "Amount is required"),
   gst_amount: z.string().optional(),
-  category: z.enum(["labour", "materials", "permits", "professional_fees", "appliances", "fixtures", "other"]),
   expense_date: z.string().min(1, "Date is required"),
   description: z.string().optional(),
   supplier: z.string().optional(),
   abn: z.string().optional(),
-  classification_override: z.enum(["repair", "capital_improvement", "initial_repair", "inherit"]),
+  classification_override: z.enum(["repair", "capital_improvement", "initial_repair"]).nullable().optional(),
   context_notes: z.string().optional(),
 })
 
@@ -43,12 +31,11 @@ type FormValues = z.infer<typeof schema>
 interface ExpenseFormProps {
   renovationId: string
   propertyId: string
-  renovationClassification: string
   userId: string
   defaultValues?: Partial<FormValues> & { id?: string; invoice_path?: string | null; abn?: string | null; gst_amount?: number | null; context_notes?: string | null }
 }
 
-export function ExpenseForm({ renovationId, propertyId, renovationClassification, userId, defaultValues }: ExpenseFormProps) {
+export function ExpenseForm({ renovationId, propertyId, userId, defaultValues }: ExpenseFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -61,18 +48,16 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
     defaultValues: {
       amount: defaultValues?.amount ?? "",
       gst_amount: defaultValues?.gst_amount != null ? String(defaultValues.gst_amount) : "",
-      category: defaultValues?.category ?? "labour",
       expense_date: defaultValues?.expense_date ?? new Date().toISOString().split("T")[0],
       description: defaultValues?.description ?? "",
       supplier: defaultValues?.supplier ?? "",
       abn: defaultValues?.abn ?? "",
-      classification_override: (defaultValues?.classification_override as "repair" | "capital_improvement" | "initial_repair") ?? "inherit",
+      classification_override: defaultValues?.classification_override ?? undefined,
       context_notes: defaultValues?.context_notes ?? "",
     },
   })
 
   const classificationOverride = watch("classification_override")
-  const effectiveClassification = classificationOverride === "inherit" ? renovationClassification : classificationOverride
 
   async function uploadFile(userId: string, renovationId: string, file: File): Promise<string | null> {
     const supabase = createClient()
@@ -98,13 +83,12 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
     const payload = {
       amount: parseFloat(values.amount),
       gst_amount: values.gst_amount ? parseFloat(values.gst_amount) : null,
-      category: values.category,
       expense_date: values.expense_date,
       description: values.description || null,
       supplier: values.supplier || null,
       abn: values.abn || null,
       invoice_path: invoicePath,
-      classification_override: values.classification_override === "inherit" ? null : values.classification_override,
+      classification_override: values.classification_override ?? null,
       context_notes: values.context_notes || null,
     }
 
@@ -114,7 +98,7 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
       toast.success("Expense updated")
       router.push(`/properties/${propertyId}/renovations/${renovationId}`)
     } else {
-      const { data: newExpense, error } = await supabase.from("expenses").insert({ ...payload, renovation_id: renovationId }).select("id").single()
+      const { data: newExpense, error } = await supabase.from("expenses").insert({ ...payload, renovation_id: renovationId, category: "other" }).select("id").single()
       if (error) { toast.error(error.message); setLoading(false); return }
       toast.success("Expense added")
       router.push(`/properties/${propertyId}/renovations/${renovationId}/expenses/${newExpense.id}`)
@@ -151,23 +135,6 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
           </div>
 
           <div className="space-y-1.5">
-            <Label>Category *</Label>
-            <Select
-              defaultValue={defaultValues?.category ?? "labour"}
-              onValueChange={(v) => setValue("category", v as FormValues["category"])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
             <Input id="description" placeholder="What was this expense for?" {...register("description")} />
           </div>
@@ -183,15 +150,14 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
             </div>
           </div>
 
-          {/* Classification override */}
+          {/* Tax classification */}
           <div className="space-y-2">
-            <Label>Tax classification override</Label>
+            <Label>Tax classification</Label>
             <p className="text-xs text-muted-foreground">
-              Leave as &quot;Inherit&quot; to use the renovation&apos;s classification ({renovationClassification === "capital_improvement" ? "Capital Improvement" : renovationClassification === "initial_repair" ? "Initial Repair" : "Repair"}). Override only if this specific expense differs.
+              Select the tax classification for this expense.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { value: "inherit", label: "Inherit", desc: "From renovation" },
                 { value: "repair", label: "Repair", desc: "Immediate deduction", icon: Wrench },
                 { value: "initial_repair", label: "Initial Repair", desc: "At purchase — CGT base", icon: ShieldAlert },
                 { value: "capital_improvement", label: "Capital", desc: "Adds to cost base", icon: TrendingUp },
@@ -199,37 +165,27 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setValue("classification_override", value as FormValues["classification_override"])}
+                  onClick={() => setValue(
+                    "classification_override",
+                    classificationOverride === value ? null : value as FormValues["classification_override"]
+                  )}
                   className={cn(
                     "flex flex-col items-center gap-1 rounded-lg border-2 p-3 text-xs transition-all",
                     classificationOverride === value
-                      ? value === "inherit"
-                        ? "border-primary bg-primary/5"
-                        : value === "repair"
-                          ? "border-sky-500 bg-sky-50 dark:bg-sky-950/40"
-                          : value === "initial_repair"
-                            ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40"
-                            : "border-amber-500 bg-amber-50 dark:bg-amber-950/40"
+                      ? value === "repair"
+                        ? "border-sky-500 bg-sky-50 dark:bg-sky-950/40"
+                        : value === "initial_repair"
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-950/40"
+                          : "border-amber-500 bg-amber-50 dark:bg-amber-950/40"
                       : "border-border hover:border-muted-foreground/30"
                   )}
                 >
-                  {Icon && <Icon className="h-4 w-4" />}
+                  <Icon className="h-4 w-4" />
                   <span className="font-medium">{label}</span>
                   <span className="text-muted-foreground text-center">{desc}</span>
                 </button>
               ))}
             </div>
-            {classificationOverride !== "inherit" && (
-              <p className="text-xs text-muted-foreground">
-                Effective: <strong>
-                  {effectiveClassification === "capital_improvement"
-                    ? "Capital Improvement"
-                    : effectiveClassification === "initial_repair"
-                      ? "Initial Repair (at purchase)"
-                      : "Repair"}
-                </strong>
-              </p>
-            )}
           </div>
 
           {/* Invoice upload */}
@@ -284,6 +240,7 @@ export function ExpenseForm({ renovationId, propertyId, renovationClassification
               </button>
             )}
           </div>
+
           {/* AI context notes */}
           <div className="space-y-1.5">
             <Label htmlFor="context_notes">Additional context for AI classification</Label>

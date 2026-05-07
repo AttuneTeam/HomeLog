@@ -8,6 +8,7 @@
     "start": "next start",
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",
+    "db:sync": "bash scripts/sync-from-prod.sh",
     "seed:ato": "tsx scripts/seed-ato-rulings.ts"
   },
   "dependencies": {

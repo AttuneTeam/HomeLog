@@ -23,7 +23,7 @@ export default async function EditExpensePage({ params }: Props) {
 
   const { data: renovation } = await supabase
     .from("renovations")
-    .select("name, classification")
+    .select("name")
     .eq("id", renovationId)
     .single()
 
@@ -50,16 +50,14 @@ export default async function EditExpensePage({ params }: Props) {
       <ExpenseForm
         renovationId={renovationId}
         propertyId={propertyId}
-        renovationClassification={renovation?.classification ?? "repair"}
         userId={user.id}
         defaultValues={{
           id: expense.id,
           amount: expense.amount.toString(),
-          category: expense.category,
           expense_date: expense.expense_date,
           description: expense.description ?? "",
           supplier: expense.supplier ?? "",
-          classification_override: expense.classification_override ?? "inherit",
+          classification_override: expense.classification_override ?? undefined,
           invoice_path: expense.invoice_path,
           context_notes: expense.context_notes ?? "",
         }}
