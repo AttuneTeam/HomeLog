@@ -30,7 +30,7 @@ export default async function TaxReportPage({ params }: Props) {
   const { data: renovations } = await supabase
     .from("renovations")
     .select(
-      "id, name, description, classification, claimable, expenses(id, expense_date, supplier, abn, category, amount, gst_amount, description, invoice_path, classification_override)",
+      "id, name, description, classification, claimable, expenses(id, expense_date, supplier, abn, category, amount, gst_amount, description, invoice_path, manual_classification)",
     )
     .eq("property_id", propertyId)
     .eq("claimable", true)
@@ -51,7 +51,7 @@ export default async function TaxReportPage({ params }: Props) {
   for (const renovation of renovations ?? []) {
     for (const expense of renovation.expenses ?? []) {
       const effectiveClassification =
-        expense.classification_override ?? renovation.classification;
+        expense.manual_classification ?? renovation.classification;
 
       let invoice_url: string | null = null;
       if (expense.invoice_path) {
@@ -79,9 +79,9 @@ export default async function TaxReportPage({ params }: Props) {
         renovation_description: (renovation as { description?: string | null }).description ?? null,
       };
 
-      if (effectiveClassification === "capital_improvement") {
+      if (effectiveClassification === "Capital Works") {
         capitalImprovements.push(taxExpense);
-      } else if (effectiveClassification === "initial_repair") {
+      } else if (effectiveClassification === "Immediate Repair") {
         initialRepairs.push(taxExpense);
       } else {
         repairs.push(taxExpense);

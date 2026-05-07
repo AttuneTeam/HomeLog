@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Plus,
   Pencil,
@@ -46,7 +46,7 @@ export default async function PropertyDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from("renovations")
-      .select("*, expenses(amount, classification_override)")
+      .select("*, expenses(amount, manual_classification)")
       .eq("property_id", propertyId)
       .order("start_date", { ascending: false }),
     supabase
@@ -78,10 +78,10 @@ export default async function PropertyDetailPage({ params }: Props) {
         r.expenses?.reduce(
           (
             s: number,
-            e: { amount: number; classification_override: string | null },
+            e: { amount: number; manual_classification: string | null },
           ) => {
-            const cls = e.classification_override ?? r.classification;
-            return cls === "capital_improvement" ? s + Number(e.amount) : s;
+            const cls = e.manual_classification;
+            return cls === "Capital Works" ? s + Number(e.amount) : s;
           },
           0,
         ) ?? 0;
@@ -259,7 +259,6 @@ function RenovationTabs({
     id: string;
     name: string;
     status: string;
-    classification: string;
     start_date: string | null;
     end_date: string | null;
     expenses?: Array<{ amount: number }>;
@@ -310,9 +309,6 @@ function RenovationTabs({
                     <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
                       Dates
                     </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
-                      Classification
-                    </th>
                     <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
                       Cost
                     </th>
@@ -344,11 +340,6 @@ function RenovationTabs({
                             ? ` → ${formatDate(renovation.end_date)}`
                             : ""}
                         </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <ClassificationBadge
-                            classification={renovation.classification}
-                          />
-                        </td>
                         <td className="px-4 py-3 text-right font-medium tabular-nums">
                           {formatCurrency(total)}
                         </td>
@@ -362,24 +353,5 @@ function RenovationTabs({
         </TabsContent>
       ))}
     </Tabs>
-  );
-}
-
-
-function ClassificationBadge({ classification }: { classification: string }) {
-  const colours =
-    classification === "capital_improvement"
-      ? "bg-amber-100 text-amber-800"
-      : classification === "initial_repair"
-        ? "bg-purple-100 text-purple-800"
-        : "bg-sky-100 text-sky-800";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours}`}
-    >
-      {classificationLabel(
-        classification as "repair" | "capital_improvement" | "initial_repair",
-      )}
-    </span>
   );
 }

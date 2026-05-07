@@ -25,7 +25,7 @@ interface Property {
       amount: number;
       expense_date: string;
       category: string;
-      classification_override: string | null;
+      manual_classification: string | null;
     }[];
   }[];
 }

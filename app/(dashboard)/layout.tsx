@@ -19,10 +19,12 @@ export default async function DashboardLayout({
       ? user.user_metadata.display_name
       : null;
 
-  await supabase.from("profiles").upsert(
-    { id: user.id, display_name: displayNameFromMeta },
-    { onConflict: "id", ignoreDuplicates: true }
-  );
+  await supabase
+    .from("profiles")
+    .upsert(
+      { id: user.id, display_name: displayNameFromMeta },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
 
   const { data: profile } = await supabase
     .from("profiles")
