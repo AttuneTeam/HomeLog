@@ -49,6 +49,7 @@ export default async function EditPropertyPage({ params }: Props) {
           postcode: property.postcode ?? "",
           purchase_date: property.purchase_date ?? "",
           purchase_price: property.purchase_price?.toString() ?? "",
+          stamp_duty: property.stamp_duty?.toString() ?? "",
           notes: property.notes ?? "",
           property_type:
             (property.property_type as "investment" | "primary_residence") ??

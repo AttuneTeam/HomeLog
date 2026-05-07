@@ -48,18 +48,20 @@ export default async function DashboardPage() {
   const propertyCount = properties?.length ?? 0;
 
   const allExpenses =
-    renovations?.flatMap((r) =>
-      (r.expenses ?? []).map(
-        (e: {
-          amount: number;
-          manual_classification: string | null;
-          expense_date: string;
-        }) => ({
-          ...e,
-          renovation_classification: r.classification,
-        }),
-      ),
-    ) ?? [];
+    renovations
+      ?.filter((r) => r.status !== "planned")
+      .flatMap((r) =>
+        (r.expenses ?? []).map(
+          (e: {
+            amount: number;
+            manual_classification: string | null;
+            expense_date: string;
+          }) => ({
+            ...e,
+            renovation_classification: r.classification,
+          }),
+        ),
+      ) ?? [];
 
   const totalSpend = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
 

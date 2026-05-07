@@ -30,3 +30,15 @@ export function classificationLabel(c: ManualTaxClassification): string {
   if (c === "Capital Works") return "Capital Works";
   return c;
 }
+
+export function calcTotalSpend(
+  renovations: Array<{
+    status: string;
+    expenses?: Array<{ amount: number | string }> | null;
+  }>,
+): number {
+  return renovations.reduce((sum, r) => {
+    if (r.status === "planned") return sum;
+    return sum + (r.expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0);
+  }, 0);
+}
