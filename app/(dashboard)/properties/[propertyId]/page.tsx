@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -18,6 +17,7 @@ import {
 import { DeletePropertyButton } from "@/components/delete-property-button";
 import { PropertyFilesSection } from "@/components/property-files-section";
 import { RentalPeriodsSection } from "@/components/rental-periods-section";
+import { RenovationsList } from "@/components/renovations-list";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -46,7 +46,9 @@ export default async function PropertyDetailPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from("renovations")
-      .select("*, expenses(amount, manual_classification)")
+      .select(
+        "*, expenses(id, description, expense_date, amount, manual_classification, supplier)",
+      )
       .eq("property_id", propertyId)
       .order("start_date", { ascending: false }),
     supabase
@@ -232,7 +234,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             </ButtonLink>
           </div>
         ) : (
-          <RenovationTabs renovations={renovations} propertyId={propertyId} />
+          <RenovationsList renovations={renovations} propertyId={propertyId} />
         )}
       </div>
 
@@ -251,107 +253,3 @@ export default async function PropertyDetailPage({ params }: Props) {
   );
 }
 
-function RenovationTabs({
-  renovations,
-  propertyId,
-}: {
-  renovations: Array<{
-    id: string;
-    name: string;
-    status: string;
-    start_date: string | null;
-    end_date: string | null;
-    expenses?: Array<{ amount: number }>;
-  }>;
-  propertyId: string;
-}) {
-  const byStatus = {
-    planned: renovations.filter((r) => r.status === "planned"),
-    in_progress: renovations.filter((r) => r.status === "in_progress"),
-    completed: renovations.filter((r) => r.status === "completed"),
-  };
-
-  return (
-    <Tabs defaultValue="planned">
-      <TabsList variant="line">
-        {(
-          [
-            { value: "planned", label: "Planned" },
-            { value: "in_progress", label: "In Progress" },
-            { value: "completed", label: "Completed" },
-          ] as const
-        ).map(({ value, label }) => (
-          <TabsTrigger key={value} value={value}>
-            {label}
-            {byStatus[value].length > 0 && (
-              <span className="ml-1 text-xs text-muted-foreground">
-                ({byStatus[value].length})
-              </span>
-            )}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-
-      {(["planned", "in_progress", "completed"] as const).map((status) => (
-        <TabsContent key={status} value={status} className="mt-4">
-          {byStatus[status].length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              No {status.replace("_", " ")} renovations
-            </p>
-          ) : (
-            <div className="rounded-lg border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Renovation
-                    </th>
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
-                      Dates
-                    </th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                      Cost
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {byStatus[status].map((renovation) => {
-                    const total =
-                      renovation.expenses?.reduce(
-                        (s, e) => s + Number(e.amount),
-                        0,
-                      ) ?? 0;
-                    return (
-                      <tr
-                        key={renovation.id}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <Link
-                            href={`/properties/${propertyId}/renovations/${renovation.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {renovation.name}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell whitespace-nowrap">
-                          {formatDate(renovation.start_date)}
-                          {renovation.end_date
-                            ? ` → ${formatDate(renovation.end_date)}`
-                            : ""}
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium tabular-nums">
-                          {formatCurrency(total)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-}
