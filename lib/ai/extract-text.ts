@@ -28,7 +28,7 @@ export async function extractTextFromBuffer(
         role: "user",
         content: [
           mimeType === "application/pdf"
-            ? { type: "file" as const, data: base64, mimeType: "application/pdf" as const }
+            ? { type: "file" as const, data: base64, mediaType: "application/pdf" as const }
             : { type: "image" as const, image: `data:${mimeType};base64,${base64}` },
           {
             type: "text",
