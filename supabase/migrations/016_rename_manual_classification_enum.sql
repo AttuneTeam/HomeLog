@@ -1,1 +1,1 @@
-ALTER TYPE manual_tax_classification RENAME VALUE 'Immediate Deduction' TO 'Immediate Repair';
+-- No-op: enum value 'Immediate Repair' was already set correctly in 015_expense_manual_classification.sql
