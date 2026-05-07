@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Pencil, FileText } from "lucide-react";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { InvoiceViewer } from "@/components/invoice-viewer";
@@ -44,8 +44,6 @@ export default async function ExpenseDetailPage({ params }: Props) {
     .select("address")
     .eq("id", propertyId)
     .single();
-
-  const effectiveClassification = expense.classification_override ?? null;
 
   let invoiceUrl: string | null = null;
   if (expense.invoice_path) {
@@ -125,25 +123,6 @@ export default async function ExpenseDetailPage({ params }: Props) {
           <CardContent>
             <p className="text-xs text-muted-foreground">Supplier</p>
             <p className="font-medium mt-1">{expense.supplier ?? "—"}</p>
-          </CardContent>
-        </Card>
-        <Card className="col-span-2 sm:col-span-1">
-          <CardContent>
-            <p className="text-xs text-muted-foreground">Tax classification</p>
-            {effectiveClassification ? (
-              <p
-                className={`font-medium mt-1 ${effectiveClassification === "capital_improvement" ? "text-amber-700" : "text-sky-700"}`}
-              >
-                {classificationLabel(
-                  effectiveClassification as
-                    | "repair"
-                    | "capital_improvement"
-                    | "initial_repair",
-                )}
-              </p>
-            ) : (
-              <p className="font-medium mt-1 text-muted-foreground">—</p>
-            )}
           </CardContent>
         </Card>
       </div>

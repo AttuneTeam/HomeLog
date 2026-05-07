@@ -57,7 +57,6 @@ export default async function EditExpensePage({ params }: Props) {
           expense_date: expense.expense_date,
           description: expense.description ?? "",
           supplier: expense.supplier ?? "",
-          classification_override: expense.classification_override ?? undefined,
           invoice_path: expense.invoice_path,
           context_notes: expense.context_notes ?? "",
         }}
