@@ -283,7 +283,7 @@ export interface Database {
           description?: string | null;
           supplier?: string | null;
           invoice_path?: string | null;
-          context_notes: string | null;
+          context_notes?: string | null;
           classification_override?: Classification | null;
           raw_text?: string | null;
           abn?: string | null;
