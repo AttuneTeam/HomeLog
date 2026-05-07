@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { embed } from "ai";
 import { embeddingModel } from "@/lib/ai/openai-client";
 import { aiClassificationSchema } from "@/lib/ai/classification-schema";
@@ -157,14 +156,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  await supabase.from("quote_ai_classifications").delete().eq("quote_id", quoteId);
 
-  await admin.from("quote_ai_classifications").delete().eq("quote_id", quoteId);
-
-  const { error: insertError } = await admin
+  const { error: insertError } = await supabase
     .from("quote_ai_classifications")
     .insert({
       quote_id: quoteId,

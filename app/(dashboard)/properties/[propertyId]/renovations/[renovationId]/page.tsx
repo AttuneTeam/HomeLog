@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
 import { Plus, Pencil, Receipt } from "lucide-react";
 import { DeleteRenovationButton } from "@/components/delete-renovation-button";
@@ -180,12 +179,12 @@ export default async function RenovationDetailPage({ params }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground">
                     Expense
                   </th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
-                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground"></th>
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
+                  <th className="text-right px-0 py-2.5 font-medium text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -194,7 +193,7 @@ export default async function RenovationDetailPage({ params }: Props) {
                     key={expense.id}
                     className="hover:bg-muted/30 transition-colors"
                   >
-                    <td className="px-4 py-1">
+                    <td className="px-0 py-1">
                       <Link
                         href={`/properties/${propertyId}/renovations/${renovationId}/expenses/${expense.id}`}
                         className="hover:underline font-medium"
@@ -202,12 +201,12 @@ export default async function RenovationDetailPage({ params }: Props) {
                         {expense.description ?? "Expense"}
                       </Link>
                       {expense.supplier && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs mt-1 text-muted-foreground">
                           {expense.supplier}
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
+                    <td className="px-4 py-3 hidden sm:table-cell whitespace-nowrap">
                       {expense.classification_override && (
                         <ClassificationBadge
                           classification={expense.classification_override}
@@ -217,26 +216,16 @@ export default async function RenovationDetailPage({ params }: Props) {
                     <td className="text-left px-4 py-3 text-muted-foreground whitespace-nowrap hidden sm:table-cell">
                       {formatDate(expense.expense_date)}
                     </td>
-
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">
+                    <td className="px-0 py-3 text-right tabular-nums font-medium">
                       {formatCurrency(Number(expense.amount))}
                     </td>
                   </tr>
                 ))}
                 <tr className="border-t bg-muted/50">
-                  <td
-                    colSpan={3}
-                    className="px-4 py-2.5 text-sm font-semibold text-right hidden sm:table-cell"
-                  >
-                    Total
-                  </td>
-                  <td
-                    colSpan={3}
-                    className="px-4 py-2.5 text-sm font-semibold text-right sm:hidden"
-                  >
-                    Total
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-semibold tabular-nums">
+                  <td className="px-0 py-2.5 text-sm font-semibold text-right hidden sm:table-cell"></td>
+                  <td className="px-4 py-2.5 text-sm font-semibold text-right sm:table-cell"></td>
+                  <td className="px-4 py-2.5 text-sm font-semibold text-right sm:table-cell"></td>
+                  <td className="px-0 py-2.5 text-right font-semibold tabular-nums">
                     {formatCurrency(totalSpend)}
                   </td>
                 </tr>
