@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { classificationModel } from "./openai-client";
+import { extractionModel } from "./openai-client";
 
 const MIME_MAP: Record<string, string> = {
   pdf: "application/pdf",
@@ -22,7 +22,7 @@ export async function extractTextFromBuffer(
   const base64 = buffer.toString("base64");
 
   const { text } = await generateText({
-    model: classificationModel,
+    model: extractionModel,
     messages: [
       {
         role: "user",
