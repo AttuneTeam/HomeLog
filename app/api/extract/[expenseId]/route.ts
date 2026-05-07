@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { embedMany } from 'ai'
 import { embeddingModel } from '@/lib/ai/openai-client'
 import { extractTextFromBuffer, mimeTypeFromPath } from '@/lib/ai/extract-text'
@@ -35,14 +34,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'No invoice attached to this expense' }, { status: 400 })
   }
 
-  // Service role client for storage access and DB writes
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
   // Download invoice file from storage
-  const { data: fileData, error: fileError } = await admin.storage
+  const { data: fileData, error: fileError } = await supabase.storage
     .from('invoices')
     .download(expense.invoice_path)
 
@@ -67,7 +60,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   // Store raw text on the expense record
-  await admin
+  await supabase
     .from('expenses')
     .update({ raw_text: rawText })
     .eq('id', expenseId)
@@ -81,7 +74,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   })
 
   // Delete existing embeddings for idempotency
-  await admin
+  await supabase
     .from('expense_embeddings')
     .delete()
     .eq('expense_id', expenseId)
@@ -94,7 +87,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     embedding: embeddings[i],
   }))
 
-  const { error: insertError } = await admin
+  const { error: insertError } = await supabase
     .from('expense_embeddings')
     .insert(rows)
 

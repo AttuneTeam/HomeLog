@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Pencil, FileText } from "lucide-react";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { InvoiceViewer } from "@/components/invoice-viewer";
@@ -16,16 +16,6 @@ interface Props {
     expenseId: string;
   }>;
 }
-
-const categoryLabels: Record<string, string> = {
-  labour: "Labour",
-  materials: "Materials",
-  permits: "Permits",
-  professional_fees: "Professional fees",
-  appliances: "Appliances",
-  fixtures: "Fixtures",
-  other: "Other",
-};
 
 export default async function ExpenseDetailPage({ params }: Props) {
   const { propertyId, renovationId, expenseId } = await params;
@@ -45,7 +35,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
 
   const { data: renovation } = await supabase
     .from("renovations")
-    .select("name, classification")
+    .select("name")
     .eq("id", renovationId)
     .single();
 
@@ -54,9 +44,6 @@ export default async function ExpenseDetailPage({ params }: Props) {
     .select("address")
     .eq("id", propertyId)
     .single();
-
-  const effectiveClassification =
-    expense.classification_override ?? renovation?.classification ?? "repair";
 
   let invoiceUrl: string | null = null;
   if (expense.invoice_path) {
@@ -100,7 +87,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
             <span>Expense</span>
           </div>
           <h1 className="text-2xl font-bold">
-            {expense.description ?? categoryLabels[expense.category]}
+            {expense.description ?? "Expense"}
           </h1>
           <p className="text-3xl font-bold mt-2">
             {formatCurrency(Number(expense.amount))}
@@ -125,7 +112,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground">Date</p>
             <p className="font-medium mt-1">
               {formatDate(expense.expense_date)}
@@ -133,34 +120,9 @@ export default async function ExpenseDetailPage({ params }: Props) {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Category</p>
-            <p className="font-medium mt-1">
-              {categoryLabels[expense.category]}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
+          <CardContent>
             <p className="text-xs text-muted-foreground">Supplier</p>
             <p className="font-medium mt-1">{expense.supplier ?? "—"}</p>
-          </CardContent>
-        </Card>
-        <Card className="col-span-2 sm:col-span-1">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-muted-foreground">Tax classification</p>
-            <p
-              className={`font-medium mt-1 ${effectiveClassification === "capital_improvement" ? "text-amber-700" : "text-sky-700"}`}
-            >
-              {classificationLabel(
-                effectiveClassification as "repair" | "capital_improvement",
-              )}
-              {expense.classification_override && (
-                <span className="text-muted-foreground text-xs ml-1">
-                  (override)
-                </span>
-              )}
-            </p>
           </CardContent>
         </Card>
       </div>
