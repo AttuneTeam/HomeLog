@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const response = await openai.responses.create({
       prompt: {
         id: "pmpt_69c7aec3bcb88190a78cb8b271723b870d77dbec02ce5c56",
-        version: "4",
+        version: "6",
         variables: {
           rulings:
             rulingsContext ||
@@ -104,6 +104,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
             : "(unknown)",
           expensedate: expense.expense_date,
           property_status: propertyStatus,
+          purchase_date: property?.purchase_date ?? "(unknown)",
           expense_context: expense.context_notes ?? "",
           expense_raw_text: expense.raw_text?.slice(0, 1000) ?? "",
         },
