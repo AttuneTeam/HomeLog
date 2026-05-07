@@ -6,6 +6,13 @@ import { Loader2, Leaf, AlertCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Step = "idle" | "extracting" | "classifying" | "done" | "error";
 
@@ -13,6 +20,8 @@ type Classification =
   | "Immediate Deduction"
   | "Capital Works (Div 43)"
   | "Plant & Equipment (Div 40)";
+
+type ManualClassification = "Immediate Deduction" | "Repair" | "Capital Works";
 
 interface AiClassification {
   classification: Classification;
@@ -27,6 +36,8 @@ interface AiClassification {
 interface Props {
   expenseId: string;
   existingClassification: AiClassification | null;
+  existingManualClassification?: ManualClassification | null;
+  hasExtractedText?: boolean;
   contextNotes?: string | null;
 }
 
@@ -41,25 +52,57 @@ const STEP_MESSAGES: Partial<Record<Step, string>> = {
   classifying: "Retrieving ATO rulings & classifying...",
 };
 
-export function AiTaxClassificationPanel({ expenseId, existingClassification, contextNotes }: Props) {
+const AI_TO_MANUAL: Record<Classification, ManualClassification> = {
+  "Immediate Deduction": "Immediate Deduction",
+  "Capital Works (Div 43)": "Capital Works",
+  "Plant & Equipment (Div 40)": "Capital Works",
+};
+
+const MANUAL_OPTIONS: ManualClassification[] = [
+  "Immediate Deduction",
+  "Repair",
+  "Capital Works",
+];
+
+export function AiTaxClassificationPanel({
+  expenseId,
+  existingClassification,
+  existingManualClassification,
+  hasExtractedText = false,
+  contextNotes,
+}: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(existingClassification ? "done" : "idle");
   const [result, setResult] = useState<AiClassification | null>(existingClassification);
   const [error, setError] = useState<string | null>(null);
+  const [textExtracted, setTextExtracted] = useState(hasExtractedText);
+  const [manualClassification, setManualClassification] = useState<ManualClassification | "">(
+    existingManualClassification ??
+      (existingClassification ? AI_TO_MANUAL[existingClassification.classification] : "")
+  );
+  const [savedManual, setSavedManual] = useState<ManualClassification | "">(
+    existingManualClassification ??
+      (existingClassification ? AI_TO_MANUAL[existingClassification.classification] : "")
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   const isLoading = step === "extracting" || step === "classifying";
   const hasResult = step === "done" && result;
+  const isDirty = manualClassification !== savedManual;
 
   async function handleClassify() {
-    setStep("extracting");
     setError(null);
 
-    const r1 = await fetch(`/api/extract/${expenseId}`, { method: "POST" });
-    if (!r1.ok) {
-      const json = await r1.json().catch(() => ({}));
-      setError(json.error ?? "Invoice extraction failed. Make sure an invoice is attached.");
-      setStep("error");
-      return;
+    if (!textExtracted) {
+      setStep("extracting");
+      const r1 = await fetch(`/api/extract/${expenseId}`, { method: "POST" });
+      if (!r1.ok) {
+        const json = await r1.json().catch(() => ({}));
+        setError(json.error ?? "Invoice extraction failed. Make sure an invoice is attached.");
+        setStep("error");
+        return;
+      }
+      setTextExtracted(true);
     }
 
     setStep("classifying");
@@ -72,9 +115,32 @@ export function AiTaxClassificationPanel({ expenseId, existingClassification, co
       return;
     }
 
+    const aiClassification: Classification = json.classification.classification;
+    const mapped = AI_TO_MANUAL[aiClassification];
+
     setResult({ ...json.classification, created_at: new Date().toISOString(), model_used: "gpt-5.5" });
+    setManualClassification(mapped);
+    setSavedManual(mapped);
     setStep("done");
     router.refresh();
+  }
+
+  async function handleSaveManual() {
+    if (!manualClassification) return;
+    setIsSaving(true);
+    try {
+      const r = await fetch(`/api/expenses/${expenseId}/manual-classification`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classification: manualClassification }),
+      });
+      if (r.ok) {
+        setSavedManual(manualClassification);
+        router.refresh();
+      }
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   const confidencePct = result ? Math.round(result.confidence_score * 100) : 0;
@@ -121,7 +187,33 @@ export function AiTaxClassificationPanel({ expenseId, existingClassification, co
           </div>
         )}
 
-        {step === "idle" && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Manual Classification</p>
+          <div className="flex items-center gap-2">
+            <Select
+              value={manualClassification}
+              onValueChange={(v) => setManualClassification(v as ManualClassification)}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select classification..." />
+              </SelectTrigger>
+              <SelectContent>
+                {MANUAL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isDirty && (
+              <Button size="sm" onClick={handleSaveManual} disabled={isSaving || !manualClassification}>
+                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {step === "idle" && !manualClassification && (
           <p className="text-sm text-muted-foreground">
             Click &ldquo;Classify with AI&rdquo; to analyse this expense against ATO rulings and determine its tax treatment.
           </p>

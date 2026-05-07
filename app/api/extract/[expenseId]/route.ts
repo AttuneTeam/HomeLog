@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   // Fetch expense through RLS — returns null if not owned by user
   const { data: expense } = await supabase
     .from('expenses')
-    .select('id, invoice_path, description, category, supplier, amount, expense_date')
+    .select('id, invoice_path, description, category, supplier, amount, expense_date, raw_text')
     .eq('id', expenseId)
     .single()
 
@@ -32,6 +32,11 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   if (!expense.invoice_path) {
     return NextResponse.json({ error: 'No invoice attached to this expense' }, { status: 400 })
+  }
+
+  // Return cached text if already extracted
+  if (expense.raw_text) {
+    return NextResponse.json({ ok: true, cached: true })
   }
 
   // Download invoice file from storage
