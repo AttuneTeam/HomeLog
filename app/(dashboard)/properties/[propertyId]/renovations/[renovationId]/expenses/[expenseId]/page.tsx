@@ -130,6 +130,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
       <AiTaxClassificationPanel
         expenseId={expenseId}
         existingClassification={aiClassification ?? null}
+        existingManualClassification={expense.manual_classification ?? null}
         hasExtractedText={!!expense.raw_text}
         contextNotes={expense.context_notes ?? null}
       />

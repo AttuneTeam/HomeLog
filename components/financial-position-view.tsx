@@ -14,7 +14,7 @@ interface Expense {
   amount: number
   expense_date: string
   category: string
-  classification_override: string | null
+  manual_classification: string | null
 }
 
 interface Renovation {
@@ -83,7 +83,7 @@ export function FinancialPositionView({ properties, financialYearStartMonth, fin
         r.expenses.map((e) => ({
           ...e,
           renovation_classification: r.classification,
-          effective_classification: e.classification_override ?? r.classification,
+          effective_classification: e.manual_classification ?? r.classification,
         }))
       )
 
@@ -93,12 +93,12 @@ export function FinancialPositionView({ properties, financialYearStartMonth, fin
         return d >= fyStart && d <= asOf
       })
 
-      const allTimeRepairs = expensesUpToAsOf.filter((e) => e.effective_classification === "repair").reduce((s, e) => s + Number(e.amount), 0)
-      const allTimeCapital = expensesUpToAsOf.filter((e) => e.effective_classification === "capital_improvement").reduce((s, e) => s + Number(e.amount), 0)
+      const allTimeRepairs = expensesUpToAsOf.filter((e) => e.effective_classification === "Repair").reduce((s, e) => s + Number(e.amount), 0)
+      const allTimeCapital = expensesUpToAsOf.filter((e) => e.effective_classification === "Capital Works").reduce((s, e) => s + Number(e.amount), 0)
       const allTimeTotal = expensesUpToAsOf.reduce((s, e) => s + Number(e.amount), 0)
 
-      const fYRepairs = expensesInFY.filter((e) => e.effective_classification === "repair").reduce((s, e) => s + Number(e.amount), 0)
-      const fYCapital = expensesInFY.filter((e) => e.effective_classification === "capital_improvement").reduce((s, e) => s + Number(e.amount), 0)
+      const fYRepairs = expensesInFY.filter((e) => e.effective_classification === "Repair").reduce((s, e) => s + Number(e.amount), 0)
+      const fYCapital = expensesInFY.filter((e) => e.effective_classification === "Capital Works").reduce((s, e) => s + Number(e.amount), 0)
       const fYTotal = expensesInFY.reduce((s, e) => s + Number(e.amount), 0)
 
       const adjustedCostBase = (property.purchase_price ?? 0) + allTimeCapital
@@ -111,8 +111,8 @@ export function FinancialPositionView({ properties, financialYearStartMonth, fin
           return d >= fyStart && d <= asOf
         })
         const rTotal = rExpensesInFY.reduce((s, e) => s + Number(e.amount), 0)
-        const rRepairs = rExpensesInFY.filter((e) => (e.classification_override ?? r.classification) === "repair").reduce((s, e) => s + Number(e.amount), 0)
-        const rCapital = rExpensesInFY.filter((e) => (e.classification_override ?? r.classification) === "capital_improvement").reduce((s, e) => s + Number(e.amount), 0)
+        const rRepairs = rExpensesInFY.filter((e) => (e.manual_classification ?? r.classification) === "Repair").reduce((s, e) => s + Number(e.amount), 0)
+        const rCapital = rExpensesInFY.filter((e) => (e.manual_classification ?? r.classification) === "Capital Works").reduce((s, e) => s + Number(e.amount), 0)
         return { ...r, fyTotal: rTotal, fyRepairs: rRepairs, fyCapital: rCapital }
       }).filter((r) => r.fyTotal > 0)
 

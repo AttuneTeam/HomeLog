@@ -54,9 +54,11 @@ export default async function EditExpensePage({ params }: Props) {
         defaultValues={{
           id: expense.id,
           amount: expense.amount.toString(),
+          gst_amount: expense.gst_amount != null ? String(expense.gst_amount) : "",
           expense_date: expense.expense_date,
           description: expense.description ?? "",
           supplier: expense.supplier ?? "",
+          abn: expense.abn ?? "",
           invoice_path: expense.invoice_path,
           context_notes: expense.context_notes ?? "",
         }}

@@ -39,7 +39,7 @@ export default async function DashboardPage() {
       `
       id, name, status, classification, start_date, end_date, property_id,
       properties!inner(address, user_id),
-      expenses(amount, classification_override, expense_date)
+      expenses(amount, manual_classification, expense_date)
     `,
     )
     .eq("properties.user_id", user.id)
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       (r.expenses ?? []).map(
         (e: {
           amount: number;
-          classification_override: string | null;
+          manual_classification: string | null;
           expense_date: string;
         }) => ({
           ...e,
@@ -64,13 +64,13 @@ export default async function DashboardPage() {
   const totalSpend = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
   const repairTotal = allExpenses.reduce((s, e) => {
-    const cls = e.classification_override ?? e.renovation_classification;
-    return cls === "repair" ? s + Number(e.amount) : s;
+    const cls = e.manual_classification ?? e.renovation_classification;
+    return cls === "Repair" ? s + Number(e.amount) : s;
   }, 0);
 
   const capitalTotal = allExpenses.reduce((s, e) => {
-    const cls = e.classification_override ?? e.renovation_classification;
-    return cls === "capital_improvement" ? s + Number(e.amount) : s;
+    const cls = e.manual_classification ?? e.renovation_classification;
+    return cls === "Capital Works" ? s + Number(e.amount) : s;
   }, 0);
 
   const activeRenovations =
@@ -335,11 +335,11 @@ export default async function DashboardPage() {
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isCapital ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800"}`}
                           >
-                            {classificationLabel(
-                              r.classification as
-                                | "repair"
-                                | "capital_improvement",
-                            )}
+                            {r.classification === "capital_improvement"
+                              ? "Capital Improvement"
+                              : r.classification === "initial_repair"
+                                ? "Initial Repair"
+                                : "Repair"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">

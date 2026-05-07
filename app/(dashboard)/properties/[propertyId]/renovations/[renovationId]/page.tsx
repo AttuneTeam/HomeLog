@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
 import { Plus, Pencil, Receipt } from "lucide-react";
 import { DeleteRenovationButton } from "@/components/delete-renovation-button";
 import { RenovationQuotesSection } from "@/components/renovation-quotes-section";
+import { ManualTaxClassification } from "@/lib/supabase/database.types";
 
 interface Props {
   params: Promise<{ propertyId: string; renovationId: string }>;
@@ -207,9 +208,9 @@ export default async function RenovationDetailPage({ params }: Props) {
                       )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell whitespace-nowrap">
-                      {expense.classification_override && (
+                      {expense.manual_classification && (
                         <ClassificationBadge
-                          classification={expense.classification_override}
+                          classification={expense.manual_classification}
                         />
                       )}
                     </td>
@@ -246,20 +247,26 @@ export default async function RenovationDetailPage({ params }: Props) {
   );
 }
 
-function ClassificationBadge({ classification }: { classification: string }) {
+function ClassificationBadge({
+  classification,
+}: {
+  classification: ManualTaxClassification;
+}) {
   const colours =
-    classification === "capital_improvement"
+    classification === "Capital Works"
       ? "bg-amber-100 text-amber-800"
-      : classification === "initial_repair"
+      : classification === "Immediate Repair"
         ? "bg-purple-100 text-purple-800"
         : "bg-sky-100 text-sky-800";
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours} shrink-0`}
     >
-      {classificationLabel(
-        classification as "repair" | "capital_improvement" | "initial_repair",
-      )}
+      {classification === "Capital Works"
+        ? "Capital Works"
+        : classification === "Immediate Repair"
+          ? "Immediate Repair"
+          : "Repair"}
     </span>
   );
 }

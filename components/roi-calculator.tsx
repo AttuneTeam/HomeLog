@@ -313,7 +313,7 @@ interface InvestmentProperty {
     expenses: {
       amount: number;
       expense_date: string;
-      classification_override: string | null;
+      manual_classification: string | null;
     }[];
   }[];
 }
@@ -377,8 +377,8 @@ export function RoiCalculator({
       .flatMap((r) =>
         r.expenses.filter((e) => {
           const d = new Date(e.expense_date);
-          const effClass = e.classification_override ?? r.classification;
-          return effClass === "repair" && d >= fyStart && d <= today;
+          const effClass = e.manual_classification ?? r.classification;
+          return effClass === "Repair" && d >= fyStart && d <= today;
         })
       )
       .reduce((sum, e) => sum + Number(e.amount), 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Leaf, AlertCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,7 @@ type Classification =
   | "Capital Works (Div 43)"
   | "Plant & Equipment (Div 40)";
 
-type ManualClassification = "Immediate Deduction" | "Repair" | "Capital Works";
+type ManualClassification = "Immediate Repair" | "Repair" | "Capital Works";
 
 interface AiClassification {
   classification: Classification;
@@ -53,13 +53,13 @@ const STEP_MESSAGES: Partial<Record<Step, string>> = {
 };
 
 const AI_TO_MANUAL: Record<Classification, ManualClassification> = {
-  "Immediate Deduction": "Immediate Deduction",
+  "Immediate Deduction": "Immediate Repair",
   "Capital Works (Div 43)": "Capital Works",
   "Plant & Equipment (Div 40)": "Capital Works",
 };
 
 const MANUAL_OPTIONS: ManualClassification[] = [
-  "Immediate Deduction",
+  "Immediate Repair",
   "Repair",
   "Capital Works",
 ];
@@ -80,15 +80,11 @@ export function AiTaxClassificationPanel({
     existingManualClassification ??
       (existingClassification ? AI_TO_MANUAL[existingClassification.classification] : "")
   );
-  const [savedManual, setSavedManual] = useState<ManualClassification | "">(
-    existingManualClassification ??
-      (existingClassification ? AI_TO_MANUAL[existingClassification.classification] : "")
-  );
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLoading = step === "extracting" || step === "classifying";
   const hasResult = step === "done" && result;
-  const isDirty = manualClassification !== savedManual;
 
   async function handleClassify() {
     setError(null);
@@ -120,27 +116,34 @@ export function AiTaxClassificationPanel({
 
     setResult({ ...json.classification, created_at: new Date().toISOString(), model_used: "gpt-5.5" });
     setManualClassification(mapped);
-    setSavedManual(mapped);
     setStep("done");
-    router.refresh();
+    await saveManual(mapped);
   }
 
-  async function handleSaveManual() {
-    if (!manualClassification) return;
-    setIsSaving(true);
+  async function saveManual(value: ManualClassification) {
+    setSaveState("saving");
     try {
       const r = await fetch(`/api/expenses/${expenseId}/manual-classification`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classification: manualClassification }),
+        body: JSON.stringify({ classification: value }),
       });
       if (r.ok) {
-        setSavedManual(manualClassification);
+        setSaveState("saved");
         router.refresh();
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => setSaveState("idle"), 2000);
+      } else {
+        setSaveState("error");
       }
-    } finally {
-      setIsSaving(false);
+    } catch {
+      setSaveState("error");
     }
+  }
+
+  function handleManualChange(v: ManualClassification) {
+    setManualClassification(v);
+    saveManual(v);
   }
 
   const confidencePct = result ? Math.round(result.confidence_score * 100) : 0;
@@ -188,29 +191,27 @@ export function AiTaxClassificationPanel({
         )}
 
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Manual Classification</p>
-          <div className="flex items-center gap-2">
-            <Select
-              value={manualClassification}
-              onValueChange={(v) => setManualClassification(v as ManualClassification)}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select classification..." />
-              </SelectTrigger>
-              <SelectContent>
-                {MANUAL_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isDirty && (
-              <Button size="sm" onClick={handleSaveManual} disabled={isSaving || !manualClassification}>
-                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
-              </Button>
-            )}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Manual Classification</p>
+            {saveState === "saving" && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            {saveState === "saved" && <span className="text-xs text-green-600">Saved</span>}
+            {saveState === "error" && <span className="text-xs text-destructive">Failed to save</span>}
           </div>
+          <Select
+            value={manualClassification}
+            onValueChange={(v) => handleManualChange(v as ManualClassification)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select classification..." />
+            </SelectTrigger>
+            <SelectContent>
+              {MANUAL_OPTIONS.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {step === "idle" && !manualClassification && (
