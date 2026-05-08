@@ -8,8 +8,21 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
+import type { RentalExpenseCategory } from "@/lib/supabase/database.types";
 
 // ─── Shared types (also imported by tax-report.tsx) ─────────────────────────
+
+export interface TaxRentalExpense {
+  id: string;
+  expense_date: string;
+  category: RentalExpenseCategory;
+  amount: number;
+  gst_amount: number | null;
+  supplier: string | null;
+  abn: string | null;
+  description: string | null;
+  invoice_url: string | null;
+}
 
 export interface TaxExpense {
   id: string;
@@ -32,6 +45,7 @@ export interface TaxReportData {
     suburb: string | null;
     state: string | null;
     postcode: string | null;
+    stamp_duty: number | null;
     purchase_date: string | null;
     purchase_price: number | null;
   };
@@ -44,6 +58,12 @@ export interface TaxReportData {
   repairs: TaxExpense[];
   initialRepairs: TaxExpense[];
   capitalImprovements: TaxExpense[];
+  rentalExpenses: TaxRentalExpense[];
+  financialYear: string;
+  totalRentalIncome: number | null;
+  totalAgentFees: number;
+  totalOperatingExpenses: number;
+  netRentalIncome: number | null;
   generatedAt: string;
 }
 
@@ -184,7 +204,12 @@ const S = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#fcd34d",
   },
-  disclaimerTitle: { fontFamily: "Helvetica-Bold", fontSize: 8, marginBottom: 3, color: "#92400e" },
+  disclaimerTitle: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8,
+    marginBottom: 3,
+    color: "#92400e",
+  },
   disclaimerText: { fontSize: 7.5, color: "#92400e", lineHeight: 1.5 },
   // Empty state
   emptyRow: {
@@ -238,11 +263,12 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
         </View>
       ) : (
         expenses.map((e, i) => {
-          const exGst =
-            e.gst_amount != null ? e.amount - e.gst_amount : null;
+          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : null;
           return (
             <View key={e.id} style={i % 2 === 0 ? S.tableRow : S.tableRowAlt}>
-              <Text style={[S.tdTxt, S.colDate]}>{fmtDate(e.expense_date)}</Text>
+              <Text style={[S.tdTxt, S.colDate]}>
+                {fmtDate(e.expense_date)}
+              </Text>
               <Text style={[S.tdTxt, S.colSupplier]}>{e.supplier ?? "—"}</Text>
               <Text style={[S.tdMuted, S.colAbn]}>{e.abn ?? "—"}</Text>
               <Text style={[S.tdTxt, S.colCategory]}>
@@ -277,21 +303,115 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
   );
 }
 
+function rentalCategoryLabel(cat: RentalExpenseCategory): string {
+  const MAP: Record<RentalExpenseCategory, string> = {
+    water: "Water",
+    council_rates: "Council Rates",
+    insurance: "Insurance",
+    repairs_maintenance: "Repairs & Maintenance",
+    strata_fees: "Strata Fees",
+    land_tax: "Land Tax",
+    other: "Other",
+  };
+  return MAP[cat] ?? cat;
+}
+
+function RentalExpenseTable({ expenses }: { expenses: TaxRentalExpense[] }) {
+  return (
+    <View>
+      <View style={S.tableHeader}>
+        <Text style={[S.thTxt, S.colDate]}>Date</Text>
+        <Text style={[S.thTxt, S.colCategory]}>Category</Text>
+        <Text style={[S.thTxt, S.colSupplier]}>Supplier</Text>
+        <Text style={[S.thTxt, S.colAbn]}>ABN</Text>
+        <Text style={[S.thTxt, S.colDesc]}>Description</Text>
+        <Text style={[S.thTxt, S.colExGst, { textAlign: "right" }]}>
+          Ex-GST
+        </Text>
+        <Text style={[S.thTxt, S.colGst, { textAlign: "right" }]}>GST</Text>
+        <Text style={[S.thTxt, S.colAmount, { textAlign: "right" }]}>
+          Total
+        </Text>
+      </View>
+
+      {expenses.length === 0 ? (
+        <View style={S.emptyRow}>
+          <Text style={S.emptyTxt}>No rental operating expenses recorded.</Text>
+        </View>
+      ) : (
+        expenses.map((e, i) => {
+          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : null;
+          return (
+            <View key={e.id} style={i % 2 === 0 ? S.tableRow : S.tableRowAlt}>
+              <Text style={[S.tdTxt, S.colDate]}>
+                {fmtDate(e.expense_date)}
+              </Text>
+              <Text style={[S.tdTxt, S.colCategory]}>
+                {rentalCategoryLabel(e.category)}
+              </Text>
+              <Text style={[S.tdTxt, S.colSupplier]}>{e.supplier ?? "—"}</Text>
+              <Text style={[S.tdMuted, S.colAbn]}>{e.abn ?? "—"}</Text>
+              <Text style={[S.tdMuted, S.colDesc]}>{e.description ?? "—"}</Text>
+              <Text style={[S.tdTxt, S.colExGst, { textAlign: "right" }]}>
+                {exGst != null ? fmt(exGst) : "—"}
+              </Text>
+              <Text style={[S.tdTxt, S.colGst, { textAlign: "right" }]}>
+                {e.gst_amount != null ? fmt(e.gst_amount) : "—"}
+              </Text>
+              <Text style={[S.tdBold, S.colAmount, { textAlign: "right" }]}>
+                {fmt(e.amount)}
+              </Text>
+            </View>
+          );
+        })
+      )}
+
+      {expenses.length > 0 && (
+        <View style={S.tableSubtotalRow}>
+          <Text style={[S.thTxt, { flex: 1 }]}>Subtotal</Text>
+          <Text style={[S.thTxt, S.colAmount, { textAlign: "right" }]}>
+            {fmt(expenses.reduce((s, e) => s + e.amount, 0))}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ─── PDF Document ────────────────────────────────────────────────────────────
 
 export function TaxReportDocument({ data }: { data: TaxReportData }) {
-  const { property, roiInputs, repairs, initialRepairs, capitalImprovements, generatedAt } = data;
+  const {
+    property,
+    roiInputs,
+    repairs,
+    initialRepairs,
+    capitalImprovements,
+    rentalExpenses,
+    financialYear,
+    totalRentalIncome,
+    totalAgentFees,
+    totalOperatingExpenses,
+    netRentalIncome,
+    generatedAt,
+  } = data;
 
   const purchasePrice = property.purchase_price ?? 0;
   const stampDuty = roiInputs?.stamp_duty ?? 0;
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
-  const costBase = purchasePrice + stampDuty + initialRepairTotal + capitalTotal;
+  const costBase =
+    purchasePrice + stampDuty + initialRepairTotal + capitalTotal;
 
   const div43 = roiInputs?.div43_depreciation ?? null;
   const div40 = roiInputs?.div40_depreciation ?? null;
 
-  const fullAddress = [property.address, property.suburb, property.state, property.postcode]
+  const fullAddress = [
+    property.address,
+    property.suburb,
+    property.state,
+    property.postcode,
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -309,7 +429,9 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
         <View style={S.headerRow}>
           <View>
             <Text style={S.reportTitle}>Investment Property Tax Report</Text>
-            <Text style={S.reportSubtitle}>{fullAddress}</Text>
+            <Text style={S.reportSubtitle}>
+              FY{financialYear} — {fullAddress}
+            </Text>
           </View>
           <View style={S.headerRight}>
             <Text style={S.headerMeta}>Generated: {generatedAt}</Text>
@@ -333,28 +455,64 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
           </View>
           <View style={S.summaryRow}>
             <Text style={S.summaryLabel}>Purchase date</Text>
-            <Text style={S.summaryValue}>{fmtDate(property.purchase_date)}</Text>
+            <Text style={S.summaryValue}>
+              {fmtDate(property.purchase_date)}
+            </Text>
           </View>
           <View style={S.summaryRow}>
             <Text style={S.summaryLabel}>Purchase price</Text>
             <Text style={S.summaryValue}>{fmt(property.purchase_price)}</Text>
           </View>
-          <View style={S.summaryRow}>
-            <Text style={S.summaryLabel}>
-              Estimated annual rental income (from ROI inputs)
-            </Text>
-            <Text style={S.summaryValue}>
-              {annualRent != null
-                ? `${fmt(annualRent)} (${fmt(weeklyRent)}/wk)`
-                : "Not entered"}
-            </Text>
-          </View>
+          {totalRentalIncome != null && (
+            <>
+              <View style={S.summaryRow}>
+                <Text style={S.summaryLabel}>Gross rental income</Text>
+                <Text style={S.summaryValue}>{fmt(totalRentalIncome)}</Text>
+              </View>
+              {totalAgentFees > 0 && (
+                <View style={S.summaryRow}>
+                  <Text style={S.summaryLabel}>
+                    Less: Agent management fees
+                  </Text>
+                  <Text style={S.summaryValue}>({fmt(totalAgentFees)})</Text>
+                </View>
+              )}
+              {totalOperatingExpenses > 0 && (
+                <View style={S.summaryRow}>
+                  <Text style={S.summaryLabel}>
+                    Less: Operating expenses
+                  </Text>
+                  <Text style={S.summaryValue}>
+                    ({fmt(totalOperatingExpenses)})
+                  </Text>
+                </View>
+              )}
+              {netRentalIncome != null && (
+                <View style={S.summaryTotalRow}>
+                  <Text style={S.summaryTotalLabel}>Net rental income</Text>
+                  <Text style={S.summaryTotalValue}>
+                    {fmt(netRentalIncome)}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
+        {/* Rental Operating Expenses */}
+        <View style={S.section}>
+          <Text style={S.sectionTitle}>
+            Rental Operating Expenses (Immediately deductible — water, council
+            rates, insurance, etc.)
+          </Text>
+          <RentalExpenseTable expenses={rentalExpenses} />
         </View>
 
         {/* Repairs & Maintenance */}
         <View style={S.section}>
           <Text style={S.sectionTitle}>
-            Deductible Expenses — Repairs &amp; Maintenance (Immediate deduction)
+            Deductible Expenses — Repairs &amp; Maintenance (Immediate
+            deduction)
           </Text>
           <ExpenseTable expenses={repairs} />
         </View>
@@ -362,7 +520,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
         {/* Initial Repairs */}
         <View style={S.section}>
           <Text style={S.sectionTitle}>
-            Initial Repairs at Purchase (Part of CGT cost base — not immediately deductible)
+            Initial Repairs at Purchase (Part of CGT cost base — not immediately
+            deductible)
           </Text>
           <ExpenseTable expenses={initialRepairs} />
         </View>
@@ -370,7 +529,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
         {/* Capital Improvements */}
         <View style={S.section}>
           <Text style={S.sectionTitle}>
-            Capital Improvements (Adds to CGT cost base — may attract Div 43 depreciation)
+            Capital Improvements (Adds to CGT cost base — may attract Div 43
+            depreciation)
           </Text>
           <ExpenseTable expenses={capitalImprovements} />
         </View>
@@ -410,7 +570,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
         {(div43 != null || div40 != null) && (
           <View style={S.section}>
             <Text style={S.sectionTitle}>
-              Depreciation Schedule (from ROI inputs — confirm with quantity surveyor)
+              Depreciation Schedule (from ROI inputs — confirm with quantity
+              surveyor)
             </Text>
             {div43 != null && (
               <View style={S.summaryRow}>

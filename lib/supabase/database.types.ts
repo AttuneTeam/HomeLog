@@ -2,6 +2,31 @@ export type Classification =
   | "repair"
   | "capital_improvement"
   | "initial_repair";
+
+export type RentalExpenseCategory =
+  | "water"
+  | "council_rates"
+  | "insurance"
+  | "repairs_maintenance"
+  | "strata_fees"
+  | "land_tax"
+  | "other";
+
+export type RentalOperatingExpense = {
+  id: string;
+  property_id: string;
+  category: RentalExpenseCategory;
+  amount: number;
+  gst_amount: number | null;
+  expense_date: string;
+  description: string | null;
+  supplier: string | null;
+  abn: string | null;
+  invoice_path: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
 export type ManualTaxClassification =
   | "Immediate Repair"
   | "Repair"
@@ -42,9 +67,50 @@ export type RentalPeriod = {
   updated_at: string;
 };
 
+export type OffsetAccount = {
+  id: string;
+  property_id: string;
+  label: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
+      property_offset_accounts: {
+        Row: {
+          id: string;
+          property_id: string;
+          label: string;
+          balance: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          label: string;
+          balance?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          label?: string;
+          balance?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_offset_accounts_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           id: string;
@@ -577,6 +643,173 @@ export interface Database {
           },
         ];
       };
+      rental_operating_expenses: {
+        Row: {
+          id: string;
+          property_id: string;
+          category: RentalExpenseCategory;
+          amount: number;
+          gst_amount: number | null;
+          expense_date: string;
+          description: string | null;
+          supplier: string | null;
+          abn: string | null;
+          invoice_path: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          category: RentalExpenseCategory;
+          amount: number;
+          gst_amount?: number | null;
+          expense_date: string;
+          description?: string | null;
+          supplier?: string | null;
+          abn?: string | null;
+          invoice_path?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: RentalExpenseCategory;
+          amount?: number;
+          gst_amount?: number | null;
+          expense_date?: string;
+          description?: string | null;
+          supplier?: string | null;
+          abn?: string | null;
+          invoice_path?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rental_operating_expenses_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tax_prepayments: {
+        Row: {
+          user_id: string;
+          financial_year_end: number;
+          amount: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          financial_year_end: number;
+          amount: number;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      property_loans: {
+        Row: {
+          property_id: string;
+          loan_amount: number;
+          loan_term_years: number;
+          updated_at: string;
+        };
+        Insert: {
+          property_id: string;
+          loan_amount: number;
+          loan_term_years: number;
+          updated_at?: string;
+        };
+        Update: {
+          loan_amount?: number;
+          loan_term_years?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_loans_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: true;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loan_interest_rates: {
+        Row: {
+          id: string;
+          property_id: string;
+          rate: number;
+          effective_date: string;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          rate: number;
+          effective_date: string;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          rate?: number;
+          effective_date?: string;
+          notes?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loan_interest_rates_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      household_income_sources: {
+        Row: {
+          id: string;
+          user_id: string;
+          label: string;
+          amount: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          label: string;
+          amount: number;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          label?: string;
+          amount?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "household_income_sources_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -602,6 +835,7 @@ export interface Database {
       renovation_status: RenovationStatus;
       expense_category: ExpenseCategory;
       ai_tax_classification: AiTaxClassification;
+      rental_expense_category: RentalExpenseCategory;
     };
     CompositeTypes: {
       [_ in never]: never;

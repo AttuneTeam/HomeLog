@@ -20,7 +20,9 @@ export default async function TaxReportPage({ params }: Props) {
   // Fetch property
   const { data: property } = await supabase
     .from("properties")
-    .select("id, address, suburb, state, postcode, purchase_date, purchase_price")
+    .select(
+      "id, address, suburb, state, postcode, purchase_date, purchase_price, stamp_duty",
+    )
     .eq("id", propertyId)
     .single();
 
@@ -34,14 +36,94 @@ export default async function TaxReportPage({ params }: Props) {
     )
     .eq("property_id", propertyId)
     .eq("claimable", true)
+    .neq("status", "planned")
     .order("start_date", { ascending: true });
 
-  // Fetch ROI calculator inputs (stamp duty, weekly rent, depreciation)
-  const { data: roiInputs } = await supabase
-    .from("roi_calculator_inputs")
-    .select("stamp_duty, weekly_rent, div43_depreciation, div40_depreciation")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  // Fetch ROI calculator inputs, rental periods, and profile in parallel
+  const [{ data: roiInputs }, { data: rentalPeriods }, { data: profile }] =
+    await Promise.all([
+      supabase
+        .from("roi_calculator_inputs")
+        .select(
+          "stamp_duty, weekly_rent, div43_depreciation, div40_depreciation",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("rental_periods")
+        .select("start_date, end_date, weekly_rent, management_fee_pct")
+        .eq("property_id", propertyId),
+      supabase
+        .from("profiles")
+        .select("financial_year_start_month, financial_year_start_day")
+        .eq("id", user.id)
+        .maybeSingle(),
+    ]);
+
+  // Financial year bounds derived from user profile (month is 1-based in DB)
+  const fyStartMonth = (profile?.financial_year_start_month ?? 7) - 1; // 0-based
+  const fyStartDay = profile?.financial_year_start_day ?? 1;
+  const today = new Date();
+  const fyStartYear =
+    today.getMonth() > fyStartMonth ||
+    (today.getMonth() === fyStartMonth && today.getDate() >= fyStartDay)
+      ? today.getFullYear()
+      : today.getFullYear() - 1;
+  const fyStart = new Date(fyStartYear, fyStartMonth, fyStartDay);
+  const fyEnd = new Date(fyStartYear + 1, fyStartMonth, fyStartDay - 1);
+  const fyStartStr = fyStart.toISOString().slice(0, 10);
+  const fyEndStr = fyEnd.toISOString().slice(0, 10);
+  const financialYear = `${fyStartYear}–${String(fyStartYear + 1).slice(2)}`;
+
+  // Fetch rental operating expenses now that FY dates are known
+  const { data: rentalExpenses } = await supabase
+    .from("rental_operating_expenses")
+    .select("*")
+    .eq("property_id", propertyId)
+    .gte("expense_date", fyStartStr)
+    .lte("expense_date", fyEndStr)
+    .order("expense_date", { ascending: true });
+
+  function fyClampedWeeks(period: {
+    start_date: string;
+    end_date: string | null;
+    weekly_rent: number;
+  }): number {
+    const start = new Date(
+      Math.max(new Date(period.start_date).getTime(), fyStart.getTime()),
+    );
+    const end = new Date(
+      Math.min(
+        (period.end_date ? new Date(period.end_date) : today).getTime(),
+        fyEnd.getTime(),
+      ),
+    );
+    if (end <= start) return 0;
+    return (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
+  }
+
+  const totalRentalIncome =
+    rentalPeriods && rentalPeriods.length > 0
+      ? rentalPeriods.reduce((sum, period) => {
+          const weeks = fyClampedWeeks(period);
+          return sum + weeks * period.weekly_rent;
+        }, 0)
+      : null;
+
+  const totalAgentFees =
+    rentalPeriods?.reduce((sum, period) => {
+      if (!period.management_fee_pct) return sum;
+      const weeks = fyClampedWeeks(period);
+      return sum + weeks * period.weekly_rent * (period.management_fee_pct / 100);
+    }, 0) ?? 0;
+
+  const totalOperatingExpenses =
+    rentalExpenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
+
+  const netRentalIncome =
+    totalRentalIncome != null
+      ? totalRentalIncome - totalAgentFees - totalOperatingExpenses
+      : null;
 
   // Resolve effective classification for each expense and generate signed URLs
   const repairs: TaxExpense[] = [];
@@ -50,6 +132,9 @@ export default async function TaxReportPage({ params }: Props) {
 
   for (const renovation of renovations ?? []) {
     for (const expense of renovation.expenses ?? []) {
+      if (expense.expense_date < fyStartStr || expense.expense_date > fyEndStr)
+        continue;
+
       const effectiveClassification =
         expense.manual_classification ?? renovation.classification;
 
@@ -76,7 +161,8 @@ export default async function TaxReportPage({ params }: Props) {
         classification: effectiveClassification,
         invoice_url,
         renovation_name: renovation.name,
-        renovation_description: (renovation as { description?: string | null }).description ?? null,
+        renovation_description:
+          (renovation as { description?: string | null }).description ?? null,
       };
 
       if (effectiveClassification === "Capital Works") {
@@ -96,9 +182,26 @@ export default async function TaxReportPage({ params }: Props) {
   initialRepairs.sort(byDate);
   capitalImprovements.sort(byDate);
 
+  // Generate signed URLs for rental expense invoices
+  const rentalExpensesWithUrls = await Promise.all(
+    (rentalExpenses ?? []).map(async (e) => {
+      if (!e.invoice_path) return { ...e, invoice_url: null };
+      const { data: signed } = await supabase.storage
+        .from("invoices")
+        .createSignedUrl(e.invoice_path, 3600);
+      return { ...e, invoice_url: signed?.signedUrl ?? null };
+    }),
+  );
+
   const reportData: TaxReportData = {
     property,
     roiInputs: roiInputs ?? null,
+    financialYear,
+    totalRentalIncome,
+    totalAgentFees,
+    totalOperatingExpenses,
+    netRentalIncome,
+    rentalExpenses: rentalExpensesWithUrls,
     repairs,
     initialRepairs,
     capitalImprovements,

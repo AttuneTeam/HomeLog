@@ -33,17 +33,80 @@ export default async function FinancialPage() {
   const fyMonth = profile?.financial_year_start_month ?? 7;
   const fyDay = profile?.financial_year_start_day ?? 1;
 
+  // Compute current FY end year (e.g. July 2025 start → 2026 end)
+  const today = new Date();
+  const fyStartMonth = fyMonth - 1;
+  const fyStartYear =
+    today.getMonth() > fyStartMonth ||
+    (today.getMonth() === fyStartMonth && today.getDate() >= fyDay)
+      ? today.getFullYear()
+      : today.getFullYear() - 1;
+  const fyEndYear = fyStartYear + 1;
+
   // Fetch ROI inputs for all investment properties
   const investmentPropertyIds = (properties ?? [])
     .filter((p) => p.property_type !== "primary_residence")
     .map((p) => p.id);
 
-  const { data: roiRows } = investmentPropertyIds.length
-    ? await supabase
-        .from("roi_calculator_inputs")
-        .select("*")
-        .in("property_id", investmentPropertyIds)
-    : { data: [] };
+  const [
+    { data: roiRows },
+    { data: rentalPeriodRows },
+    { data: rentalExpenseRows },
+    { data: loanRateRows },
+    { data: propertyLoanRows },
+    { data: incomeSourceRows },
+    { data: taxPrepaymentRow },
+    { data: offsetRows },
+  ] = await Promise.all([
+    investmentPropertyIds.length
+      ? supabase
+          .from("roi_calculator_inputs")
+          .select("*")
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
+    investmentPropertyIds.length
+      ? supabase
+          .from("rental_periods")
+          .select("property_id, start_date, end_date, weekly_rent, management_fee_pct")
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
+    investmentPropertyIds.length
+      ? supabase
+          .from("rental_operating_expenses")
+          .select("property_id, category, amount, expense_date")
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
+    investmentPropertyIds.length
+      ? supabase
+          .from("loan_interest_rates")
+          .select("id, property_id, rate, effective_date")
+          .in("property_id", investmentPropertyIds)
+          .order("effective_date", { ascending: true })
+      : Promise.resolve({ data: [] }),
+    investmentPropertyIds.length
+      ? supabase
+          .from("property_loans")
+          .select("property_id, loan_amount, loan_term_years")
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("household_income_sources")
+      .select("id, label, amount, sort_order")
+      .eq("user_id", user.id)
+      .order("sort_order"),
+    supabase
+      .from("tax_prepayments")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("financial_year_end", fyEndYear)
+      .maybeSingle(),
+    investmentPropertyIds.length
+      ? supabase
+          .from("property_offset_accounts")
+          .select("property_id, balance")
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const roiInputsByPropertyId: Record<string, RoiInputs> = {};
   for (const row of roiRows ?? []) {
@@ -67,6 +130,38 @@ export default async function FinancialPage() {
     };
   }
 
+  type RentalPeriodRow = { property_id: string; start_date: string; end_date: string | null; weekly_rent: number; management_fee_pct: number | null };
+  type RentalExpenseRow = { property_id: string; category: string; amount: number; expense_date: string };
+
+  const rentalPeriodsByPropertyId: Record<string, RentalPeriodRow[]> = {};
+  for (const row of (rentalPeriodRows ?? []) as RentalPeriodRow[]) {
+    (rentalPeriodsByPropertyId[row.property_id] ??= []).push(row);
+  }
+
+  const rentalExpensesByPropertyId: Record<string, RentalExpenseRow[]> = {};
+  for (const row of (rentalExpenseRows ?? []) as RentalExpenseRow[]) {
+    (rentalExpensesByPropertyId[row.property_id] ??= []).push(row);
+  }
+
+  type LoanRateRow = { id: string; property_id: string; rate: number; effective_date: string };
+  const loanRatesByPropertyId: Record<string, LoanRateRow[]> = {};
+  for (const row of (loanRateRows ?? []) as LoanRateRow[]) {
+    (loanRatesByPropertyId[row.property_id] ??= []).push(row);
+  }
+
+  type PropertyLoanRow = { property_id: string; loan_amount: number; loan_term_years: number };
+  const propertyLoanByPropertyId: Record<string, PropertyLoanRow> = {};
+  for (const row of (propertyLoanRows ?? []) as PropertyLoanRow[]) {
+    propertyLoanByPropertyId[row.property_id] = row;
+  }
+
+  type OffsetRow = { property_id: string; balance: number };
+  const offsetsByPropertyId: Record<string, number> = {};
+  for (const row of (offsetRows ?? []) as OffsetRow[]) {
+    offsetsByPropertyId[row.property_id] =
+      (offsetsByPropertyId[row.property_id] ?? 0) + Number(row.balance);
+  }
+
   return (
     <FinancialTabs
       userId={user.id}
@@ -74,6 +169,19 @@ export default async function FinancialPage() {
       financialYearStartMonth={fyMonth}
       financialYearStartDay={fyDay}
       roiInputsByPropertyId={roiInputsByPropertyId}
+      rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
+      rentalExpensesByPropertyId={rentalExpensesByPropertyId}
+      loanRatesByPropertyId={loanRatesByPropertyId}
+      propertyLoanByPropertyId={propertyLoanByPropertyId}
+      offsetsByPropertyId={offsetsByPropertyId}
+      incomeSources={(incomeSourceRows ?? []).map((r) => ({
+        id: r.id,
+        label: r.label,
+        amount: Number(r.amount),
+        sort_order: r.sort_order,
+      }))}
+      prepaidTax={Number(taxPrepaymentRow?.amount ?? 0)}
+      financialYearEnd={fyEndYear}
     />
   );
 }

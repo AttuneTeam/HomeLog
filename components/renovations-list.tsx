@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 type Expense = {
   id: string;
@@ -100,12 +100,6 @@ export function RenovationsList({
                     >
                       {renovation.name}
                     </Link>
-                    <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">
-                      {formatDate(renovation.start_date)}
-                      {renovation.end_date
-                        ? ` → ${formatDate(renovation.end_date)}`
-                        : ""}
-                    </span>
                     <span className="text-sm font-medium tabular-nums whitespace-nowrap pl-6">
                       {formatCurrency(total)}
                     </span>
@@ -150,11 +144,7 @@ export function RenovationsList({
   );
 }
 
-function ClassificationBadge({
-  classification,
-}: {
-  classification: string;
-}) {
+function ClassificationBadge({ classification }: { classification: string }) {
   const colours =
     classification === "Capital Works"
       ? "bg-amber-100 text-amber-800"

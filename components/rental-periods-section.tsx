@@ -236,7 +236,7 @@ export function RentalPeriodsSection({
   const timeline = buildTimeline(periods);
 
   return (
-    <div>
+    <div className="mb-8 mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Rental Periods</h2>
         <Button size="sm" onClick={openAdd} variant="outline">
@@ -284,7 +284,7 @@ export function RentalPeriodsSection({
             return (
               <div
                 key={period.id}
-                className="rounded-lg border bg-white overflow-hidden"
+                className="rounded-lg border bg-card overflow-hidden"
               >
                 {/* Collapsed / summary row */}
                 <div className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted/30 transition-colors">
@@ -311,7 +311,7 @@ export function RentalPeriodsSection({
                           ? formatDate(period.end_date)
                           : "Present"}
                       </span>
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800">
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
                         {formatCurrency(period.weekly_rent)}/wk
                       </span>
                     </div>
@@ -368,7 +368,7 @@ export function RentalPeriodsSection({
                         <p className="text-xs text-muted-foreground">
                           Gross rental income
                         </p>
-                        <p className="font-semibold text-sm text-emerald-700">
+                        <p className="font-semibold text-sm text-emerald-700 dark:text-emerald-400">
                           {formatCurrency(totalIncome)}
                         </p>
                       </div>
@@ -377,7 +377,7 @@ export function RentalPeriodsSection({
                           <p className="text-xs text-muted-foreground">
                             Management fees ({period.management_fee_pct}%)
                           </p>
-                          <p className="font-semibold text-sm text-red-600">
+                          <p className="font-semibold text-sm text-red-600 dark:text-red-400">
                             -{formatCurrency(totalFees)}
                           </p>
                         </div>
