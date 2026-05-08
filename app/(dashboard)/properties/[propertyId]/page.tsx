@@ -17,6 +17,8 @@ import {
 import { DeletePropertyButton } from "@/components/delete-property-button";
 import { PropertyFilesSection } from "@/components/property-files-section";
 import { RentalPeriodsSection } from "@/components/rental-periods-section";
+import { RentalExpensesSection } from "@/components/rental-expenses-section";
+import { LoanInterestRatesSection } from "@/components/loan-interest-rates-section";
 import { RenovationsList } from "@/components/renovations-list";
 
 interface Props {
@@ -43,6 +45,10 @@ export default async function PropertyDetailPage({ params }: Props) {
     { data: renovations },
     { data: propertyFiles },
     { data: rentalPeriods },
+    { data: rentalExpenses },
+    { data: loanRates },
+    { data: propertyLoan },
+    { data: offsetAccounts },
   ] = await Promise.all([
     supabase
       .from("renovations")
@@ -61,6 +67,26 @@ export default async function PropertyDetailPage({ params }: Props) {
       .select("*")
       .eq("property_id", propertyId)
       .order("start_date", { ascending: true }),
+    supabase
+      .from("rental_operating_expenses")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("expense_date", { ascending: false }),
+    supabase
+      .from("loan_interest_rates")
+      .select("id, property_id, rate, effective_date, notes")
+      .eq("property_id", propertyId)
+      .order("effective_date", { ascending: true }),
+    supabase
+      .from("property_loans")
+      .select("loan_amount, loan_term_years")
+      .eq("property_id", propertyId)
+      .maybeSingle(),
+    supabase
+      .from("property_offset_accounts")
+      .select("id, label, balance")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: true }),
   ]);
 
   const totalSpend = calcTotalSpend(renovations ?? []);
@@ -187,16 +213,51 @@ export default async function PropertyDetailPage({ params }: Props) {
         initialFiles={propertyFiles ?? []}
       />
 
+      {/* Loan Interest Rate History */}
+      {property.property_type !== "primary_residence" && (
+        <>
+          <LoanInterestRatesSection
+            propertyId={propertyId}
+            initialRates={(loanRates ?? []).map((r) => ({
+              id: r.id,
+              property_id: r.property_id,
+              rate: Number(r.rate),
+              effective_date: r.effective_date,
+              notes: r.notes,
+            }))}
+            initialLoan={
+              propertyLoan
+                ? {
+                    loan_amount: Number(propertyLoan.loan_amount),
+                    loan_term_years: propertyLoan.loan_term_years,
+                  }
+                : null
+            }
+            initialOffsets={(offsetAccounts ?? []).map((o) => ({
+              id: o.id,
+              label: o.label,
+              balance: Number(o.balance),
+            }))}
+          />
+        </>
+      )}
+
       {/* Rental Periods */}
-      <Separator />
       <RentalPeriodsSection
         propertyId={propertyId}
         initialPeriods={rentalPeriods ?? []}
       />
 
+      {/* Rental Operating Expenses */}
+      <RentalExpensesSection
+        propertyId={propertyId}
+        userId={user.id}
+        initialExpenses={rentalExpenses ?? []}
+      />
+
       {/* Renovations */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 mt-8">
           <h2 className="text-lg font-semibold">Renovations</h2>
           <ButtonLink
             href={`/properties/${propertyId}/renovations/new`}
@@ -245,4 +306,3 @@ export default async function PropertyDetailPage({ params }: Props) {
     </div>
   );
 }
-

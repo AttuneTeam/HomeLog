@@ -3,7 +3,14 @@
 import { useCallback, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import * as XLSX from "xlsx";
-import { AlertTriangle, ChevronDown, Download, ExternalLink, FileText, Sheet } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  Download,
+  ExternalLink,
+  FileText,
+  Sheet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,10 +19,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { TaxExpense, TaxReportData } from "@/components/tax-report-pdf";
+import type {
+  TaxExpense,
+  TaxRentalExpense,
+  TaxReportData,
+} from "@/components/tax-report-pdf";
 import { TaxReportDocument } from "@/components/tax-report-pdf";
 
-export type { TaxExpense, TaxReportData };
+export type { TaxExpense, TaxRentalExpense, TaxReportData };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -25,6 +36,120 @@ function sum(expenses: TaxExpense[]) {
 
 function categoryLabel(c: string) {
   return c.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function RentalExpenseTable({ expenses }: { expenses: TaxRentalExpense[] }) {
+  if (expenses.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground italic py-3">
+        No rental operating expenses recorded for this financial year.
+      </p>
+    );
+  }
+
+  const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b bg-muted/50">
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground whitespace-nowrap">
+              Date
+            </th>
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+              Category
+            </th>
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+              Supplier
+            </th>
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+              ABN
+            </th>
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground">
+              Description
+            </th>
+            <th className="text-right py-2 px-2 font-medium text-muted-foreground whitespace-nowrap">
+              Ex-GST
+            </th>
+            <th className="text-right py-2 px-2 font-medium text-muted-foreground whitespace-nowrap">
+              GST
+            </th>
+            <th className="text-right py-2 px-2 font-medium text-muted-foreground whitespace-nowrap">
+              Total
+            </th>
+            <th className="py-2 px-2 font-medium text-muted-foreground">
+              Bill
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {expenses.map((e) => {
+            const exGst = e.gst_amount != null ? e.amount - e.gst_amount : null;
+            return (
+              <tr
+                key={e.id}
+                className="border-b hover:bg-muted/30 transition-colors"
+              >
+                <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
+                  {formatDate(e.expense_date)}
+                </td>
+                <td className="py-2 px-2 font-medium">
+                  {categoryLabel(e.category)}
+                </td>
+                <td className="py-2 px-2 font-medium">
+                  {e.supplier ?? (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="py-2 px-2 text-muted-foreground tabular-nums">
+                  {e.abn ?? "—"}
+                </td>
+                <td className="py-2 px-2 text-muted-foreground max-w-[180px] truncate">
+                  {e.description ?? "—"}
+                </td>
+                <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">
+                  {exGst != null ? formatCurrency(exGst) : "—"}
+                </td>
+                <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">
+                  {e.gst_amount != null ? formatCurrency(e.gst_amount) : "—"}
+                </td>
+                <td className="py-2 px-2 text-right tabular-nums font-medium">
+                  {formatCurrency(e.amount)}
+                </td>
+                <td className="py-2 px-2 text-center">
+                  {e.invoice_url ? (
+                    <a
+                      href={e.invoice_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className="bg-muted/50 font-semibold border-t">
+            <td colSpan={7} className="py-2 px-2 text-sm">
+              Subtotal
+            </td>
+            <td className="py-2 px-2 text-right text-sm tabular-nums">
+              {formatCurrency(total)}
+            </td>
+            <td />
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -60,7 +185,9 @@ function SummaryRow({
           </span>
         )}
       </span>
-      <span className={`text-sm font-medium whitespace-nowrap ${bold ? "font-semibold" : ""}`}>
+      <span
+        className={`text-sm font-medium whitespace-nowrap ${bold ? "font-semibold" : ""}`}
+      >
         {value}
       </span>
     </div>
@@ -93,9 +220,6 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
               ABN
             </th>
             <th className="text-left py-2 px-2 font-medium text-muted-foreground">
-              Category
-            </th>
-            <th className="text-left py-2 px-2 font-medium text-muted-foreground">
               Description
             </th>
             <th className="text-right py-2 px-2 font-medium text-muted-foreground whitespace-nowrap">
@@ -114,21 +238,22 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
         </thead>
         <tbody>
           {expenses.map((e) => {
-            const exGst =
-              e.gst_amount != null ? e.amount - e.gst_amount : null;
+            const exGst = e.gst_amount != null ? e.amount - e.gst_amount : null;
             return (
-              <tr key={e.id} className="border-b hover:bg-muted/30 transition-colors">
+              <tr
+                key={e.id}
+                className="border-b hover:bg-muted/30 transition-colors"
+              >
                 <td className="py-2 px-2 whitespace-nowrap text-muted-foreground">
                   {formatDate(e.expense_date)}
                 </td>
                 <td className="py-2 px-2 font-medium">
-                  {e.supplier ?? <span className="text-muted-foreground">—</span>}
+                  {e.supplier ?? (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </td>
                 <td className="py-2 px-2 text-muted-foreground tabular-nums">
                   {e.abn ?? "—"}
-                </td>
-                <td className="py-2 px-2 text-muted-foreground">
-                  {categoryLabel(e.category)}
                 </td>
                 <td className="py-2 px-2 text-muted-foreground max-w-[180px] truncate">
                   {e.description ?? e.renovation_name}
@@ -180,17 +305,30 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TaxReport({ data }: { data: TaxReportData }) {
-  const { property, roiInputs, repairs, initialRepairs, capitalImprovements, generatedAt } =
-    data;
+  const {
+    property,
+    roiInputs,
+    repairs,
+    initialRepairs,
+    capitalImprovements,
+    rentalExpenses,
+    financialYear,
+    totalRentalIncome,
+    totalAgentFees,
+    totalOperatingExpenses,
+    netRentalIncome,
+    generatedAt,
+  } = data;
 
   const [downloading, setDownloading] = useState(false);
   const [xlsxDownloading, setXlsxDownloading] = useState(false);
 
   const purchasePrice = property.purchase_price ?? 0;
-  const stampDuty = roiInputs?.stamp_duty ?? 0;
+  const stampDuty = property.stamp_duty ?? 0;
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
-  const costBase = purchasePrice + stampDuty + initialRepairTotal + capitalTotal;
+  const costBase =
+    purchasePrice + stampDuty + initialRepairTotal + capitalTotal;
 
   const div43 = roiInputs?.div43_depreciation ?? null;
   const div40 = roiInputs?.div40_depreciation ?? null;
@@ -222,20 +360,35 @@ export function TaxReport({ data }: { data: TaxReportData }) {
 
       // Sort groups by completion date (latest expense date) ascending
       const sortedGroups = Array.from(groups.entries()).sort(([, a], [, b]) => {
-        const maxA = a.reduce((m, e) => (e.expense_date > m ? e.expense_date : m), a[0].expense_date);
-        const maxB = b.reduce((m, e) => (e.expense_date > m ? e.expense_date : m), b[0].expense_date);
+        const maxA = a.reduce(
+          (m, e) => (e.expense_date > m ? e.expense_date : m),
+          a[0].expense_date,
+        );
+        const maxB = b.reduce(
+          (m, e) => (e.expense_date > m ? e.expense_date : m),
+          b[0].expense_date,
+        );
         return maxA.localeCompare(maxB);
       });
 
       // Build AOA rows — one row per renovation group
       type Row = (string | number)[];
-      const rows: Row[] = [["Completion Date", "Description", "Supplier", "Ex-GST", "GST", "Total"]];
+      const rows: Row[] = [
+        [
+          "Completion Date",
+          "Description",
+          "Supplier",
+          "Ex-GST",
+          "GST",
+          "Total",
+        ],
+      ];
 
       for (const [renovationName, expenses] of sortedGroups) {
         // Completion date = latest expense date in the group
         const maxDate = expenses.reduce(
           (m, e) => (e.expense_date > m ? e.expense_date : m),
-          expenses[0].expense_date
+          expenses[0].expense_date,
         );
 
         // Description cell: renovation title + line break + renovation description
@@ -251,13 +404,21 @@ export function TaxReport({ data }: { data: TaxReportData }) {
         let sumGst = 0;
         let sumTotal = 0;
         for (const e of expenses) {
-          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
+          const exGst =
+            e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
           sumExGst += exGst;
           sumGst += e.gst_amount ?? 0;
           sumTotal += e.amount;
         }
 
-        rows.push([formatDate(maxDate), descriptionCell, supplier, sumExGst, sumGst, sumTotal]);
+        rows.push([
+          formatDate(maxDate),
+          descriptionCell,
+          supplier,
+          sumExGst,
+          sumGst,
+          sumTotal,
+        ]);
       }
 
       const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -291,12 +452,54 @@ export function TaxReport({ data }: { data: TaxReportData }) {
       }
 
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-      XLSX.writeFile(wb, `expenses-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.xlsx`, { cellStyles: true });
+      XLSX.utils.book_append_sheet(wb, ws, "Renovation Expenses");
+
+      // Rental operating expenses sheet
+      if (rentalExpenses.length > 0) {
+        type Row = (string | number)[];
+        const rentalRows: Row[] = [
+          ["Date", "Category", "Supplier", "ABN", "Description", "Ex-GST", "GST", "Total"],
+        ];
+        for (const e of rentalExpenses) {
+          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
+          rentalRows.push([
+            formatDate(e.expense_date),
+            categoryLabel(e.category),
+            e.supplier ?? "",
+            e.abn ?? "",
+            e.description ?? "",
+            exGst,
+            e.gst_amount ?? 0,
+            e.amount,
+          ]);
+        }
+        const wsRental = XLSX.utils.aoa_to_sheet(rentalRows);
+        wsRental["!cols"] = [
+          { wch: 14 }, { wch: 20 }, { wch: 22 }, { wch: 16 },
+          { wch: 30 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+        ];
+        const currencyFmt = '"$"#,##0.00';
+        const rRange = XLSX.utils.decode_range(wsRental["!ref"] ?? "A1");
+        for (let r = 1; r <= rRange.e.r; r++) {
+          for (let c = 5; c <= 7; c++) {
+            const cellRef = XLSX.utils.encode_cell({ r, c });
+            if (wsRental[cellRef] && typeof wsRental[cellRef].v === "number") {
+              wsRental[cellRef].z = currencyFmt;
+            }
+          }
+        }
+        XLSX.utils.book_append_sheet(wb, wsRental, "Rental Operating Expenses");
+      }
+
+      XLSX.writeFile(
+        wb,
+        `expenses-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.xlsx`,
+        { cellStyles: true },
+      );
     } finally {
       setXlsxDownloading(false);
     }
-  }, [repairs, initialRepairs, capitalImprovements, property.address]);
+  }, [repairs, initialRepairs, capitalImprovements, rentalExpenses, property.address]);
 
   const handleDownload = useCallback(async () => {
     setDownloading(true);
@@ -318,20 +521,34 @@ export function TaxReport({ data }: { data: TaxReportData }) {
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Tax Report</h1>
+          <h1 className="text-2xl font-bold">
+            Tax Report{" "}
+            <span className="text-muted-foreground font-normal text-lg">
+              FY{financialYear}
+            </span>
+          </h1>
           <p className="text-muted-foreground mt-1">{fullAddress}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Generated {generatedAt}
           </p>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button disabled={downloading || xlsxDownloading} />}>
+          <DropdownMenuTrigger
+            render={<Button disabled={downloading || xlsxDownloading} />}
+          >
             <Download className="h-4 w-4 mr-1.5" />
-            {downloading ? "Generating PDF…" : xlsxDownloading ? "Generating…" : "Download"}
+            {downloading
+              ? "Generating PDF…"
+              : xlsxDownloading
+                ? "Generating…"
+                : "Download"}
             <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExcelDownload} disabled={xlsxDownloading}>
+            <DropdownMenuItem
+              onClick={handleExcelDownload}
+              disabled={xlsxDownloading}
+            >
               <Sheet className="h-4 w-4" />
               Excel
             </DropdownMenuItem>
@@ -349,9 +566,9 @@ export function TaxReport({ data }: { data: TaxReportData }) {
         <p>
           <strong>For accountant / tax agent use.</strong> This report
           summarises data entered in Home Base. It is not financial or tax
-          advice. Rental income shown is an estimate from the ROI calculator.
-          Depreciation figures require confirmation from a registered quantity
-          surveyor. Always have a registered tax agent review before lodging.
+          advice. Rental income shown is an estimate. Depreciation figures
+          require confirmation from a registered quantity surveyor. Always have
+          a registered tax agent review before lodging.
         </p>
       </div>
 
@@ -368,16 +585,46 @@ export function TaxReport({ data }: { data: TaxReportData }) {
             label="Purchase price"
             value={formatCurrency(property.purchase_price)}
           />
-          <SummaryRow
-            label="Estimated annual rental income"
-            value={
-              annualRent != null
-                ? `${formatCurrency(annualRent)}`
-                : "Not entered"
-            }
-            sub={weeklyRent != null ? `(${formatCurrency(weeklyRent)}/wk — from ROI inputs)` : undefined}
-          />
+          {totalRentalIncome != null && (
+            <>
+              <SummaryRow
+                label="Gross rental income"
+                value={formatCurrency(totalRentalIncome)}
+                sub="(from rental periods)"
+              />
+              {totalAgentFees > 0 && (
+                <SummaryRow
+                  label="Less: Agent management fees"
+                  value={`(${formatCurrency(totalAgentFees)})`}
+                />
+              )}
+              {totalOperatingExpenses > 0 && (
+                <SummaryRow
+                  label="Less: Operating expenses"
+                  value={`(${formatCurrency(totalOperatingExpenses)})`}
+                />
+              )}
+              {netRentalIncome != null && (
+                <SummaryRow
+                  label="Net rental income"
+                  value={formatCurrency(netRentalIncome)}
+                  bold
+                />
+              )}
+            </>
+          )}
         </div>
+      </section>
+
+      {/* Rental Operating Expenses */}
+      <section>
+        <SectionHeading>Rental Operating Expenses</SectionHeading>
+        <p className="text-xs text-muted-foreground mb-3">
+          Immediately deductible property operating costs — water, council
+          rates, insurance, repairs &amp; maintenance, strata fees, land tax,
+          etc.
+        </p>
+        <RentalExpenseTable expenses={rentalExpenses} />
       </section>
 
       {/* Repairs & Maintenance */}
@@ -406,8 +653,8 @@ export function TaxReport({ data }: { data: TaxReportData }) {
       <section>
         <SectionHeading>Capital Improvements</SectionHeading>
         <p className="text-xs text-muted-foreground mb-3">
-          Improvements that add to or extend the property&apos;s value. Added
-          to the CGT cost base; may attract Division 43 depreciation deductions.
+          Improvements that add to or extend the property&apos;s value. Added to
+          the CGT cost base; may attract Division 43 depreciation deductions.
         </p>
         <ExpenseTable expenses={capitalImprovements} />
       </section>
@@ -420,11 +667,7 @@ export function TaxReport({ data }: { data: TaxReportData }) {
             label="Purchase price"
             value={formatCurrency(purchasePrice)}
           />
-          <SummaryRow
-            label="Stamp duty"
-            sub="from ROI inputs"
-            value={formatCurrency(stampDuty)}
-          />
+          <SummaryRow label="Stamp duty" value={formatCurrency(stampDuty)} />
           <SummaryRow
             label={`Initial repairs (${initialRepairs.length} expense${initialRepairs.length !== 1 ? "s" : ""})`}
             value={formatCurrency(initialRepairTotal)}
