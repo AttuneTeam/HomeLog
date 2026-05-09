@@ -36,7 +36,7 @@ export function Sidebar({ displayName }: SidebarProps) {
   }
 
   return (
-    <aside className="flex flex-col w-60 h-full min-h-screen border-r bg-background px-3 py-4 shrink-0">
+    <aside className="flex flex-col w-60 h-screen sticky top-0 border-r bg-background px-3 py-4 shrink-0">
       <div className="flex items-center gap-2 px-2 mb-6">
         <Home className="h-5 w-5" />
         <span className="font-bold text-lg tracking-tight">Home Base</span>

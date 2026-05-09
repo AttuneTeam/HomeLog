@@ -33,7 +33,7 @@ export default async function DashboardLayout({
     .maybeSingle();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar displayName={profile?.display_name ?? user.email ?? "User"} />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>

@@ -69,6 +69,14 @@ export function RenovationsList({
               ({byStatus[status].length})
             </span>
           </div>
+          {(() => {
+            const sectionTotal = byStatus[status].reduce(
+              (s, r) =>
+                s + (r.expenses?.reduce((a, e) => a + Number(e.amount), 0) ?? 0),
+              0,
+            );
+            return (
+          <>
           <div className="divide-y">
             {byStatus[status].map((renovation) => {
               const total =
@@ -138,6 +146,15 @@ export function RenovationsList({
               );
             })}
           </div>
+          {sectionTotal > 0 && (
+            <div className="flex justify-between items-center px-1 pt-2 mt-1 border-t text-sm font-semibold">
+              <span>Total spent</span>
+              <span className="tabular-nums">{formatCurrency(sectionTotal)}</span>
+            </div>
+          )}
+          </>
+            );
+          })()}
         </div>
       ))}
     </div>
