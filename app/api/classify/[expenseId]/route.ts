@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           property_status: propertyStatus,
           purchase_date: property?.purchase_date ?? "(unknown)",
           expense_context: expense.context_notes ?? "",
-          expense_raw_text: expense.raw_text?.slice(0, 1000) ?? "",
+          expense_raw_text: expense.raw_text ?? "",
         },
       },
       text: {
