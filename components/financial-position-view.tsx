@@ -894,7 +894,7 @@ export function FinancialPositionView({
           </CardHeader>
           <CardContent className="px-0 pb-0">
             {/* Column headers */}
-            <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr] gap-x-3 px-6 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 px-6 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <span>Month</span>
               <span className="text-right">Repayment</span>
               <span className="text-right">
@@ -905,6 +905,10 @@ export function FinancialPositionView({
               <span className="text-right">
                 Tax benefit{" "}
                 <span className="normal-case font-normal">(est.)</span>
+              </span>
+              <span className="text-right">
+                Net{" "}
+                <span className="normal-case font-normal">(before tax back)</span>
               </span>
               <span className="text-right">Net</span>
             </div>
@@ -934,7 +938,7 @@ export function FinancialPositionView({
                   return (
                     <div
                       key={ms.toISOString()}
-                      className={`grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-2 text-sm ${isCurrent ? "bg-muted/40 font-medium" : ""}`}
+                      className={`grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-2 text-sm ${isCurrent ? "bg-muted/40 font-medium" : ""}`}
                     >
                       <span
                         className={`tabular-nums ${isProjected ? "text-muted-foreground" : ""}`}
@@ -979,6 +983,20 @@ export function FinancialPositionView({
                           ? `+${formatCurrency(Math.abs(monthlyTaxBenefit))}`
                           : "—"}
                       </span>
+                      {(() => {
+                        const netBeforeTaxBack = fullNet - monthlyTaxBenefit;
+                        return (
+                          <span
+                            className={`text-right tabular-nums font-semibold ${
+                              netBeforeTaxBack >= 0 ? "text-emerald-700" : "text-red-600"
+                            } ${isProjected ? "opacity-70" : ""}`}
+                          >
+                            {netBeforeTaxBack >= 0
+                              ? `+${formatCurrency(netBeforeTaxBack)}`
+                              : `(${formatCurrency(-netBeforeTaxBack)})`}
+                          </span>
+                        );
+                      })()}
                       <span
                         className={`text-right tabular-nums font-semibold ${
                           fullNet >= 0 ? "text-emerald-700" : "text-red-600"
@@ -1020,7 +1038,7 @@ export function FinancialPositionView({
                 (m) => m.hasRepaymentData,
               );
               return (
-                <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-3 border-t bg-muted/30 text-sm font-semibold">
+                <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-3 border-t bg-muted/30 text-sm font-semibold">
                   <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
                     FY total
                   </span>
@@ -1047,6 +1065,18 @@ export function FinancialPositionView({
                       ? `+${formatCurrency(Math.abs(totTaxBenefit))}`
                       : "—"}
                   </span>
+                  {(() => {
+                    const totNetBeforeTaxBack = totNet - totTaxBenefit;
+                    return (
+                      <span
+                        className={`text-right tabular-nums ${totNetBeforeTaxBack >= 0 ? "text-emerald-700" : "text-red-600"}`}
+                      >
+                        {totNetBeforeTaxBack >= 0
+                          ? `+${formatCurrency(totNetBeforeTaxBack)}`
+                          : `(${formatCurrency(-totNetBeforeTaxBack)})`}
+                      </span>
+                    );
+                  })()}
                   <span
                     className={`text-right tabular-nums ${totNet >= 0 ? "text-emerald-700" : "text-red-600"}`}
                   >
