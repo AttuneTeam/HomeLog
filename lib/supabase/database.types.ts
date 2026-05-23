@@ -45,11 +45,41 @@ export type ExpenseCategory =
   | "fixtures"
   | "other";
 
+export type PropertyEnrichment = {
+  id: string;
+  property_id: string;
+  year_built: number | null;
+  architectural_style: string | null;
+  heritage_listing: string | null;
+  heritage_description: string | null;
+  historical_context: string | null;
+  notable_features: string[] | null;
+  image_urls: string[] | null;
+  sale_history: { year: string | null; price: string | null; type: string | null; notes: string | null }[] | null;
+  suburb_profile: {
+    overview: string | null;
+    distance_to_cbd: string | null;
+    transport: string[];
+    schools: string[];
+    parks: string[];
+    dining_shopping: string | null;
+    lifestyle: string | null;
+    median_house_price: string | null;
+  } | null;
+  street_and_council_history: string | null;
+  sources: { title: string; url: string }[] | null;
+  raw_search_results: Record<string, unknown> | null;
+  enriched_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PropertyFile = {
   id: string;
   property_id: string;
   storage_path: string;
   display_name: string | null;
+  folder_name: string | null;
   created_at: string;
 };
 
@@ -442,6 +472,7 @@ export interface Database {
           property_id: string;
           storage_path: string;
           display_name: string | null;
+          folder_name: string | null;
           created_at: string;
         };
         Insert: {
@@ -449,10 +480,12 @@ export interface Database {
           property_id: string;
           storage_path: string;
           display_name?: string | null;
+          folder_name?: string | null;
           created_at?: string;
         };
         Update: {
           display_name?: string | null;
+          folder_name?: string | null;
         };
         Relationships: [
           {
@@ -770,6 +803,71 @@ export interface Database {
             foreignKeyName: "loan_interest_rates_property_id_fkey";
             columns: ["property_id"];
             isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_enrichment: {
+        Row: {
+          id: string;
+          property_id: string;
+          year_built: number | null;
+          architectural_style: string | null;
+          heritage_listing: string | null;
+          heritage_description: string | null;
+          historical_context: string | null;
+          notable_features: string[] | null;
+          image_urls: string[] | null;
+          sale_history: { year: string | null; price: string | null; type: string | null; notes: string | null }[] | null;
+          suburb_profile: Record<string, unknown> | null;
+          street_and_council_history: string | null;
+          sources: { title: string; url: string }[] | null;
+          raw_search_results: Record<string, unknown> | null;
+          enriched_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          year_built?: number | null;
+          architectural_style?: string | null;
+          heritage_listing?: string | null;
+          heritage_description?: string | null;
+          historical_context?: string | null;
+          notable_features?: string[] | null;
+          image_urls?: string[] | null;
+          sale_history?: { year: string | null; price: string | null; type: string | null; notes: string | null }[] | null;
+          suburb_profile?: Record<string, unknown> | null;
+          street_and_council_history?: string | null;
+          sources?: { title: string; url: string }[] | null;
+          raw_search_results?: Record<string, unknown> | null;
+          enriched_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          year_built?: number | null;
+          architectural_style?: string | null;
+          heritage_listing?: string | null;
+          heritage_description?: string | null;
+          historical_context?: string | null;
+          notable_features?: string[] | null;
+          image_urls?: string[] | null;
+          sale_history?: { year: string | null; price: string | null; type: string | null; notes: string | null }[] | null;
+          suburb_profile?: Record<string, unknown> | null;
+          street_and_council_history?: string | null;
+          sources?: { title: string; url: string }[] | null;
+          raw_search_results?: Record<string, unknown> | null;
+          enriched_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_enrichment_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: true;
             referencedRelation: "properties";
             referencedColumns: ["id"];
           },

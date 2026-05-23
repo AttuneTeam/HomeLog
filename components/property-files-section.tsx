@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { PropertyFile } from "@/lib/supabase/database.types";
@@ -16,7 +16,72 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileText, Upload, Trash2, Plus, Pencil } from "lucide-react";
+import { FileText, Upload, Trash2, Plus, Pencil, FolderOpen } from "lucide-react";
+
+function FolderInput({
+  value,
+  onChange,
+  suggestions,
+  id,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  suggestions: string[];
+  id: string;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = suggestions.filter(
+    (s) => !value || s.toLowerCase().includes(value.toLowerCase()),
+  );
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <Input
+        id={id}
+        placeholder={placeholder}
+        value={value}
+        autoComplete="off"
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md text-sm overflow-hidden">
+          {filtered.map((s) => (
+            <li
+              key={s}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(s);
+                setOpen(false);
+              }}
+              className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-accent"
+            >
+              <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 interface PropertyFilesSectionProps {
   propertyId: string;
@@ -33,14 +98,20 @@ export function PropertyFilesSection({
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [folderName, setFolderName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [confirmDeleteFile, setConfirmDeleteFile] =
     useState<PropertyFile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [editFile, setEditFile] = useState<PropertyFile | null>(null);
   const [editName, setEditName] = useState("");
+  const [editFolder, setEditFolder] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const existingFolders = Array.from(
+    new Set(files.map((f) => f.folder_name).filter(Boolean) as string[]),
+  ).sort();
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -62,6 +133,7 @@ export function PropertyFilesSection({
         property_id: propertyId,
         storage_path: path,
         display_name: displayName.trim() || null,
+        folder_name: folderName.trim() || null,
       })
       .select()
       .single();
@@ -75,6 +147,7 @@ export function PropertyFilesSection({
     setUploadOpen(false);
     setSelectedFile(null);
     setDisplayName("");
+    setFolderName("");
     setUploading(false);
   }
 
@@ -114,9 +187,10 @@ export function PropertyFilesSection({
     setEditSaving(true);
     const supabase = createClient();
     const newName = editName.trim() || null;
+    const newFolder = editFolder.trim() || null;
     const { error } = await supabase
       .from("property_files")
-      .update({ display_name: newName })
+      .update({ display_name: newName, folder_name: newFolder })
       .eq("id", editFile.id);
     if (error) {
       toast.error(error.message);
@@ -125,10 +199,12 @@ export function PropertyFilesSection({
     }
     setFiles((prev) =>
       prev.map((f) =>
-        f.id === editFile.id ? { ...f, display_name: newName } : f,
+        f.id === editFile.id
+          ? { ...f, display_name: newName, folder_name: newFolder }
+          : f,
       ),
     );
-    toast.success("Name updated");
+    toast.success("File updated");
     setEditSaving(false);
     setEditFile(null);
   }
@@ -149,6 +225,7 @@ export function PropertyFilesSection({
             if (!open) {
               setSelectedFile(null);
               setDisplayName("");
+              setFolderName("");
             }
           }}
         >
@@ -201,6 +278,16 @@ export function PropertyFilesSection({
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="folder_name">Folder (optional)</Label>
+                <FolderInput
+                  id="folder_name"
+                  placeholder="e.g. Building & Pest, Purchase Docs"
+                  value={folderName}
+                  onChange={setFolderName}
+                  suggestions={existingFolders}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -232,63 +319,72 @@ export function PropertyFilesSection({
           </div>
         </div>
       ) : (
-        <div>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 px-1 pb-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              File
-            </span>
-          </div>
-          <div className="divide-y">
-            {files.map((file) => (
-              <div
-                key={file.id}
-                className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 items-center px-1 py-1"
-              >
-                <button
-                  type="button"
-                  className="flex items-center gap-2 text-sm text-left hover:underline truncate"
-                  onClick={() => handleDownload(file.storage_path)}
-                >
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="truncate">{fileLabel(file)}</span>
-                </button>
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  {new Date(file.created_at).toLocaleString("en-AU", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditFile(file);
-                      setEditName(file.display_name ?? fileLabel(file));
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="destructive"
-                    onClick={() => setConfirmDeleteFile(file)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+        <div className="space-y-4">
+          {[...existingFolders, null].map((folder) => {
+            const groupFiles = files.filter((f) =>
+              folder === null ? !f.folder_name : f.folder_name === folder,
+            );
+            if (groupFiles.length === 0) return null;
+            return (
+              <div key={folder ?? "__uncategorised__"}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1 px-1">
+                  {folder ?? "Uncategorised"}
+                </p>
+                <div className="divide-y">
+                  {groupFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 items-center px-1 py-1"
+                    >
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-sm text-left hover:underline truncate"
+                        onClick={() => handleDownload(file.storage_path)}
+                      >
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="truncate">{fileLabel(file)}</span>
+                      </button>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(file.created_at).toLocaleString("en-AU", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditFile(file);
+                            setEditName(file.display_name ?? fileLabel(file));
+                            setEditFolder(file.folder_name ?? "");
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon-sm"
+                          variant="destructive"
+                          onClick={() => setConfirmDeleteFile(file)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Edit name dialog */}
+      {/* Edit file dialog */}
       <Dialog
         open={editFile !== null}
         onOpenChange={(open) => {
@@ -297,19 +393,31 @@ export function PropertyFilesSection({
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename file</DialogTitle>
+            <DialogTitle>Edit file</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5 py-2">
-            <Label htmlFor="edit_display_name">Display name</Label>
-            <Input
-              id="edit_display_name"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleEditSave();
-              }}
-              autoFocus
-            />
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_display_name">Display name</Label>
+              <Input
+                id="edit_display_name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleEditSave();
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit_folder_name">Folder (optional)</Label>
+              <FolderInput
+                id="edit_folder_name"
+                placeholder="e.g. Building & Pest, Purchase Docs"
+                value={editFolder}
+                onChange={setEditFolder}
+                suggestions={existingFolders}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
