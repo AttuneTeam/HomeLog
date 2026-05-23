@@ -290,9 +290,8 @@ export function FinancialPositionView({
 
       // Offset accounts reduce effective loan balance for interest calculation
       const totalOffset = offsetsByPropertyId[property.id] ?? 0;
-      const effectiveLoanAmount = loanAmount != null
-        ? Math.max(0, loanAmount - totalOffset)
-        : null;
+      const effectiveLoanAmount =
+        loanAmount != null ? Math.max(0, loanAmount - totalOffset) : null;
 
       // Loan interest: use tracked rate history if available, else fall back to flat ROI estimate
       const purchaseDate = property.purchase_date
@@ -310,7 +309,10 @@ export function FinancialPositionView({
             )
           : null;
       const loanInterestEst =
-        loanInterestActual == null && effectiveLoanAmount != null && effectiveLoanAmount > 0 && roi?.interest_rate
+        loanInterestActual == null &&
+        effectiveLoanAmount != null &&
+        effectiveLoanAmount > 0 &&
+        roi?.interest_rate
           ? effectiveLoanAmount * (roi.interest_rate / 100)
           : loanInterestActual == null && effectiveLoanAmount === 0
             ? 0
@@ -319,10 +321,23 @@ export function FinancialPositionView({
       // Interest saved by offset = difference between full and reduced interest
       const interestSavedByOffset =
         totalOffset > 0 && loanAmount != null && rates.length > 0
-          ? calcInterestFromRates(loanAmount, rates, fyStart, fyEnd, purchaseDate) -
-            calcInterestFromRates(effectiveLoanAmount!, rates, fyStart, fyEnd, purchaseDate)
+          ? calcInterestFromRates(
+              loanAmount,
+              rates,
+              fyStart,
+              fyEnd,
+              purchaseDate,
+            ) -
+            calcInterestFromRates(
+              effectiveLoanAmount!,
+              rates,
+              fyStart,
+              fyEnd,
+              purchaseDate,
+            )
           : totalOffset > 0 && loanAmount != null && roi?.interest_rate
-            ? loanAmount * (roi.interest_rate / 100) - (effectiveLoanAmount! * (roi.interest_rate / 100))
+            ? loanAmount * (roi.interest_rate / 100) -
+              effectiveLoanAmount! * (roi.interest_rate / 100)
             : 0;
       const loanInterest = loanInterestActual ?? loanInterestEst;
       const loanInterestIsActual = loanInterestActual != null;
@@ -439,7 +454,12 @@ export function FinancialPositionView({
       let hasRepaymentData = false;
       let anyPropertyOwnedThisMonth = false;
 
-      for (const { property, loanAmount, loanTerm, totalOffset } of propertyPnl) {
+      for (const {
+        property,
+        loanAmount,
+        loanTerm,
+        totalOffset,
+      } of propertyPnl) {
         const purchasedOn = property.purchase_date
           ? new Date(property.purchase_date)
           : null;
@@ -756,7 +776,8 @@ export function FinancialPositionView({
                     in interest this FY
                     {totalOffset > 0 && (
                       <span className="text-muted-foreground">
-                        {" "}({formatCurrency(totalOffset)} offset)
+                        {" "}
+                        ({formatCurrency(totalOffset)} offset)
                       </span>
                     )}
                   </p>
@@ -908,7 +929,9 @@ export function FinancialPositionView({
               </span>
               <span className="text-right">
                 Net{" "}
-                <span className="normal-case font-normal">(before tax back)</span>
+                <span className="normal-case font-normal">
+                  (before tax back)
+                </span>
               </span>
               <span className="text-right">Net</span>
             </div>
@@ -941,7 +964,7 @@ export function FinancialPositionView({
                       className={`grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-2 text-sm ${isCurrent ? "bg-muted/40 font-medium" : ""}`}
                     >
                       <span
-                        className={`tabular-nums ${isProjected ? "text-muted-foreground" : ""}`}
+                        className={`tabular-nums whitespace-nowrap ${isProjected ? "text-muted-foreground" : ""}`}
                       >
                         {label}
                         {isCurrent && (
@@ -988,7 +1011,9 @@ export function FinancialPositionView({
                         return (
                           <span
                             className={`text-right tabular-nums font-semibold ${
-                              netBeforeTaxBack >= 0 ? "text-emerald-700" : "text-red-600"
+                              netBeforeTaxBack >= 0
+                                ? "text-emerald-700"
+                                : "text-red-600"
                             } ${isProjected ? "opacity-70" : ""}`}
                           >
                             {netBeforeTaxBack >= 0
