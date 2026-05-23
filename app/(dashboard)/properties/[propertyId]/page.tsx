@@ -13,6 +13,7 @@ import {
   DollarSign,
   Wrench,
   FileBarChart,
+  History,
 } from "lucide-react";
 import { DeletePropertyButton } from "@/components/delete-property-button";
 import { PropertyFilesSection } from "@/components/property-files-section";
@@ -143,6 +144,14 @@ export default async function PropertyDetailPage({ params }: Props) {
         </div>
         <div className="flex gap-2 shrink-0">
           <ButtonLink
+            href={`/properties/${propertyId}/history`}
+            variant="outline"
+            size="sm"
+          >
+            <History className="h-3.5 w-3.5 mr-1.5" />
+            History
+          </ButtonLink>
+          <ButtonLink
             href={`/properties/${propertyId}/tax-report`}
             variant="outline"
             size="sm"
@@ -205,104 +214,105 @@ export default async function PropertyDetailPage({ params }: Props) {
         </Card>
       </div>
 
-      {/* Files */}
-      <Separator />
-      <PropertyFilesSection
-        propertyId={propertyId}
-        userId={user.id}
-        initialFiles={propertyFiles ?? []}
-      />
+      <div className="space-y-12">
+        {/* Files */}
+        <PropertyFilesSection
+          propertyId={propertyId}
+          userId={user.id}
+          initialFiles={propertyFiles ?? []}
+        />
 
-      {/* Loan Interest Rate History */}
-      {property.property_type !== "primary_residence" && (
-        <>
-          <LoanInterestRatesSection
-            propertyId={propertyId}
-            initialRates={(loanRates ?? []).map((r) => ({
-              id: r.id,
-              property_id: r.property_id,
-              rate: Number(r.rate),
-              effective_date: r.effective_date,
-              notes: r.notes,
-            }))}
-            initialLoan={
-              propertyLoan
-                ? {
-                    loan_amount: Number(propertyLoan.loan_amount),
-                    loan_term_years: propertyLoan.loan_term_years,
-                  }
-                : null
-            }
-            initialOffsets={(offsetAccounts ?? []).map((o) => ({
-              id: o.id,
-              label: o.label,
-              balance: Number(o.balance),
-            }))}
-          />
-        </>
-      )}
+        {/* Loan Interest Rate History */}
+        {property.property_type !== "primary_residence" && (
+          <>
+            <LoanInterestRatesSection
+              propertyId={propertyId}
+              initialRates={(loanRates ?? []).map((r) => ({
+                id: r.id,
+                property_id: r.property_id,
+                rate: Number(r.rate),
+                effective_date: r.effective_date,
+                notes: r.notes,
+              }))}
+              initialLoan={
+                propertyLoan
+                  ? {
+                      loan_amount: Number(propertyLoan.loan_amount),
+                      loan_term_years: propertyLoan.loan_term_years,
+                    }
+                  : null
+              }
+              initialOffsets={(offsetAccounts ?? []).map((o) => ({
+                id: o.id,
+                label: o.label,
+                balance: Number(o.balance),
+              }))}
+            />
+          </>
+        )}
 
-      {/* Rental Periods */}
-      <RentalPeriodsSection
-        propertyId={propertyId}
-        initialPeriods={rentalPeriods ?? []}
-      />
+        {/* Rental Periods */}
+        <RentalPeriodsSection
+          propertyId={propertyId}
+          initialPeriods={rentalPeriods ?? []}
+        />
 
-      {/* Rental Operating Expenses */}
-      <RentalExpensesSection
-        propertyId={propertyId}
-        userId={user.id}
-        initialExpenses={rentalExpenses ?? []}
-      />
+        {/* Rental Operating Expenses */}
+        <RentalExpensesSection
+          propertyId={propertyId}
+          userId={user.id}
+          initialExpenses={rentalExpenses ?? []}
+        />
 
-      {/* Renovations */}
-      <div>
-        <div className="flex items-center justify-between mb-4 mt-8">
-          <h2 className="text-lg font-semibold">Renovations</h2>
-          <ButtonLink
-            href={`/properties/${propertyId}/renovations/new`}
-            size="sm"
-            variant="outline"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add renovation
-          </ButtonLink>
-        </div>
-
-        {!renovations || renovations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
-            <Wrench className="h-8 w-8 text-muted-foreground/50" />
-            <div>
-              <p className="font-medium">No renovations yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Track your first renovation project
-              </p>
-            </div>
+        {/* Renovations */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Renovations</h2>
             <ButtonLink
               href={`/properties/${propertyId}/renovations/new`}
-              variant="outline"
               size="sm"
+              variant="outline"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Add renovation
             </ButtonLink>
           </div>
-        ) : (
-          <RenovationsList renovations={renovations} propertyId={propertyId} />
-        )}
-      </div>
 
-      {property.notes && (
-        <>
-          <Separator />
+          {!renovations || renovations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
+              <Wrench className="h-8 w-8 text-muted-foreground/50" />
+              <div>
+                <p className="font-medium">No renovations yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Track your first renovation project
+                </p>
+              </div>
+              <ButtonLink
+                href={`/properties/${propertyId}/renovations/new`}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add renovation
+              </ButtonLink>
+            </div>
+          ) : (
+            <RenovationsList
+              renovations={renovations}
+              propertyId={propertyId}
+            />
+          )}
+        </div>
+
+        {property.notes && (
           <div>
             <h3 className="text-sm font-medium mb-1.5">Notes</h3>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
               {property.notes}
             </p>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
