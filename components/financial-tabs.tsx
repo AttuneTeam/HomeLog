@@ -2,7 +2,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialPositionView } from "@/components/financial-position-view";
-import { IncomeSourcesPanel, type IncomeSource } from "@/components/income-sources-panel";
+import {
+  IncomeSourcesPanel,
+  type IncomeSource,
+} from "@/components/income-sources-panel";
 import { RoiCalculator, type RoiInputs } from "@/components/roi-calculator";
 import { ScenarioComparisonTab } from "@/components/scenario-comparison-tab";
 
@@ -101,7 +104,6 @@ export function FinancialTabs({
         <Tabs defaultValue="position">
           <TabsList>
             <TabsTrigger value="position">Financial Position</TabsTrigger>
-            <TabsTrigger value="calculator">Investment Calculator</TabsTrigger>
             <TabsTrigger value="scenarios">Scenario Comparison</TabsTrigger>
           </TabsList>
 
