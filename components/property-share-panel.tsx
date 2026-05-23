@@ -238,7 +238,7 @@ export function PropertySharePanel({ propertyId }: Props) {
                   Share this link with the recipient
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className="text-xs flex-1 truncate">{inviteUrl}</code>
+                  <code className="text-xs flex-1 truncate min-w-0">{inviteUrl}</code>
                   <CopyButton text={inviteUrl} />
                 </div>
               </div>
@@ -288,7 +288,7 @@ export function PropertySharePanel({ propertyId }: Props) {
                     Public passport link
                   </p>
                   <div className="flex items-center gap-2">
-                    <code className="text-xs flex-1 truncate">{passportUrl}</code>
+                    <code className="text-xs flex-1 truncate min-w-0">{passportUrl}</code>
                     <CopyButton text={passportUrl} />
                   </div>
                 </div>
