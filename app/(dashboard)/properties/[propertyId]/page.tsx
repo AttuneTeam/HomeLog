@@ -16,6 +16,7 @@ import {
   History,
 } from "lucide-react";
 import { DeletePropertyButton } from "@/components/delete-property-button";
+import { PropertySharePanel } from "@/components/property-share-panel";
 import { PropertyFilesSection } from "@/components/property-files-section";
 import { RentalPeriodsSection } from "@/components/rental-periods-section";
 import { RentalExpensesSection } from "@/components/rental-expenses-section";
@@ -142,7 +143,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             </span>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 flex-wrap justify-end">
           <ButtonLink
             href={`/properties/${propertyId}/history`}
             variant="outline"
@@ -159,15 +160,20 @@ export default async function PropertyDetailPage({ params }: Props) {
             <FileBarChart className="h-3.5 w-3.5 mr-1.5" />
             Tax Report
           </ButtonLink>
-          <ButtonLink
-            href={`/properties/${propertyId}/edit`}
-            variant="outline"
-            size="sm"
-          >
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            Edit
-          </ButtonLink>
-          <DeletePropertyButton propertyId={propertyId} />
+          {property.user_id === user.id && (
+            <>
+              <PropertySharePanel propertyId={propertyId} />
+              <ButtonLink
+                href={`/properties/${propertyId}/edit`}
+                variant="outline"
+                size="sm"
+              >
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                Edit
+              </ButtonLink>
+              <DeletePropertyButton propertyId={propertyId} />
+            </>
+          )}
         </div>
       </div>
 

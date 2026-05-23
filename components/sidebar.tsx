@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Building2, LogOut, TrendingUp, Sun, Moon } from "lucide-react";
+import { Home, Building2, LogOut, TrendingUp, Sun, Moon, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,9 @@ import { toast } from "sonner";
 import { useTheme } from "next-themes";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: Home },
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/financial", label: "Financial Position", icon: TrendingUp },
+  { href: "/settings/account", label: "Account", icon: UserCircle },
 ];
 
 interface SidebarProps {
@@ -49,7 +49,7 @@ export function Sidebar({ displayName }: SidebarProps) {
             href={href}
             className={cn(
               "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              pathname === href || (href !== "/" && pathname.startsWith(href))
+              pathname === href || pathname.startsWith(href + "/")
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}

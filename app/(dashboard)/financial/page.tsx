@@ -10,6 +10,16 @@ export default async function FinancialPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // If user is a co-owner, use the account owner's ID for income/prepayment queries
+  const { data: guestOf } = await supabase
+    .from("account_members")
+    .select("owner_id")
+    .eq("grantee_user_id", user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  const incomeOwnerId = guestOf?.owner_id ?? user.id;
+
   const [{ data: profile }, { data: properties }] = await Promise.all([
     supabase
       .from("profiles")
@@ -92,12 +102,12 @@ export default async function FinancialPage() {
     supabase
       .from("household_income_sources")
       .select("id, label, amount, sort_order")
-      .eq("user_id", user.id)
+      .eq("user_id", incomeOwnerId)
       .order("sort_order"),
     supabase
       .from("tax_prepayments")
       .select("amount")
-      .eq("user_id", user.id)
+      .eq("user_id", incomeOwnerId)
       .eq("financial_year_end", fyEndYear)
       .maybeSingle(),
     investmentPropertyIds.length

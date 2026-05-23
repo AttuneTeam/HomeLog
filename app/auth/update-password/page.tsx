@@ -1,9 +1,7 @@
 "use client"
 
-import { Suspense } from "react"
 import { useState } from "react"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,16 +14,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Home } from "lucide-react"
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 })
 
 type FormValues = z.infer<typeof schema>
 
-function LoginForm() {
+export default function UpdatePasswordPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect") ?? "/"
   const [loading, setLoading] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
@@ -35,20 +34,15 @@ function LoginForm() {
   async function onSubmit(values: FormValues) {
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    })
+    const { error } = await supabase.auth.updateUser({ password: values.password })
+    setLoading(false)
     if (error) {
       toast.error(error.message)
-      setLoading(false)
       return
     }
-    router.push(redirectTo)
-    router.refresh()
+    toast.success("Password updated")
+    router.push("/")
   }
-
-  const signupHref = redirectTo === "/" ? "/signup" : `/signup?redirect=${encodeURIComponent(redirectTo)}`
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
@@ -58,51 +52,34 @@ function LoginForm() {
             <Home className="h-7 w-7" />
             <span className="text-2xl font-bold tracking-tight">Home Base</span>
           </div>
-          <p className="text-sm text-muted-foreground">Property renovation tracker</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Enter your email and password to continue</CardDescription>
+            <CardTitle>Set new password</CardTitle>
+            <CardDescription>Choose a strong password for your account.</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">New password</Label>
                 <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
                 {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in"}
-              </Button>
-              <div className="flex justify-between w-full text-sm text-muted-foreground">
-                <Link href="/forgot-password" className="underline underline-offset-4 hover:text-foreground">
-                  Forgot password?
-                </Link>
-                <Link href={signupHref} className="underline underline-offset-4 hover:text-foreground">
-                  Sign up
-                </Link>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmPassword">Confirm password</Label>
+                <Input id="confirmPassword" type="password" placeholder="••••••••" {...register("confirmPassword")} />
+                {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
               </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Updating…" : "Update password"}
+              </Button>
             </CardFooter>
           </form>
         </Card>
       </div>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   )
 }
