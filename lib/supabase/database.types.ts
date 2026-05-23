@@ -106,6 +106,46 @@ export type OffsetAccount = {
   updated_at: string;
 };
 
+export type AccountMemberRole = "co_owner";
+export type AccountMemberStatus = "pending" | "active" | "declined" | "revoked";
+
+export type AccountMember = {
+  id: string;
+  owner_id: string;
+  grantee_email: string;
+  grantee_user_id: string | null;
+  role: AccountMemberRole;
+  status: AccountMemberStatus;
+  invite_token: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyShareRole = "viewer";
+export type PropertyShareStatus = "pending" | "active" | "declined" | "revoked";
+
+export type PropertyShare = {
+  id: string;
+  property_id: string;
+  owner_id: string;
+  grantee_email: string;
+  grantee_user_id: string | null;
+  role: PropertyShareRole;
+  status: PropertyShareStatus;
+  invite_token: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyPassportLink = {
+  id: string;
+  property_id: string;
+  owner_id: string;
+  share_token: string;
+  expires_at: string | null;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -904,6 +944,115 @@ export interface Database {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      account_members: {
+        Row: {
+          id: string;
+          owner_id: string;
+          grantee_email: string;
+          grantee_user_id: string | null;
+          role: AccountMemberRole;
+          status: AccountMemberStatus;
+          invite_token: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          grantee_email: string;
+          grantee_user_id?: string | null;
+          role?: AccountMemberRole;
+          status?: AccountMemberStatus;
+          invite_token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          grantee_user_id?: string | null;
+          status?: AccountMemberStatus;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "account_members_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_shares: {
+        Row: {
+          id: string;
+          property_id: string;
+          owner_id: string;
+          grantee_email: string;
+          grantee_user_id: string | null;
+          role: PropertyShareRole;
+          status: PropertyShareStatus;
+          invite_token: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          owner_id: string;
+          grantee_email: string;
+          grantee_user_id?: string | null;
+          role?: PropertyShareRole;
+          status?: PropertyShareStatus;
+          invite_token?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          grantee_user_id?: string | null;
+          status?: PropertyShareStatus;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_shares_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_passport_links: {
+        Row: {
+          id: string;
+          property_id: string;
+          owner_id: string;
+          share_token: string;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          property_id: string;
+          owner_id: string;
+          share_token?: string;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          share_token?: string;
+          expires_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_passport_links_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: true;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];

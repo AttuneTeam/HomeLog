@@ -1,8 +1,9 @@
 "use client"
 
+import { Suspense } from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -26,8 +27,10 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") ?? "/"
   const [loading, setLoading] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
@@ -49,9 +52,12 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
-    toast.success("Account created! Check your email to confirm your address.")
-    router.push("/login")
+    toast.success("Account created! You can now sign in.")
+    const loginHref = redirectTo === "/" ? "/login" : `/login?redirect=${encodeURIComponent(redirectTo)}`
+    router.push(loginHref)
   }
+
+  const loginHref = redirectTo === "/" ? "/login" : `/login?redirect=${encodeURIComponent(redirectTo)}`
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
@@ -67,7 +73,11 @@ export default function SignupPage() {
         <Card>
           <CardHeader>
             <CardTitle>Create an account</CardTitle>
-            <CardDescription>Start tracking your renovations today</CardDescription>
+            <CardDescription>
+              {redirectTo.startsWith("/invite")
+                ? "Create an account to accept your invitation"
+                : "Start tracking your renovations today"}
+            </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
@@ -98,7 +108,7 @@ export default function SignupPage() {
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 Already have an account?{" "}
-                <Link href="/login" className="underline underline-offset-4 hover:text-foreground">
+                <Link href={loginHref} className="underline underline-offset-4 hover:text-foreground">
                   Sign in
                 </Link>
               </p>
@@ -107,5 +117,13 @@ export default function SignupPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   )
 }
