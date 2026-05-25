@@ -42,10 +42,6 @@ export default async function PassportPage({ params }: Props) {
   const [
     { data: property },
     { data: renovations },
-    { data: propertyFiles },
-    { data: rentalPeriods },
-    { data: rentalExpenses },
-    { data: loanRates },
   ] = await Promise.all([
     admin.from("properties").select("*").eq("id", propertyId).single(),
     admin
@@ -53,26 +49,6 @@ export default async function PassportPage({ params }: Props) {
       .select("*, expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification)")
       .eq("property_id", propertyId)
       .order("start_date", { ascending: false }),
-    admin
-      .from("property_files")
-      .select("*")
-      .eq("property_id", propertyId)
-      .order("created_at", { ascending: false }),
-    admin
-      .from("rental_periods")
-      .select("*")
-      .eq("property_id", propertyId)
-      .order("start_date", { ascending: true }),
-    admin
-      .from("rental_operating_expenses")
-      .select("*")
-      .eq("property_id", propertyId)
-      .order("expense_date", { ascending: false }),
-    admin
-      .from("loan_interest_rates")
-      .select("id, property_id, rate, effective_date, notes")
-      .eq("property_id", propertyId)
-      .order("effective_date", { ascending: true }),
   ]);
 
   if (!property) notFound();
@@ -85,14 +61,14 @@ export default async function PassportPage({ params }: Props) {
       sortDate: property.purchase_date,
       displayDate: property.purchase_date,
       type: "purchase",
-      title: "Property purchased",
+      title: "Property Acquired",
       subtitle: property.address,
       amount: null,
     });
   }
 
   for (const r of renovations ?? []) {
-    const date = r.end_date ?? r.start_date;
+    const date = r.end_date ?? r.start_date ?? r.created_at;
     if (!date) continue;
     const expenses = (r.expenses ?? []).map(
       (e: {
@@ -139,99 +115,18 @@ export default async function PassportPage({ params }: Props) {
     });
   }
 
-  for (const p of rentalPeriods ?? []) {
-    events.push({
-      id: `rental-start-${p.id}`,
-      sortDate: p.start_date,
-      displayDate: p.start_date,
-      type: "rental_start",
-      title: "Tenancy began",
-      subtitle: p.management_company ?? null,
-      amount: null,
-      rental: {
-        weeklyRent: Number(p.weekly_rent),
-        managementCompany: p.management_company,
-        agentName: p.agent_name,
-        endDate: p.end_date,
-      },
-    });
-    if (p.end_date) {
-      events.push({
-        id: `rental-end-${p.id}`,
-        sortDate: p.end_date,
-        displayDate: p.end_date,
-        type: "rental_end",
-        title: "Tenancy ended",
-        subtitle: p.management_company ?? null,
-        amount: null,
-        rental: {
-          weeklyRent: Number(p.weekly_rent),
-          managementCompany: p.management_company,
-          agentName: p.agent_name,
-          endDate: p.end_date,
-        },
-      });
-    }
-  }
-
-  for (const e of rentalExpenses ?? []) {
-    events.push({
-      id: `maintenance-${e.id}`,
-      sortDate: e.expense_date,
-      displayDate: e.expense_date,
-      type: "maintenance",
-      title: e.description ?? e.category,
-      subtitle: e.supplier ?? null,
-      amount: null,
-      maintenance: {
-        category: e.category,
-        supplier: e.supplier,
-        abn: e.abn,
-        invoicePath: e.invoice_path,
-      },
-    });
-  }
-
-  for (const f of propertyFiles ?? []) {
-    if (!f.display_name) continue;
-    events.push({
-      id: `doc-${f.id}`,
-      sortDate: f.created_at,
-      displayDate: f.created_at,
-      type: "document",
-      title: f.display_name,
-      subtitle: null,
-      amount: null,
-      document: { storagePath: f.storage_path },
-    });
-  }
-
-  for (const r of loanRates ?? []) {
-    events.push({
-      id: `rate-${r.id}`,
-      sortDate: r.effective_date,
-      displayDate: r.effective_date,
-      type: "rate_change",
-      title: `Interest rate changed to ${r.rate}%`,
-      subtitle: r.notes ?? null,
-      amount: null,
-      rateChange: { rate: Number(r.rate), notes: r.notes },
-    });
-  }
-
-  events.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+  // Oldest first — tells the value story chronologically
+  events.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
 
   const completedRenovations = (renovations ?? []).filter((r) => r.status === "completed");
-  const earliestRentalDate = (rentalPeriods ?? []).map((p) => p.start_date).sort()[0];
-  const rentalYears = earliestRentalDate
-    ? Math.floor((Date.now() - new Date(earliestRentalDate).getTime()) / (1000 * 60 * 60 * 24 * 365))
-    : 0;
 
   const summary: HistorySummary = {
     capitalInvested: 0,
-    maintenanceSpend: 0,
     renovationsCompleted: completedRenovations.length,
-    rentalYears,
+    purchasePrice: 0,
+    purchaseYear: property.purchase_date
+      ? new Date(property.purchase_date).getFullYear()
+      : null,
   };
 
   const locationParts = [property.suburb, property.state, property.postcode].filter(Boolean);
@@ -246,7 +141,7 @@ export default async function PassportPage({ params }: Props) {
         </span>
       </header>
 
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="p-6 max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-2xl font-bold">{property.address}</h1>
           {locationParts.length > 0 && (
