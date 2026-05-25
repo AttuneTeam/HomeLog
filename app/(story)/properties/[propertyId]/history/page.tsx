@@ -388,241 +388,210 @@ export default async function PropertyStoryPage({ params }: Props) {
 
         {/* Section E: Character & Neighbourhood */}
         {hasContextSection && (
-          <section className="space-y-14">
-            <div>
+          <section>
+            <div className="mb-12">
               <h2 className="font-caslon text-[32px] md:text-[48px] leading-tight text-[#030813] mb-2">
                 Character &amp; Neighbourhood
               </h2>
               <p className="font-grotesk text-[16px] text-[#76777c]">
-                Notable features, public records and neighbourhood context for{" "}
-                {property.address}.
+                Neighbourhood context and notable features for {property.address}.
               </p>
             </div>
 
-            {/* Notable features */}
-            {notableFeatures.length > 0 && (
-              <div>
-                <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-6">
-                  Notable Features
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {notableFeatures.map((feature, i) => (
-                    <div
-                      key={i}
-                      className="bg-white p-6 rounded-lg border border-[#E2E2E2] flex items-start gap-4 hover:bg-[#fbf9f9] transition-colors duration-300"
-                    >
-                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#76777c] flex-shrink-0" />
-                      <p className="font-grotesk text-[15px] text-[#1b1c1c] leading-relaxed">
-                        {feature}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
 
-            {/* Street & council history */}
-            {streetHistory && (
-              <div>
-                <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-4">
-                  Street &amp; Council History
-                </p>
-                <p className="font-grotesk text-[18px] leading-loose text-[#1b1c1c] max-w-3xl">
-                  {streetHistory}
-                </p>
-              </div>
-            )}
-
-            {/* Public sale records */}
-            {saleHistory.length > 0 && (
-              <div>
-                <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-4">
-                  Public Sale Records
-                </p>
-                <div className="rounded-lg border border-[#E2E2E2] overflow-hidden">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-[#E2E2E2]">
-                        {["Year", "Price", "Type", "Notes"].map((h) => (
-                          <th
-                            key={h}
-                            className="text-left px-6 py-4 font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] bg-white"
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E2E2E2]">
-                      {saleHistory.map((s, i) => (
-                        <tr
-                          key={i}
-                          className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200"
-                        >
-                          <td className="px-6 py-4 font-grotesk text-[15px] font-medium text-[#030813] tabular-nums">
-                            {s.year ?? "—"}
-                          </td>
-                          <td className="px-6 py-4 font-grotesk text-[15px] text-[#030813] tabular-nums">
-                            {s.price ?? "—"}
-                          </td>
-                          <td className="px-6 py-4 font-grotesk text-[14px] text-[#76777c] capitalize">
-                            {s.type ?? "—"}
-                          </td>
-                          <td className="px-6 py-4 font-grotesk text-[14px] text-[#76777c]">
-                            {s.notes ?? ""}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Suburb profile */}
-            {suburbProfile && (
+              {/* Left column: suburb profile */}
               <div className="space-y-8">
-                <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c]">
-                  Neighbourhood Profile
-                </p>
+                {suburbProfile && (
+                  <>
+                    {suburbProfile.overview && (
+                      <div>
+                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                          Neighbourhood Profile
+                        </p>
+                        <p className="font-grotesk text-[15px] leading-relaxed text-[#1b1c1c]">
+                          {suburbProfile.overview}
+                        </p>
+                      </div>
+                    )}
 
-                {suburbProfile.overview && (
-                  <p className="font-grotesk text-[18px] leading-loose text-[#1b1c1c] max-w-3xl">
-                    {suburbProfile.overview}
-                  </p>
+                    {(suburbProfile.distance_to_cbd || suburbProfile.median_house_price) && (
+                      <div className="grid grid-cols-2 gap-4">
+                        {suburbProfile.distance_to_cbd && (
+                          <div className="bg-white p-6 rounded-lg border border-[#E2E2E2] flex flex-col gap-2 hover:bg-[#fbf9f9] transition-colors duration-300">
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#c6c6cc]">
+                              Distance to CBD
+                            </p>
+                            <p className="font-grotesk text-[18px] text-[#1b1c1c] font-medium">
+                              {suburbProfile.distance_to_cbd}
+                            </p>
+                          </div>
+                        )}
+                        {suburbProfile.median_house_price && (
+                          <div className="bg-white p-6 rounded-lg border border-[#E2E2E2] flex flex-col gap-2 hover:bg-[#fbf9f9] transition-colors duration-300">
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#c6c6cc]">
+                              Median Price
+                            </p>
+                            <p className="font-grotesk text-[18px] text-[#1b1c1c] font-medium">
+                              {suburbProfile.median_house_price}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(suburbProfile.transport.length > 0 ||
+                      suburbProfile.schools.length > 0 ||
+                      suburbProfile.parks.length > 0) && (
+                      <div className="grid grid-cols-1 gap-6">
+                        {suburbProfile.transport.length > 0 && (
+                          <div>
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                              Transport
+                            </p>
+                            <ul className="space-y-2">
+                              {suburbProfile.transport.map((t, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                  <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{t}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {suburbProfile.schools.length > 0 && (
+                          <div>
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                              Schools
+                            </p>
+                            <ul className="space-y-2">
+                              {suburbProfile.schools.map((s, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                  <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{s}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {suburbProfile.parks.length > 0 && (
+                          <div>
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                              Parks &amp; Recreation
+                            </p>
+                            <ul className="space-y-2">
+                              {suburbProfile.parks.map((p, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                  <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{p}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(suburbProfile.dining_shopping || suburbProfile.lifestyle) && (
+                      <div className="space-y-6">
+                        {suburbProfile.dining_shopping && (
+                          <div>
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                              Dining &amp; Shopping
+                            </p>
+                            <p className="font-grotesk text-[14px] leading-relaxed text-[#1b1c1c]">
+                              {suburbProfile.dining_shopping}
+                            </p>
+                          </div>
+                        )}
+                        {suburbProfile.lifestyle && (
+                          <div>
+                            <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                              Lifestyle
+                            </p>
+                            <p className="font-grotesk text-[14px] leading-relaxed text-[#1b1c1c]">
+                              {suburbProfile.lifestyle}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
+              </div>
 
-                {(suburbProfile.distance_to_cbd || suburbProfile.median_house_price) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {suburbProfile.distance_to_cbd && (
-                      <div className="bg-white p-8 rounded-lg border border-[#E2E2E2] flex flex-col gap-3 hover:bg-[#fbf9f9] transition-colors duration-300">
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#c6c6cc]">
-                          Distance to CBD
-                        </p>
-                        <p className="font-grotesk text-[22px] text-[#1b1c1c] font-medium">
-                          {suburbProfile.distance_to_cbd}
-                        </p>
-                      </div>
-                    )}
-                    {suburbProfile.median_house_price && (
-                      <div className="bg-white p-8 rounded-lg border border-[#E2E2E2] flex flex-col gap-3 hover:bg-[#fbf9f9] transition-colors duration-300">
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#c6c6cc]">
-                          Median House Price
-                        </p>
-                        <p className="font-grotesk text-[22px] text-[#1b1c1c] font-medium">
-                          {suburbProfile.median_house_price}
-                        </p>
-                      </div>
-                    )}
+              {/* Right column: street history, notable features, sale records */}
+              <div className="space-y-10">
+                {streetHistory && (
+                  <div>
+                    <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                      Street &amp; Council History
+                    </p>
+                    <p className="font-grotesk text-[15px] leading-relaxed text-[#1b1c1c]">
+                      {streetHistory}
+                    </p>
                   </div>
                 )}
 
-                {(suburbProfile.transport.length > 0 ||
-                  suburbProfile.schools.length > 0 ||
-                  suburbProfile.parks.length > 0) && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {suburbProfile.transport.length > 0 && (
-                      <div>
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-4">
-                          Transport
-                        </p>
-                        <ul className="space-y-2.5">
-                          {suburbProfile.transport.map((t, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                              <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
-                                {t}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {suburbProfile.schools.length > 0 && (
-                      <div>
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-4">
-                          Schools
-                        </p>
-                        <ul className="space-y-2.5">
-                          {suburbProfile.schools.map((s, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                              <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
-                                {s}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {suburbProfile.parks.length > 0 && (
-                      <div>
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-4">
-                          Parks &amp; Recreation
-                        </p>
-                        <ul className="space-y-2.5">
-                          {suburbProfile.parks.map((p, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                              <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
-                                {p}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                {notableFeatures.length > 0 && (
+                  <div>
+                    <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                      Notable Features
+                    </p>
+                    <ul className="space-y-2">
+                      {notableFeatures.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
+                          <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                {(suburbProfile.dining_shopping || suburbProfile.lifestyle) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {suburbProfile.dining_shopping && (
-                      <div>
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
-                          Dining &amp; Shopping
-                        </p>
-                        <p className="font-grotesk text-[15px] leading-relaxed text-[#1b1c1c]">
-                          {suburbProfile.dining_shopping}
-                        </p>
-                      </div>
-                    )}
-                    {suburbProfile.lifestyle && (
-                      <div>
-                        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
-                          Lifestyle
-                        </p>
-                        <p className="font-grotesk text-[15px] leading-relaxed text-[#1b1c1c]">
-                          {suburbProfile.lifestyle}
-                        </p>
-                      </div>
-                    )}
+                {saleHistory.length > 0 && (
+                  <div>
+                    <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
+                      Public Sale Records
+                    </p>
+                    <div className="rounded-lg border border-[#E2E2E2] overflow-hidden">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-[#E2E2E2]">
+                            {["Year", "Price", "Type"].map((h) => (
+                              <th
+                                key={h}
+                                className="text-left px-4 py-3 font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] bg-white"
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E2E2]">
+                          {saleHistory.map((s, i) => (
+                            <tr key={i} className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200">
+                              <td className="px-4 py-3 font-grotesk text-[14px] font-medium text-[#030813] tabular-nums">
+                                {s.year ?? "—"}
+                              </td>
+                              <td className="px-4 py-3 font-grotesk text-[14px] text-[#030813] tabular-nums">
+                                {s.price ?? "—"}
+                              </td>
+                              <td className="px-4 py-3 font-grotesk text-[13px] text-[#76777c] capitalize">
+                                {s.type ?? "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
-            )}
 
-            {/* Sources */}
-            {sources.length > 0 && (
-              <div>
-                <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] mb-3">
-                  Sources
-                </p>
-                <div className="flex flex-wrap gap-x-6 gap-y-1.5">
-                  {sources.map((s, i) => (
-                    <a
-                      key={i}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-grotesk text-[12px] text-[#76777c] hover:text-[#030813] transition-colors underline underline-offset-2"
-                    >
-                      {s.title}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
           </section>
         )}
 
