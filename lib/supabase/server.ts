@@ -29,8 +29,15 @@ export async function createClient() {
 }
 
 export function createAdminClient() {
-  return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    console.error("[createAdminClient] missing env vars", {
+      NEXT_PUBLIC_SUPABASE_URL: url ? "set" : "MISSING",
+      SUPABASE_SERVICE_ROLE_KEY: key ? "set" : "MISSING",
+    });
+  }
+
+  return createSupabaseClient<Database>(url!, key!);
 }

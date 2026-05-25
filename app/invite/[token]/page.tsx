@@ -18,11 +18,15 @@ export default async function InvitePage({ params }: Props) {
   } = await supabase.auth.getUser();
 
   // Fetch invite data via admin client so unauthenticated visitors can see invite context
-  const { data: accountMember } = await admin
+  const { data: accountMember, error: accountMemberError } = await admin
     .from("account_members")
     .select("id, status, owner_id, role, grantee_email")
     .eq("invite_token", token)
     .maybeSingle();
+
+  if (accountMemberError) {
+    console.error("[invite/page] account_members query failed", { token, error: accountMemberError.message, code: accountMemberError.code });
+  }
 
   if (accountMember) {
     const { data: ownerProfile } = await admin
@@ -90,11 +94,15 @@ export default async function InvitePage({ params }: Props) {
     );
   }
 
-  const { data: propertyShare } = await admin
+  const { data: propertyShare, error: propertyShareError } = await admin
     .from("property_shares")
     .select("id, status, owner_id, property_id, grantee_email")
     .eq("invite_token", token)
     .maybeSingle();
+
+  if (propertyShareError) {
+    console.error("[invite/page] property_shares query failed", { token, error: propertyShareError.message, code: propertyShareError.code });
+  }
 
   if (propertyShare) {
     const [{ data: ownerProfile }, { data: property }] = await Promise.all([
@@ -162,6 +170,7 @@ export default async function InvitePage({ params }: Props) {
   }
 
   // Token not found
+  console.warn("[invite/page] token not found in any table", { token });
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm text-center space-y-4">
