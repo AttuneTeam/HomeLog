@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -68,8 +69,6 @@ export default async function PropertyStoryPage({ params }: Props) {
   }
 
   for (const r of renovations ?? []) {
-    const date = r.end_date ?? r.start_date ?? r.created_at;
-    if (!date) continue;
     const expenses = (r.expenses ?? []).map(
       (e: {
         id: string;
@@ -93,6 +92,13 @@ export default async function PropertyStoryPage({ params }: Props) {
         manualClassification: e.manual_classification,
       }),
     );
+    const earliestExpenseDate =
+      expenses
+        .map((e) => e.expenseDate)
+        .filter(Boolean)
+        .sort()[0] ?? null;
+    const date = r.end_date ?? r.start_date ?? earliestExpenseDate ?? r.created_at;
+    if (!date) continue;
     const totalCost = expenses.reduce(
       (s: number, e: { amount: number }) => s + e.amount,
       0,
@@ -176,9 +182,13 @@ export default async function PropertyStoryPage({ params }: Props) {
     type: string | null;
     notes: string | null;
   }[];
-  const suburbProfile = (enrichment?.suburb_profile ?? null) as SuburbProfile | null;
+  const suburbProfile = (enrichment?.suburb_profile ??
+    null) as SuburbProfile | null;
   const streetHistory = enrichment?.street_and_council_history ?? null;
-  const sources = (enrichment?.sources ?? []) as { title: string; url: string }[];
+  const sources = (enrichment?.sources ?? []) as {
+    title: string;
+    url: string;
+  }[];
 
   const hasContextSection =
     enrichment &&
@@ -206,9 +216,7 @@ export default async function PropertyStoryPage({ params }: Props) {
             <span className="hidden sm:inline">Properties</span>
           </Link>
           <div className="hidden sm:block h-4 w-px bg-[#E2E2E2]" />
-          <h1 className="font-caslon text-[18px] md:text-[24px] text-[#030813] truncate flex-1 min-w-0">
-            {property.address}
-          </h1>
+
           {enrichment && (
             <div className="flex items-center gap-3 flex-shrink-0">
               <EnrichmentEditor
@@ -219,12 +227,23 @@ export default async function PropertyStoryPage({ params }: Props) {
                   heritage_listing: enrichment.heritage_listing,
                   heritage_description: enrichment.heritage_description,
                   historical_context: enrichment.historical_context,
-                  notable_features: (enrichment.notable_features ?? []) as string[],
+                  notable_features: (enrichment.notable_features ??
+                    []) as string[],
                   image_urls: (enrichment.image_urls ?? []) as string[],
-                  sale_history: (enrichment.sale_history ?? []) as { year: string | null; price: string | null; type: string | null; notes: string | null }[],
-                  suburb_profile: enrichment.suburb_profile as import("@/components/enrichment-editor").EnrichmentDraft["suburb_profile"],
-                  street_and_council_history: enrichment.street_and_council_history,
-                  sources: (enrichment.sources ?? []) as { title: string; url: string }[],
+                  sale_history: (enrichment.sale_history ?? []) as {
+                    year: string | null;
+                    price: string | null;
+                    type: string | null;
+                    notes: string | null;
+                  }[],
+                  suburb_profile:
+                    enrichment.suburb_profile as import("@/components/enrichment-editor").EnrichmentDraft["suburb_profile"],
+                  street_and_council_history:
+                    enrichment.street_and_council_history,
+                  sources: (enrichment.sources ?? []) as {
+                    title: string;
+                    url: string;
+                  }[],
                 }}
               />
               <div className="w-px h-4 bg-[#E2E2E2]" />
@@ -235,6 +254,27 @@ export default async function PropertyStoryPage({ params }: Props) {
       </header>
 
       <main className="max-w-[1280px] mx-auto px-4 md:px-16 py-12 space-y-20">
+        {/* Logo + address */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Image
+            src="/logo.png"
+            alt="Home Base"
+            width={160}
+            height={125}
+            className="h-14 w-auto"
+          />
+          <div>
+            <h2 className="font-caslon text-[32px] md:text-[48px] leading-tight text-[#030813]">
+              {property.address}
+            </h2>
+            {property.suburb && (
+              <p className="font-grotesk text-[16px] text-[#76777c] mt-1">
+                {property.suburb}
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Section A: At a Glance */}
         {hasAtAGlance && (
           <section>
@@ -394,12 +434,12 @@ export default async function PropertyStoryPage({ params }: Props) {
                 Character &amp; Neighbourhood
               </h2>
               <p className="font-grotesk text-[16px] text-[#76777c]">
-                Neighbourhood context and notable features for {property.address}.
+                Neighbourhood context and notable features for{" "}
+                {property.address}.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-
               {/* Left column: suburb profile */}
               <div className="space-y-8">
                 {suburbProfile && (
@@ -415,7 +455,8 @@ export default async function PropertyStoryPage({ params }: Props) {
                       </div>
                     )}
 
-                    {(suburbProfile.distance_to_cbd || suburbProfile.median_house_price) && (
+                    {(suburbProfile.distance_to_cbd ||
+                      suburbProfile.median_house_price) && (
                       <div className="grid grid-cols-2 gap-4">
                         {suburbProfile.distance_to_cbd && (
                           <div className="bg-white p-6 rounded-lg border border-[#E2E2E2] flex flex-col gap-2 hover:bg-[#fbf9f9] transition-colors duration-300">
@@ -453,7 +494,9 @@ export default async function PropertyStoryPage({ params }: Props) {
                               {suburbProfile.transport.map((t, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{t}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {t}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -468,7 +511,9 @@ export default async function PropertyStoryPage({ params }: Props) {
                               {suburbProfile.schools.map((s, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{s}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {s}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -483,7 +528,9 @@ export default async function PropertyStoryPage({ params }: Props) {
                               {suburbProfile.parks.map((p, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{p}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {p}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -492,7 +539,8 @@ export default async function PropertyStoryPage({ params }: Props) {
                       </div>
                     )}
 
-                    {(suburbProfile.dining_shopping || suburbProfile.lifestyle) && (
+                    {(suburbProfile.dining_shopping ||
+                      suburbProfile.lifestyle) && (
                       <div className="space-y-6">
                         {suburbProfile.dining_shopping && (
                           <div>
@@ -572,7 +620,10 @@ export default async function PropertyStoryPage({ params }: Props) {
                         </thead>
                         <tbody className="divide-y divide-[#E2E2E2]">
                           {saleHistory.map((s, i) => (
-                            <tr key={i} className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200">
+                            <tr
+                              key={i}
+                              className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200"
+                            >
                               <td className="px-4 py-3 font-grotesk text-[14px] font-medium text-[#030813] tabular-nums">
                                 {s.year ?? "—"}
                               </td>
@@ -590,7 +641,6 @@ export default async function PropertyStoryPage({ params }: Props) {
                   </div>
                 )}
               </div>
-
             </div>
           </section>
         )}
