@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { sendAccountInviteEmail } from "@/lib/email";
 
 export async function GET() {
   const supabase = await createClient();
@@ -78,14 +77,7 @@ export async function POST(req: NextRequest) {
   const inviteUrl = `${origin}/invite/${member.invite_token}`;
 
   const adminSupabase = createAdminClient();
-  const { data: ownerProfile } = await adminSupabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user.id)
-    .maybeSingle();
-  const inviterName = ownerProfile?.display_name ?? "Someone";
-
-  sendAccountInviteEmail({ to: email, inviterName, inviteUrl }).catch(() => null);
+  adminSupabase.auth.admin.inviteUserByEmail(email, { redirectTo: inviteUrl }).catch(() => null);
 
   return NextResponse.json({ member, inviteUrl }, { status: 201 });
 }

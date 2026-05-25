@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { sendPropertyInviteEmail } from "@/lib/email";
 
 interface RouteParams {
   params: Promise<{ propertyId: string }>;
@@ -99,19 +98,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const inviteUrl = `${origin}/invite/${share.invite_token}`;
 
   const adminSupabase = createAdminClient();
-  const { data: ownerProfile } = await adminSupabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user.id)
-    .maybeSingle();
-  const inviterName = ownerProfile?.display_name ?? "Someone";
-
-  sendPropertyInviteEmail({
-    to: email,
-    inviterName,
-    address: property.address,
-    inviteUrl,
-  }).catch(() => null);
+  adminSupabase.auth.admin.inviteUserByEmail(email, { redirectTo: inviteUrl }).catch(() => null);
 
   return NextResponse.json({ share, inviteUrl }, { status: 201 });
 }
