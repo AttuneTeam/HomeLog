@@ -14,6 +14,7 @@ import {
   type TimelineEvent,
   type HistorySummary,
 } from "@/components/property-history-timeline";
+import { EnrichTrigger } from "@/components/enrich-trigger";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -178,6 +179,11 @@ export default async function PropertyStoryPage({ params }: Props) {
           <h1 className="font-caslon text-[18px] md:text-[24px] text-[#030813] truncate flex-1 min-w-0">
             {property.address}
           </h1>
+          {enrichment && (
+            <div className="flex-shrink-0">
+              <EnrichTrigger propertyId={propertyId} hasEnrichment={true} />
+            </div>
+          )}
         </nav>
       </header>
 
@@ -323,6 +329,13 @@ export default async function PropertyStoryPage({ params }: Props) {
             <div className="absolute bottom-0 right-0 p-8 opacity-10">
               <Landmark className="w-40 h-40 text-white" />
             </div>
+          </section>
+        )}
+
+        {/* Enrichment CTA — shown only when no enrichment data exists */}
+        {!enrichment && (
+          <section>
+            <EnrichTrigger propertyId={propertyId} hasEnrichment={false} />
           </section>
         )}
 
