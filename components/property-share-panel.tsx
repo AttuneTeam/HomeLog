@@ -283,12 +283,12 @@ export function PropertySharePanel({ propertyId }: Props) {
 
             {passportUrl ? (
               <>
-                <div className="rounded-md border bg-muted/50 p-3 space-y-1">
+                <div className="rounded-md border bg-muted/50 p-3 space-y-1 overflow-hidden">
                   <p className="text-xs font-medium text-muted-foreground">
                     Public passport link
                   </p>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs flex-1 truncate min-w-0">{passportUrl}</code>
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <code className="text-xs flex-1 truncate min-w-0 block">{passportUrl}</code>
                     <CopyButton text={passportUrl} />
                   </div>
                 </div>
