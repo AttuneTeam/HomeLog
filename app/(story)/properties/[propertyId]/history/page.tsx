@@ -15,6 +15,7 @@ import {
   type HistorySummary,
 } from "@/components/property-history-timeline";
 import { EnrichTrigger } from "@/components/enrich-trigger";
+import { EnrichmentEditor } from "@/components/enrichment-editor";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -180,7 +181,24 @@ export default async function PropertyStoryPage({ params }: Props) {
             {property.address}
           </h1>
           {enrichment && (
-            <div className="flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <EnrichmentEditor
+                propertyId={propertyId}
+                initial={{
+                  year_built: enrichment.year_built,
+                  architectural_style: enrichment.architectural_style,
+                  heritage_listing: enrichment.heritage_listing,
+                  heritage_description: enrichment.heritage_description,
+                  historical_context: enrichment.historical_context,
+                  notable_features: (enrichment.notable_features ?? []) as string[],
+                  image_urls: (enrichment.image_urls ?? []) as string[],
+                  sale_history: (enrichment.sale_history ?? []) as { year: string | null; price: string | null; type: string | null; notes: string | null }[],
+                  suburb_profile: enrichment.suburb_profile as import("@/components/enrichment-editor").EnrichmentDraft["suburb_profile"],
+                  street_and_council_history: enrichment.street_and_council_history,
+                  sources: (enrichment.sources ?? []) as { title: string; url: string }[],
+                }}
+              />
+              <div className="w-px h-4 bg-[#E2E2E2]" />
               <EnrichTrigger propertyId={propertyId} hasEnrichment={true} />
             </div>
           )}

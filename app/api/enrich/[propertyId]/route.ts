@@ -99,6 +99,54 @@ const enrichmentSchema = z.object({
     .describe("Sources where this information was found"),
 });
 
+export async function PATCH(req: NextRequest, { params }: RouteParams) {
+  const { propertyId } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: property } = await supabase
+    .from("properties")
+    .select("id, user_id")
+    .eq("id", propertyId)
+    .single();
+  if (!property || property.user_id !== user.id) {
+    return NextResponse.json({ error: "Property not found" }, { status: 404 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+
+  const allowed = [
+    "year_built",
+    "architectural_style",
+    "heritage_listing",
+    "heritage_description",
+    "historical_context",
+    "notable_features",
+    "image_urls",
+    "sale_history",
+    "suburb_profile",
+    "street_and_council_history",
+    "sources",
+  ] as const;
+
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  for (const key of allowed) {
+    if (key in body) patch[key] = body[key];
+  }
+
+  const { error } = await supabase
+    .from("property_enrichment")
+    .update(patch)
+    .eq("property_id", propertyId);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: NextRequest, { params }: RouteParams) {
   const { propertyId } = await params;
 
