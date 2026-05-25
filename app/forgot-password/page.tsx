@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Home } from "lucide-react"
+import Image from "next/image"
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -45,10 +45,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex items-center gap-2">
-            <Home className="h-7 w-7" />
-            <span className="text-2xl font-bold tracking-tight">Home Base</span>
-          </div>
+          <Image src="/logo.png" alt="Home Base" width={160} height={125} className="h-14 w-auto" />
         </div>
 
         <Card>

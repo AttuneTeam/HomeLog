@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Home, Users, Building2 } from "lucide-react";
+import { Users, Building2 } from "lucide-react";
+import Image from "next/image";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { InviteAcceptButton } from "@/components/invite-accept-button";
 import { InviteSignupForm } from "@/components/invite-signup-form";
@@ -195,8 +196,7 @@ function InviteShell({
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex items-center gap-2 justify-center">
-          <Home className="h-5 w-5" />
-          <span className="font-bold text-lg tracking-tight">Home Base</span>
+          <Image src="/logo.png" alt="Home Base" width={120} height={94} className="h-8 w-auto" />
         </div>
 
         <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">

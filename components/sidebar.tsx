@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X } from "lucide-react";
+import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,7 @@ export function Sidebar({ displayName, isOpen, onClose }: SidebarProps) {
     >
       <div className="flex items-center justify-between px-2 mb-6">
         <div className="flex items-center gap-2">
-          <Home className="h-5 w-5" />
-          <span className="font-bold text-lg tracking-tight">Home Base</span>
+          <Image src="/logo.png" alt="Home Base" width={120} height={94} className="h-8 w-auto" />
         </div>
         <Button
           variant="ghost"
