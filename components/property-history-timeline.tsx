@@ -2,20 +2,21 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import {
-  Home,
   Wrench,
-  Users,
-  FileText,
-  TrendingUp,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  CheckCircle2,
-  Clock,
-  Receipt,
+  Wind,
+  Square,
+  Droplets,
   Building2,
+  Layers,
+  PaintBucket,
+  Zap,
+  Scale,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  type LucideIcon,
 } from "lucide-react";
 
 export type RenovationExpense = {
@@ -34,14 +35,7 @@ export type TimelineEvent = {
   id: string;
   sortDate: string;
   displayDate: string | null;
-  type:
-    | "purchase"
-    | "renovation"
-    | "rental_start"
-    | "rental_end"
-    | "maintenance"
-    | "document"
-    | "rate_change";
+  type: "purchase" | "renovation";
   title: string;
   subtitle: string | null;
   amount: number | null;
@@ -56,66 +50,13 @@ export type TimelineEvent = {
     notes: string | null;
     expenses: RenovationExpense[];
   };
-  rental?: {
-    weeklyRent: number;
-    managementCompany: string | null;
-    agentName: string | null;
-    endDate: string | null;
-  };
-  maintenance?: {
-    category: string;
-    supplier: string | null;
-    abn: string | null;
-    invoicePath: string | null;
-  };
-  document?: {
-    storagePath: string;
-  };
-  rateChange?: {
-    rate: number;
-    notes: string | null;
-  };
 };
 
 export type HistorySummary = {
   capitalInvested: number;
-  maintenanceSpend: number;
   renovationsCompleted: number;
-  rentalYears: number;
-};
-
-type FilterKey =
-  | "all"
-  | "renovations"
-  | "rental"
-  | "maintenance"
-  | "financial"
-  | "documents";
-
-const FILTER_OPTIONS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "renovations", label: "Renovations" },
-  { key: "rental", label: "Rental" },
-  { key: "maintenance", label: "Maintenance" },
-  { key: "financial", label: "Financial" },
-  { key: "documents", label: "Documents" },
-];
-
-const FILTER_TYPES: Record<FilterKey, TimelineEvent["type"][]> = {
-  all: [
-    "purchase",
-    "renovation",
-    "rental_start",
-    "rental_end",
-    "maintenance",
-    "document",
-    "rate_change",
-  ],
-  renovations: ["renovation"],
-  rental: ["rental_start", "rental_end"],
-  maintenance: ["maintenance"],
-  financial: ["purchase", "rate_change"],
-  documents: ["document"],
+  purchasePrice: number;
+  purchaseYear: number | null;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -134,73 +75,28 @@ const CATEGORY_LABELS: Record<string, string> = {
   fixtures: "Fixtures",
 };
 
-function shortDate(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-AU", {
-    month: "short",
-    year: "numeric",
-  });
+function iconForRenovation(title: string): LucideIcon {
+  const t = title.toLowerCase();
+  if (/plumb|storm|drain|water|pipe/.test(t)) return Droplets;
+  if (/air|hvac|cool|climate|aircond/.test(t)) return Wind;
+  if (/window|glass|leadlight/.test(t)) return Square;
+  if (/floor|carpet/.test(t)) return Layers;
+  if (/paint|render/.test(t)) return PaintBucket;
+  if (/electric|solar|power/.test(t)) return Zap;
+  if (/struct|foundation|slab|roof/.test(t)) return Building2;
+  if (/sale|auction|purchase|market/.test(t)) return Scale;
+  return Wrench;
 }
 
-type EventConfig = {
-  dot: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge: string;
-  label: string;
-};
+function chapterLabel(index: number): string {
+  return `Chapter ${String(index).padStart(2, "0")}`;
+}
 
-function getEventConfig(type: TimelineEvent["type"]): EventConfig {
-  switch (type) {
-    case "purchase":
-      return {
-        dot: "bg-violet-500 border-violet-200",
-        icon: Home,
-        badge: "bg-violet-100 text-violet-800",
-        label: "Purchase",
-      };
-    case "renovation":
-      return {
-        dot: "bg-blue-500 border-blue-200",
-        icon: Wrench,
-        badge: "bg-blue-100 text-blue-800",
-        label: "Renovation",
-      };
-    case "rental_start":
-      return {
-        dot: "bg-emerald-500 border-emerald-200",
-        icon: Users,
-        badge: "bg-emerald-100 text-emerald-800",
-        label: "Tenancy",
-      };
-    case "rental_end":
-      return {
-        dot: "bg-emerald-400 border-emerald-100",
-        icon: Users,
-        badge: "bg-emerald-50 text-emerald-700",
-        label: "Tenancy",
-      };
-    case "maintenance":
-      return {
-        dot: "bg-amber-500 border-amber-200",
-        icon: Receipt,
-        badge: "bg-amber-100 text-amber-800",
-        label: "Maintenance",
-      };
-    case "document":
-      return {
-        dot: "bg-slate-400 border-slate-200",
-        icon: FileText,
-        badge: "bg-slate-100 text-slate-700",
-        label: "Document",
-      };
-    case "rate_change":
-      return {
-        dot: "bg-purple-500 border-purple-200",
-        icon: TrendingUp,
-        badge: "bg-purple-100 text-purple-800",
-        label: "Loan",
-      };
-  }
+function shortMonthYear(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr)
+    .toLocaleDateString("en-AU", { month: "short", year: "numeric" })
+    .toUpperCase();
 }
 
 function InvoiceButton({
@@ -227,7 +123,7 @@ function InvoiceButton({
       type="button"
       onClick={open}
       disabled={loading}
-      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline disabled:opacity-50"
+      className="inline-flex items-center gap-1 font-grotesk text-[11px] text-[#030813] hover:text-[#775a19] underline underline-offset-4 decoration-[#E2E2E2] transition-colors disabled:opacity-50"
     >
       <ExternalLink className="h-3 w-3" />
       {loading ? "Opening…" : "View invoice"}
@@ -236,227 +132,306 @@ function InvoiceButton({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles =
-    status === "completed"
-      ? "bg-emerald-100 text-emerald-700"
-      : status === "in_progress"
-        ? "bg-blue-100 text-blue-700"
-        : "bg-slate-100 text-slate-600";
-  const Icon =
-    status === "completed"
-      ? CheckCircle2
-      : status === "in_progress"
-        ? Clock
-        : Clock;
-  const label =
-    status === "completed"
-      ? "Completed"
-      : status === "in_progress"
-        ? "In progress"
-        : "Planned";
+  const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+    completed: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-800",
+      border: "border-emerald-200",
+      label: "COMPLETED",
+    },
+    in_progress: {
+      bg: "bg-blue-50",
+      text: "text-blue-800",
+      border: "border-blue-200",
+      label: "IN PROGRESS",
+    },
+    planned: {
+      bg: "bg-[#f5f3f3]",
+      text: "text-[#45474c]",
+      border: "border-[#E2E2E2]",
+      label: "PLANNED",
+    },
+  };
+  const c = configs[status] ?? configs.planned;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${styles}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded font-grotesk text-[10px] tracking-[0.08em] font-semibold border ${c.bg} ${c.text} ${c.border}`}
     >
-      <Icon className="h-3 w-3" />
-      {label}
+      {c.label}
     </span>
   );
 }
 
-function EventCard({ event }: { event: TimelineEvent }) {
-  const [expanded, setExpanded] = useState(false);
-  const config = getEventConfig(event.type);
-  const Icon = config.icon;
-
-  const hasDetail =
-    event.renovation?.expenses.length ||
-    event.rental ||
-    event.maintenance?.abn ||
-    event.maintenance?.invoicePath ||
-    event.rateChange?.notes ||
-    event.renovation?.description ||
-    event.renovation?.notes;
-
+function YearMarker({ year }: { year: number }) {
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => hasDetail && setExpanded((v) => !v)}
-        className={`w-full text-left px-4 py-3 flex items-start gap-3 ${hasDetail ? "cursor-pointer hover:bg-muted/30 transition-colors" : "cursor-default"}`}
-      >
-        <div
-          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${config.badge}`}
-        >
-          <Icon className="h-3.5 w-3.5" />
+    <div className="flex items-center gap-4 py-2 pl-20 md:pl-28">
+      <div className="h-px flex-1 bg-[#E2E2E2]" />
+      <span className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c] shrink-0">
+        {year}
+      </span>
+      <div className="h-px flex-1 bg-[#E2E2E2]" />
+    </div>
+  );
+}
+
+function EventAvatar({
+  icon: Icon,
+  variant = "default",
+}: {
+  icon: LucideIcon;
+  variant?: "default" | "gold" | "blue";
+}) {
+  const variants: Record<string, string> = {
+    default: "bg-[#e3e2e2] text-[#030813]",
+    gold: "bg-[#fed488] text-[#775a19]",
+    blue: "bg-[#dde2f3] text-[#030813]",
+  };
+  return (
+    <div
+      className={`w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center border-2 border-[#F4F1EA] relative z-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${variants[variant]}`}
+    >
+      <Icon className="w-6 h-6 md:w-8 md:h-8" />
+    </div>
+  );
+}
+
+function SummaryBar({ summary }: { summary: HistorySummary }) {
+  return (
+    <div className="bg-[#fbf9f9] border border-[#E2E2E2] rounded-lg overflow-hidden mb-12">
+      <div className="px-6 md:px-8 py-3 border-b border-[#E2E2E2]">
+        <p className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.1em] text-[#76777c]">
+          Value Summary
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E2E2E2]">
+        <div className="px-6 md:px-8 py-5">
+          <p className="font-grotesk text-[11px] uppercase tracking-[0.1em] text-[#76777c] mb-2">
+            Capital Invested
+          </p>
+          <p className="font-caslon text-[32px] leading-tight text-[#030813]">
+            {summary.capitalInvested > 0
+              ? formatCurrency(summary.capitalInvested)
+              : "—"}
+          </p>
+          <p className="font-grotesk text-[12px] text-[#76777c] mt-1">
+            in completed renovations
+          </p>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm leading-tight">{event.title}</span>
-            {event.renovation && (
-              <StatusBadge status={event.renovation.status} />
+        <div className="px-6 md:px-8 py-5">
+          <p className="font-grotesk text-[11px] uppercase tracking-[0.1em] text-[#76777c] mb-2">
+            Renovations Completed
+          </p>
+          <p className="font-caslon text-[32px] leading-tight text-[#030813]">
+            {summary.renovationsCompleted > 0
+              ? summary.renovationsCompleted
+              : "—"}
+          </p>
+          <p className="font-grotesk text-[12px] text-[#76777c] mt-1">
+            improvements made
+          </p>
+        </div>
+        <div className="px-6 md:px-8 py-5">
+          <p className="font-grotesk text-[11px] uppercase tracking-[0.1em] text-[#76777c] mb-2">
+            Purchase Price
+          </p>
+          <p className="font-caslon text-[32px] leading-tight text-[#030813]">
+            {summary.purchasePrice > 0
+              ? formatCurrency(summary.purchasePrice)
+              : "—"}
+          </p>
+          {summary.purchaseYear && (
+            <p className="font-grotesk text-[12px] text-[#76777c] mt-1">
+              acquired in {summary.purchaseYear}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PurchaseCard({
+  event,
+  chapterIndex,
+}: {
+  event: TimelineEvent;
+  chapterIndex: number;
+}) {
+  return (
+    <div className="relative flex gap-8 md:gap-12 group">
+      <EventAvatar icon={Scale} variant="blue" />
+      <div className="pt-2 md:pt-4 bg-[#fbf9f9] p-6 md:p-8 rounded-lg border border-[#E2E2E2] flex-grow">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span className="font-grotesk text-[11px] tracking-[0.1em] font-semibold uppercase text-[#76777c] mb-1 block">
+              {chapterLabel(chapterIndex)}
+            </span>
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              <h3 className="font-caslon text-[24px] md:text-[32px] leading-tight text-[#030813]">
+                {event.title}
+              </h3>
+              {event.displayDate && (
+                <span className="bg-[#e3e2e2] text-[#45474c] font-grotesk text-[10px] tracking-[0.08em] font-semibold px-2 py-0.5 rounded border border-[#E2E2E2] uppercase">
+                  {shortMonthYear(event.displayDate)}
+                </span>
+              )}
+            </div>
+            {event.subtitle && (
+              <p className="font-grotesk text-[16px] text-[#45474c]">
+                {event.subtitle}
+              </p>
             )}
           </div>
-          {event.subtitle && (
-            <p className="text-xs text-muted-foreground mt-0.5">{event.subtitle}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
           {event.amount != null && event.amount > 0 && (
-            <span className="text-sm font-semibold tabular-nums">
-              {formatCurrency(event.amount)}
-            </span>
+            <div className="md:text-right border-t md:border-t-0 md:border-l border-[#E2E2E2] pt-4 md:pt-0 md:pl-8 flex-shrink-0">
+              <p className="font-grotesk text-[11px] tracking-[0.1em] font-semibold uppercase text-[#76777c] mb-1">
+                Purchase Price
+              </p>
+              <p className="font-caslon text-[24px] md:text-[32px] leading-tight text-[#030813]">
+                {formatCurrency(event.amount)}
+              </p>
+            </div>
           )}
-          {hasDetail ? (
-            expanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )
-          ) : null}
         </div>
-      </button>
+      </div>
+    </div>
+  );
+}
 
-      {expanded && (
-        <div className="border-t px-4 py-3 bg-muted/20 space-y-3">
-          {/* Renovation detail */}
-          {event.renovation && (
-            <>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
-                {event.renovation.contractor && (
-                  <>
-                    <span className="text-muted-foreground">Contractor</span>
-                    <span className="font-medium">{event.renovation.contractor}</span>
-                  </>
+function RenovationCard({
+  event,
+  chapterIndex,
+}: {
+  event: TimelineEvent;
+  chapterIndex: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const reno = event.renovation!;
+  const hasExpenses = reno.expenses.length > 0;
+  const Icon = iconForRenovation(event.title);
+  const avatarVariant =
+    reno.status === "in_progress" ? "gold" : "default";
+
+  return (
+    <div className="relative flex gap-8 md:gap-12 group">
+      <EventAvatar icon={Icon} variant={avatarVariant} />
+      <div className="pt-2 md:pt-4 bg-[#fbf9f9] rounded-lg border border-[#E2E2E2] flex-grow overflow-hidden">
+        <div className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <span className="font-grotesk text-[11px] tracking-[0.1em] font-semibold uppercase text-[#76777c] mb-1 block">
+                {chapterLabel(chapterIndex)}
+              </span>
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <h3 className="font-caslon text-[24px] md:text-[32px] leading-tight text-[#030813]">
+                  {event.title}
+                </h3>
+                <StatusBadge status={reno.status} />
+                {event.displayDate && (
+                  <span className="font-grotesk text-[10px] tracking-[0.08em] font-semibold px-2 py-0.5 rounded border border-[#E2E2E2] bg-[#f5f3f3] text-[#45474c] uppercase">
+                    {shortMonthYear(event.displayDate)}
+                  </span>
                 )}
-                {event.renovation.startDate && (
-                  <>
-                    <span className="text-muted-foreground">Start date</span>
-                    <span>{formatDate(event.renovation.startDate)}</span>
-                  </>
-                )}
-                {event.renovation.endDate && (
-                  <>
-                    <span className="text-muted-foreground">Completion</span>
-                    <span>{formatDate(event.renovation.endDate)}</span>
-                  </>
-                )}
-                <span className="text-muted-foreground">Classification</span>
-                <span className="capitalize">
-                  {event.renovation.classification.replace(/_/g, " ")}
-                </span>
               </div>
-              {event.renovation.description && (
-                <p className="text-sm text-muted-foreground italic">
-                  {event.renovation.description}
+              {(reno.description || reno.notes) && (
+                <p className="font-grotesk text-[16px] text-[#45474c] mb-4 max-w-2xl leading-relaxed">
+                  {reno.description ?? reno.notes}
                 </p>
               )}
-              {event.renovation.expenses.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                    Expenses
-                  </p>
-                  <div className="divide-y rounded-lg border bg-background overflow-hidden">
-                    {event.renovation.expenses.map((e) => (
-                      <div key={e.id} className="px-3 py-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {e.description ?? CATEGORY_LABELS[e.category] ?? e.category}
-                            </p>
-                            <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                              {e.supplier && (
-                                <span className="text-xs text-muted-foreground">
-                                  {e.supplier}
-                                </span>
-                              )}
-                              {e.abn && (
-                                <span className="text-xs text-muted-foreground">
-                                  ABN {e.abn}
-                                </span>
-                              )}
-                              {e.manualClassification && (
-                                <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700">
-                                  {e.manualClassification}
-                                </span>
-                              )}
-                              {e.invoicePath && (
-                                <InvoiceButton invoicePath={e.invoicePath} />
-                              )}
-                            </div>
-                          </div>
-                          <span className="text-sm font-semibold tabular-nums shrink-0">
-                            {formatCurrency(e.amount)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {reno.contractor && (
+                <div className="flex items-center gap-2 pt-2 border-t border-[#E2E2E2]/50">
+                  <span className="font-grotesk text-[11px] uppercase tracking-[0.08em] text-[#76777c]">
+                    Contractor: {reno.contractor}
+                  </span>
                 </div>
               )}
-              {event.renovation.notes && (
-                <p className="text-xs text-muted-foreground">{event.renovation.notes}</p>
-              )}
-            </>
-          )}
-
-          {/* Rental detail */}
-          {event.rental && (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
-              <span className="text-muted-foreground">Weekly rent</span>
-              <span className="font-medium">{formatCurrency(event.rental.weeklyRent)}/wk</span>
-              {event.rental.managementCompany && (
-                <>
-                  <span className="text-muted-foreground">Manager</span>
-                  <span>{event.rental.managementCompany}</span>
-                </>
-              )}
-              {event.rental.agentName && (
-                <>
-                  <span className="text-muted-foreground">Agent</span>
-                  <span>{event.rental.agentName}</span>
-                </>
-              )}
-              {event.rental.endDate && (
-                <>
-                  <span className="text-muted-foreground">Ended</span>
-                  <span>{formatDate(event.rental.endDate)}</span>
-                </>
-              )}
             </div>
-          )}
-
-          {/* Maintenance detail */}
-          {event.maintenance && (
-            <div className="space-y-1.5">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
-                <span className="text-muted-foreground">Category</span>
-                <span>{CATEGORY_LABELS[event.maintenance.category] ?? event.maintenance.category}</span>
-                {event.maintenance.supplier && (
-                  <>
-                    <span className="text-muted-foreground">Supplier</span>
-                    <span>{event.maintenance.supplier}</span>
-                  </>
-                )}
-                {event.maintenance.abn && (
-                  <>
-                    <span className="text-muted-foreground">ABN</span>
-                    <span>{event.maintenance.abn}</span>
-                  </>
-                )}
+            {event.amount != null && event.amount > 0 && (
+              <div className="md:text-right border-t md:border-t-0 md:border-l border-[#E2E2E2] pt-4 md:pt-0 md:pl-8 flex-shrink-0">
+                <p className="font-grotesk text-[11px] tracking-[0.1em] font-semibold uppercase text-[#76777c] mb-1">
+                  Value Invested
+                </p>
+                <p className="font-caslon text-[24px] md:text-[32px] leading-tight text-[#030813]">
+                  {formatCurrency(event.amount)}
+                </p>
               </div>
-              {event.maintenance.invoicePath && (
-                <InvoiceButton invoicePath={event.maintenance.invoicePath} />
-              )}
-            </div>
-          )}
-
-          {/* Rate change detail */}
-          {event.rateChange?.notes && (
-            <p className="text-sm text-muted-foreground">{event.rateChange.notes}</p>
-          )}
+            )}
+          </div>
         </div>
-      )}
+
+        {hasExpenses && (
+          <>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="w-full flex items-center justify-between px-6 md:px-8 py-3 border-t border-[#E2E2E2] font-grotesk text-[11px] font-semibold uppercase tracking-[0.08em] text-[#76777c] hover:bg-[#f5f3f3] transition-colors"
+            >
+              <span>
+                {reno.expenses.length} expense
+                {reno.expenses.length !== 1 ? "s" : ""} — breakdown
+              </span>
+              {expanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
+            {expanded && (
+              <div className="border-t border-[#E2E2E2]">
+                <div className="divide-y divide-[#E2E2E2]/50">
+                  {reno.expenses.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-start justify-between gap-4 px-6 md:px-8 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-grotesk text-[14px] font-medium text-[#1b1c1c] truncate">
+                          {e.description ??
+                            CATEGORY_LABELS[e.category] ??
+                            e.category}
+                        </p>
+                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                          {e.supplier && (
+                            <span className="font-grotesk text-[12px] text-[#76777c]">
+                              {e.supplier}
+                            </span>
+                          )}
+                          {e.abn && (
+                            <span className="font-grotesk text-[12px] text-[#76777c]">
+                              ABN {e.abn}
+                            </span>
+                          )}
+                          {e.manualClassification && (
+                            <span className="px-1.5 py-0.5 rounded font-grotesk text-[11px] bg-[#ffdea5]/30 text-[#775a19]">
+                              {e.manualClassification}
+                            </span>
+                          )}
+                          {e.invoicePath && (
+                            <InvoiceButton invoicePath={e.invoicePath} />
+                          )}
+                        </div>
+                      </div>
+                      <span className="font-grotesk text-[14px] font-semibold tabular-nums text-[#030813] shrink-0">
+                        {formatCurrency(e.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center px-6 md:px-8 py-3 border-t border-[#E2E2E2] bg-[#f5f3f3]">
+                  <span className="font-grotesk text-[11px] font-semibold uppercase tracking-[0.08em] text-[#76777c]">
+                    Total
+                  </span>
+                  <span className="font-grotesk text-[14px] font-bold tabular-nums text-[#030813]">
+                    {formatCurrency(
+                      reno.expenses.reduce((s, e) => s + e.amount, 0),
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -467,118 +442,46 @@ interface Props {
 }
 
 export function PropertyHistoryTimeline({ events, summary }: Props) {
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [newestFirst, setNewestFirst] = useState(true);
-
-  const visibleTypes = FILTER_TYPES[filter];
-  const filtered = events.filter((e) => visibleTypes.includes(e.type));
-  const sorted = newestFirst ? filtered : [...filtered].reverse();
+  let lastYear: number | null = null;
 
   return (
-    <div className="space-y-6">
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border bg-card px-4 py-3">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Wrench className="h-3 w-3" />
-            Capital invested
-          </p>
-          <p className="font-semibold mt-1 tabular-nums">
-            {formatCurrency(summary.capitalInvested)}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-card px-4 py-3">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Receipt className="h-3 w-3" />
-            Maintenance spend
-          </p>
-          <p className="font-semibold mt-1 tabular-nums">
-            {formatCurrency(summary.maintenanceSpend)}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-card px-4 py-3">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" />
-            Renovations done
-          </p>
-          <p className="font-semibold mt-1">{summary.renovationsCompleted}</p>
-        </div>
-        <div className="rounded-xl border bg-card px-4 py-3">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <Building2 className="h-3 w-3" />
-            Rental history
-          </p>
-          <p className="font-semibold mt-1">
-            {summary.rentalYears > 0 ? `${summary.rentalYears} yr${summary.rentalYears !== 1 ? "s" : ""}` : "—"}
-          </p>
-        </div>
-      </div>
+    <div>
+      <SummaryBar summary={summary} />
 
-      {/* Controls */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1 flex-wrap">
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setFilter(opt.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === opt.key
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/70"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => setNewestFirst((v) => !v)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        >
-          {newestFirst ? "Newest first" : "Oldest first"} ↕
-        </button>
-      </div>
-
-      {/* Timeline */}
-      {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center gap-2">
-          <p className="font-medium text-muted-foreground">No events found</p>
-          <p className="text-sm text-muted-foreground">Try a different filter</p>
+      {events.length === 0 ? (
+        <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#E2E2E2] rounded-lg py-20 text-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f3f3]">
+            <Wrench className="h-5 w-5 text-[#76777c]" />
+          </div>
+          <p className="font-grotesk font-semibold text-[#76777c]">
+            No renovations recorded yet
+          </p>
+          <p className="font-grotesk text-[14px] text-[#76777c] max-w-xs">
+            Add a renovation to start building your property&apos;s value
+            story.
+          </p>
         </div>
       ) : (
         <div className="relative">
-          {/* Vertical axis line */}
-          <div className="absolute left-[5.5rem] top-3 bottom-3 w-px bg-border hidden sm:block" />
+          <div className="absolute left-[31px] md:left-[47px] top-4 bottom-4 w-px bg-[#76777c]/20" />
+          <div className="space-y-12">
+            {events.map((event, i) => {
+              const year = event.displayDate
+                ? new Date(event.displayDate).getFullYear()
+                : null;
+              const showDivider = year !== null && year !== lastYear;
+              if (year !== null) lastYear = year;
 
-          <div className="space-y-4">
-            {sorted.map((event) => {
-              const config = getEventConfig(event.type);
               return (
-                <div key={event.id} className="flex gap-0 items-start">
-                  {/* Date column — hidden on mobile */}
-                  <div className="hidden sm:flex w-24 justify-end pr-4 pt-2.5 shrink-0">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {shortDate(event.displayDate)}
-                    </span>
-                  </div>
-
-                  {/* Dot on axis */}
-                  <div className="hidden sm:flex flex-col items-center shrink-0 w-4">
-                    <div
-                      className={`mt-2 h-3 w-3 rounded-full border-2 ${config.dot}`}
-                    />
-                  </div>
-
-                  {/* Card */}
-                  <div className="flex-1 sm:ml-4 min-w-0">
-                    {/* Mobile date */}
-                    <p className="sm:hidden text-xs text-muted-foreground mb-1">
-                      {shortDate(event.displayDate)}
-                    </p>
-                    <EventCard event={event} />
-                  </div>
+                <div key={event.id}>
+                  {showDivider && year !== null && (
+                    <YearMarker year={year} />
+                  )}
+                  {event.type === "purchase" ? (
+                    <PurchaseCard event={event} chapterIndex={i + 1} />
+                  ) : (
+                    <RenovationCard event={event} chapterIndex={i + 1} />
+                  )}
                 </div>
               );
             })}

@@ -72,7 +72,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const origin = req.headers.get("origin") ?? "";
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "";
   const inviteUrl = `${origin}/invite/${member.invite_token}`;
 
   const adminSupabase = createAdminClient();
