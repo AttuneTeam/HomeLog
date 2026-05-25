@@ -132,7 +132,10 @@ function InvoiceButton({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  const configs: Record<
+    string,
+    { bg: string; text: string; border: string; label: string }
+  > = {
     completed: {
       bg: "bg-emerald-50",
       text: "text-emerald-800",
@@ -188,7 +191,7 @@ function EventAvatar({
   };
   return (
     <div
-      className={`w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center border-2 border-[#F4F1EA] relative z-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${variants[variant]}`}
+      className={`w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center border-2 border-[#fff] relative z-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${variants[variant]}`}
     >
       <Icon className="w-6 h-6 md:w-8 md:h-8" />
     </div>
@@ -309,8 +312,7 @@ function RenovationCard({
   const reno = event.renovation!;
   const hasExpenses = reno.expenses.length > 0;
   const Icon = iconForRenovation(event.title);
-  const avatarVariant =
-    reno.status === "in_progress" ? "gold" : "default";
+  const avatarVariant = reno.status === "in_progress" ? "gold" : "default";
 
   return (
     <div className="relative flex gap-8 md:gap-12 group">
@@ -457,8 +459,7 @@ export function PropertyHistoryTimeline({ events, summary }: Props) {
             No renovations recorded yet
           </p>
           <p className="font-grotesk text-[14px] text-[#76777c] max-w-xs">
-            Add a renovation to start building your property&apos;s value
-            story.
+            Add a renovation to start building your property&apos;s value story.
           </p>
         </div>
       ) : (
@@ -474,9 +475,7 @@ export function PropertyHistoryTimeline({ events, summary }: Props) {
 
               return (
                 <div key={event.id}>
-                  {showDivider && year !== null && (
-                    <YearMarker year={year} />
-                  )}
+                  {showDivider && year !== null && <YearMarker year={year} />}
                   {event.type === "purchase" ? (
                     <PurchaseCard event={event} chapterIndex={i + 1} />
                   ) : (
