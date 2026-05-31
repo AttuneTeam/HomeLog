@@ -178,6 +178,20 @@ export function ExpenseForm({
         return;
       }
       toast.success("Expense updated");
+      // Upsert contractor from existing form fields (name + ABN at minimum)
+      const supplierName = values.supplier?.trim();
+      if (supplierName) {
+        fetch("/api/contractors/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expenseId: defaultValues!.id!,
+            name: supplierName,
+            abn: values.abn || null,
+            ...contractorExtras.current,
+          }),
+        }).catch(() => {});
+      }
       router.push(
         `/properties/${propertyId}/renovations/${renovationId}/expenses/${defaultValues!.id!}`,
       );

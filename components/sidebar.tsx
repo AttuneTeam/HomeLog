@@ -13,7 +13,6 @@ import { useTheme } from "next-themes";
 const navItems = [
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/financial", label: "Financial Position", icon: TrendingUp },
-  { href: "/contractors", label: "Contractors", icon: HardHat },
   { href: "/settings/account", label: "Account", icon: UserCircle },
   { href: "/settings/xero", label: "Integrations", icon: Plug },
 ];
