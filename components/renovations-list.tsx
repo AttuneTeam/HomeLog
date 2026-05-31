@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -58,106 +58,105 @@ export function RenovationsList({
   const sections = STATUS_ORDER.filter((s) => byStatus[s].length > 0);
 
   return (
-    <div className="space-y-5">
-      {sections.map((status) => (
-        <div key={status}>
-          <div className="flex items-center gap-2 px-1 pb-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {STATUS_LABELS[status]}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              ({byStatus[status].length})
-            </span>
-          </div>
-          {(() => {
-            const sectionTotal = byStatus[status].reduce(
-              (s, r) =>
-                s + (r.expenses?.reduce((a, e) => a + Number(e.amount), 0) ?? 0),
-              0,
-            );
-            return (
-          <>
-          <div className="divide-y">
-            {byStatus[status].map((renovation) => {
-              const total =
-                renovation.expenses?.reduce(
-                  (s, e) => s + Number(e.amount),
-                  0,
-                ) ?? 0;
-              const hasExpenses = (renovation.expenses?.length ?? 0) > 0;
-              const isExpanded = expanded.has(renovation.id);
-
-              return (
-                <div key={renovation.id}>
-                  <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-2 items-center px-1 py-1.5 hover:bg-muted/30 rounded transition-colors">
-                    <button
-                      type="button"
-                      onClick={() => hasExpenses && toggle(renovation.id)}
-                      className={`flex items-center justify-center w-5 h-5 text-muted-foreground ${hasExpenses ? "hover:text-foreground cursor-pointer" : "opacity-20 cursor-default"}`}
-                      aria-label={isExpanded ? "Collapse" : "Expand"}
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                    <Link
-                      href={`/properties/${propertyId}/renovations/${renovation.id}`}
-                      className="text-sm font-medium hover:underline truncate"
-                    >
-                      {renovation.name}
-                    </Link>
-                    <span className="text-sm font-medium tabular-nums whitespace-nowrap pl-6">
-                      {formatCurrency(total)}
-                    </span>
-                  </div>
-
-                  {isExpanded && hasExpenses && (
-                    <div className="divide-y bg-muted/20 rounded-b ml-6 mb-1">
-                      {renovation.expenses!.map((expense) => (
-                        <div
-                          key={expense.id}
-                          className="grid grid-cols-[1fr_auto] gap-x-4 items-center px-3 py-1.5"
+    <table className="w-full text-sm">
+      <tbody>
+        {sections.map((status) => {
+          const sectionTotal = byStatus[status].reduce(
+            (s, r) =>
+              s + (r.expenses?.reduce((a, e) => a + Number(e.amount), 0) ?? 0),
+            0,
+          );
+          return (
+            <Fragment key={status}>
+              <tr>
+                <td colSpan={3} className="px-1 pt-5 pb-2 first:pt-0">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {STATUS_LABELS[status]} ({byStatus[status].length})
+                  </span>
+                </td>
+              </tr>
+              {byStatus[status].map((renovation) => {
+                const total =
+                  renovation.expenses?.reduce(
+                    (s, e) => s + Number(e.amount),
+                    0,
+                  ) ?? 0;
+                const hasExpenses = (renovation.expenses?.length ?? 0) > 0;
+                const isExpanded = expanded.has(renovation.id);
+                return (
+                  <Fragment key={renovation.id}>
+                    <tr className="border-t hover:bg-muted/30 transition-colors">
+                      <td className="px-1 py-1.5 w-7">
+                        <button
+                          type="button"
+                          onClick={() => hasExpenses && toggle(renovation.id)}
+                          className={`flex items-center justify-center w-5 h-5 text-muted-foreground ${hasExpenses ? "hover:text-foreground cursor-pointer" : "opacity-20 cursor-default"}`}
+                          aria-label={isExpanded ? "Collapse" : "Expand"}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm text-muted-foreground truncate">
-                              {expense.description ?? "Expense"}
-                            </span>
-                            {expense.supplier && (
-                              <span className="text-xs text-muted-foreground/70 truncate hidden sm:block">
-                                {expense.supplier}
+                          {isExpanded ? (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-1 py-1.5">
+                        <Link
+                          href={`/properties/${propertyId}/renovations/${renovation.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {renovation.name}
+                        </Link>
+                      </td>
+                      <td className="px-1 py-1.5 text-right font-medium tabular-nums whitespace-nowrap">
+                        {formatCurrency(total)}
+                      </td>
+                    </tr>
+                    {isExpanded &&
+                      hasExpenses &&
+                      renovation.expenses!.map((expense) => (
+                        <tr key={expense.id} className="border-t bg-muted/20">
+                          <td className="py-1" />
+                          <td className="px-1 py-1 pl-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                {expense.description ?? "Expense"}
                               </span>
-                            )}
-                            {expense.manual_classification && (
-                              <ClassificationBadge
-                                classification={expense.manual_classification}
-                              />
-                            )}
-                          </div>
-                          <span className="text-sm tabular-nums text-muted-foreground whitespace-nowrap">
+                              {expense.supplier && (
+                                <span className="text-xs text-muted-foreground/70 hidden sm:block">
+                                  {expense.supplier}
+                                </span>
+                              )}
+                              {expense.manual_classification && (
+                                <ClassificationBadge
+                                  classification={expense.manual_classification}
+                                />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-1 py-1 text-right tabular-nums text-muted-foreground whitespace-nowrap">
                             {formatCurrency(Number(expense.amount))}
-                          </span>
-                        </div>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {sectionTotal > 0 && (
-            <div className="flex justify-between items-center px-1 pt-2 mt-1 border-t text-sm font-semibold">
-              <span>Total spent</span>
-              <span className="tabular-nums">{formatCurrency(sectionTotal)}</span>
-            </div>
-          )}
-          </>
-            );
-          })()}
-        </div>
-      ))}
-    </div>
+                  </Fragment>
+                );
+              })}
+              {sectionTotal > 0 && (
+                <tr className="border-t">
+                  <td colSpan={2} className="px-1 py-1.5">
+                    <span className="text-muted-foreground">Total</span>
+                  </td>
+                  <td className="px-1 py-1.5 text-right font-semibold tabular-nums">
+                    {formatCurrency(sectionTotal)}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 

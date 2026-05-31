@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Trash2, Pencil, Check, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Pencil,
+  Check,
+  AlertTriangle,
+  Landmark,
+  Banknote,
+  Wallet,
+  Percent,
+} from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   addLoanInterestRate,
@@ -12,6 +22,7 @@ import { saveOffsetAccounts } from "@/app/actions/property-offset-accounts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export interface LoanInterestRate {
   id: string;
@@ -170,15 +181,20 @@ export function LoanInterestRatesSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Loan Details</h2>
+      <div className="flex items-center gap-2.5 mb-3">
+        <Landmark className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Loan</h2>
       </div>
+      <Separator className="mb-6" />
 
       {/* Loan details */}
-      <div className="rounded-lg border p-4 mb-4 bg-muted/20">
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="h-4 w-4 text-muted-foreground" />
+        <h3 className="text-base font-semibold">Loan details</h3>
+      </div>
+      <div className="rounded-lg border p-4 mb-6 bg-muted/20">
         {editingLoan ? (
           <div className="space-y-3">
-            <p className="text-sm font-medium">Loan details</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Amount borrowed</Label>
@@ -267,19 +283,21 @@ export function LoanInterestRatesSection({
       </div>
 
       {/* Offset accounts */}
-      <div className="rounded-lg border p-4 mb-4 bg-muted/20 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Offset accounts</p>
-          {totalOffset > 0 && loanAmountNum > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              Effective balance:{" "}
-              <span className="font-medium text-foreground">
-                {formatCurrency(Math.max(0, loanAmountNum - totalOffset))}
-              </span>
-            </span>
-          )}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-base font-semibold">Offset accounts</h3>
         </div>
-
+        {totalOffset > 0 && loanAmountNum > 0 && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            Effective balance:{" "}
+            <span className="font-medium text-foreground">
+              {formatCurrency(Math.max(0, loanAmountNum - totalOffset))}
+            </span>
+          </span>
+        )}
+      </div>
+      <div className="rounded-lg border p-4 mb-6 bg-muted/20 space-y-3">
         {offsetRows.length === 0 && (
           <p className="text-xs text-muted-foreground">
             No offset accounts added. Add each account below.
@@ -291,7 +309,9 @@ export function LoanInterestRatesSection({
             <Input
               placeholder="e.g. Westpac offset, Joint savings"
               value={row.label}
-              onChange={(e) => updateOffsetRow(row.key, "label", e.target.value)}
+              onChange={(e) =>
+                updateOffsetRow(row.key, "label", e.target.value)
+              }
               className="flex-1 h-8 text-sm"
             />
             <div className="relative w-36 shrink-0">
@@ -320,12 +340,14 @@ export function LoanInterestRatesSection({
           </div>
         ))}
 
-        {totalOffset > 0 && loanAmountNum > 0 && totalOffset >= loanAmountNum && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-            <AlertTriangle className="h-3 w-3 shrink-0" />
-            Offset balance meets or exceeds loan — no interest accrues
-          </div>
-        )}
+        {totalOffset > 0 &&
+          loanAmountNum > 0 &&
+          totalOffset >= loanAmountNum && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              Offset balance meets or exceeds loan — no interest accrues
+            </div>
+          )}
 
         <div className="flex items-center justify-between gap-4 pt-1">
           <Button
@@ -340,7 +362,9 @@ export function LoanInterestRatesSection({
           <div className="flex items-center gap-4">
             {totalOffset > 0 && (
               <span className="text-sm">
-                <span className="text-muted-foreground mr-1.5">Total offset</span>
+                <span className="text-muted-foreground mr-1.5">
+                  Total offset
+                </span>
                 <span className="font-semibold tabular-nums">
                   {formatCurrency(totalOffset)}
                 </span>
@@ -367,11 +391,12 @@ export function LoanInterestRatesSection({
         </div>
       </div>
 
-      {/* Rate history */}
+      {/* Interest rates */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          Rate history
-        </h3>
+        <div className="flex items-center gap-2">
+          <Percent className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-base font-semibold">Interest rates</h3>
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -390,48 +415,50 @@ export function LoanInterestRatesSection({
       )}
 
       {sorted.length > 0 && (
-        <div>
-          <div className="grid grid-cols-[1fr_1fr_2fr_auto] gap-x-8 px-1 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            <span>Rate (p.a.)</span>
-            <span>Effective from</span>
-            <span>Notes</span>
-            <span />
-          </div>
-          <div className="divide-y">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Rate (p.a.)</th>
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground whitespace-nowrap">Effective from</th>
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground w-full">Notes</th>
+              <th className="w-0" />
+            </tr>
+          </thead>
+          <tbody className="divide-y">
             {sorted.map((r, i) => {
               const isCurrent = i === sorted.length - 1;
               return (
-                <div
-                  key={r.id}
-                  className="grid grid-cols-[1fr_1fr_2fr_auto] gap-x-8 items-center px-1 py-1"
-                >
-                  <span className="text-sm font-medium tabular-nums">
+                <tr key={r.id}>
+                  <td className="px-1 py-1.5 font-medium tabular-nums whitespace-nowrap">
                     {r.rate.toFixed(2)}%
                     {isCurrent && (
                       <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                         current
                       </span>
                     )}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
+                  </td>
+                  <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
                     {formatDate(r.effective_date)}
-                  </span>
-                  <span className="text-sm text-muted-foreground truncate">
+                  </td>
+                  <td className="px-1 py-1.5 text-muted-foreground">
                     {r.notes ?? "—"}
-                  </span>
-                  <Button
-                    variant="destructive"
-                    size="icon-sm"
-                    onClick={() => handleDeleteRate(r.id)}
-                    disabled={ratePending}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                  </td>
+                  <td className="px-1 py-1.5 text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDeleteRate(r.id)}
+                      disabled={ratePending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
               );
             })}
-          </div>
-        </div>
+          </tbody>
+        </table>
       )}
 
       {showRateForm && (

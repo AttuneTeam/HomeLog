@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,7 +39,6 @@ import {
   FileText,
   Loader2,
   Sparkles,
-  ExternalLink,
 } from "lucide-react";
 
 const CATEGORIES: { value: RentalExpenseCategory; label: string }[] = [
@@ -308,9 +307,12 @@ export function RentalExpensesSection({
   }
 
   return (
-    <div className="mb-8 mt-8">
+    <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Rental Operating Expenses</h2>
+        <div className="flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-base font-semibold">Operating expenses</h3>
+        </div>
         <Button size="sm" onClick={openAdd} variant="outline">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           Add expense
@@ -330,62 +332,90 @@ export function RentalExpensesSection({
         </div>
       ) : (
         <div>
-          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-6 px-1 pb-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Expense
-            </span>
-          </div>
-          <div className="divide-y">
-            {sorted.map((expense) => (
-              <div
-                key={expense.id}
-                className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-6 items-center px-1 py-1.5"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm truncate">
-                    {expense.supplier
-                      ? expense.supplier
-                      : categoryLabel(expense.category)}
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {categoryLabel(expense.category)}
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  {formatDate(expense.expense_date)}
-                </span>
-                <span className="text-sm tabular-nums text-right whitespace-nowrap">
-                  {formatCurrency(expense.amount)}
-                </span>
-                <div className="flex gap-1 justify-end">
-                  {expense.invoice_path && (
-                    <InvoiceLink invoicePath={expense.invoice_path} />
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => openEdit(expense)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon-sm"
-                    disabled={deletingId === expense.id}
-                    onClick={() => setConfirmDeleteId(expense.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between items-center px-1 pt-2 mt-1 border-t text-sm">
-            <span className="text-muted-foreground">
-              {expenses.length} expense{expenses.length !== 1 ? "s" : ""}
-            </span>
-            <span className="font-semibold">{formatCurrency(total)}</span>
-          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Expense
+                </th>
+                <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                  Date
+                </th>
+                <th className="px-1 pb-2 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                  Amount
+                </th>
+                <th className="w-0" />
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {sorted.map((expense) => (
+                <tr key={expense.id}>
+                  <td className="px-1 py-1.5">
+                    {expense.invoice_path ? (
+                      <InvoiceLink invoicePath={expense.invoice_path}>
+                        <span className="group-hover:underline">
+                          {expense.supplier ?? categoryLabel(expense.category)}
+                        </span>
+                        {expense.supplier && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {categoryLabel(expense.category)}
+                          </span>
+                        )}
+                      </InvoiceLink>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {expense.supplier ?? categoryLabel(expense.category)}
+                        </span>
+                        {expense.supplier && (
+                          <span className="text-xs text-muted-foreground">
+                            {categoryLabel(expense.category)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
+                    {formatDate(expense.expense_date)}
+                  </td>
+                  <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap">
+                    {formatCurrency(expense.amount)}
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <div className="flex gap-1 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted-foreground"
+                        onClick={() => openEdit(expense)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted-foreground hover:text-destructive"
+                        disabled={deletingId === expense.id}
+                        onClick={() => setConfirmDeleteId(expense.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td>
+                  <span className="text-muted-foreground">Total</span>
+                </td>
+                <td></td>
+                <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap">
+                  <span className="font-semibold">{formatCurrency(total)}</span>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -652,7 +682,13 @@ export function RentalExpensesSection({
   );
 }
 
-function InvoiceLink({ invoicePath }: { invoicePath: string }) {
+function InvoiceLink({
+  invoicePath,
+  children,
+}: {
+  invoicePath: string;
+  children: ReactNode;
+}) {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -674,18 +710,16 @@ function InvoiceLink({ invoicePath }: { invoicePath: string }) {
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
+    <button
+      type="button"
       onClick={open}
       disabled={loading}
-      title="View bill"
+      className="group flex items-center gap-2 min-w-0 text-left"
     >
-      {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <ExternalLink className="h-4 w-4" />
+      {loading && (
+        <Loader2 className="h-3 w-3 animate-spin shrink-0 text-muted-foreground" />
       )}
-    </Button>
+      {children}
+    </button>
   );
 }

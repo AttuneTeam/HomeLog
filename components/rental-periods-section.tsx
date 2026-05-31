@@ -236,9 +236,12 @@ export function RentalPeriodsSection({
   const timeline = buildTimeline(periods);
 
   return (
-    <div className="mb-8 mt-8">
+    <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Rental Periods</h2>
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-base font-semibold">Rental periods</h3>
+        </div>
         <Button size="sm" onClick={openAdd} variant="outline">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           Add period
@@ -397,6 +400,7 @@ export function RentalPeriodsSection({
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-muted-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
                           openEdit(period);
@@ -408,7 +412,7 @@ export function RentalPeriodsSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
+                        className="text-muted-foreground hover:text-destructive"
                         disabled={deletingId === period.id}
                         onClick={(e) => {
                           e.stopPropagation();
