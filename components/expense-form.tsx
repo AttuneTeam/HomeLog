@@ -21,6 +21,13 @@ const schema = z.object({
   description: z.string().optional(),
   supplier: z.string().optional(),
   abn: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+  website: z.string().optional(),
+  address: z.string().optional(),
+  suburb: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.string().optional(),
   context_notes: z.string().optional(),
 });
 
@@ -36,6 +43,13 @@ interface ExpenseFormProps {
     abn?: string | null;
     gst_amount?: number | null;
     context_notes?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    address?: string | null;
+    suburb?: string | null;
+    state?: string | null;
+    postcode?: string | null;
   };
 }
 
@@ -55,16 +69,6 @@ export function ExpenseForm({
   const [aiPrefilled, setAiPrefilled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = !!defaultValues?.id;
-  // Contractor contact fields extracted from invoice — passed to contractor upsert
-  const contractorExtras = useRef<{
-    phone?: string | null;
-    email?: string | null;
-    website?: string | null;
-    address?: string | null;
-    suburb?: string | null;
-    state?: string | null;
-    postcode?: string | null;
-  }>({});
 
   const {
     register,
@@ -84,6 +88,13 @@ export function ExpenseForm({
       description: defaultValues?.description ?? "",
       supplier: defaultValues?.supplier ?? "",
       abn: defaultValues?.abn ?? "",
+      phone: defaultValues?.phone ?? "",
+      email: defaultValues?.email ?? "",
+      website: defaultValues?.website ?? "",
+      address: defaultValues?.address ?? "",
+      suburb: defaultValues?.suburb ?? "",
+      state: defaultValues?.state ?? "",
+      postcode: defaultValues?.postcode ?? "",
       context_notes: defaultValues?.context_notes ?? "",
     },
   });
@@ -124,16 +135,13 @@ export function ExpenseForm({
       if (data.description) setValue("description", data.description);
       if (data.supplier) setValue("supplier", data.supplier);
       if (data.abn) setValue("abn", data.abn);
-      // Store contractor contact details for post-save upsert
-      contractorExtras.current = {
-        phone: data.contractor_phone ?? null,
-        email: data.contractor_email ?? null,
-        website: data.contractor_website ?? null,
-        address: data.contractor_address ?? null,
-        suburb: data.contractor_suburb ?? null,
-        state: data.contractor_state ?? null,
-        postcode: data.contractor_postcode ?? null,
-      };
+      if (data.contractor_phone) setValue("phone", data.contractor_phone);
+      if (data.contractor_email) setValue("email", data.contractor_email);
+      if (data.contractor_website) setValue("website", data.contractor_website);
+      if (data.contractor_address) setValue("address", data.contractor_address);
+      if (data.contractor_suburb) setValue("suburb", data.contractor_suburb);
+      if (data.contractor_state) setValue("state", data.contractor_state);
+      if (data.contractor_postcode) setValue("postcode", data.contractor_postcode);
       setAiPrefilled(true);
     } catch {
       // silent — user can fill in manually
@@ -188,7 +196,13 @@ export function ExpenseForm({
             expenseId: defaultValues!.id!,
             name: supplierName,
             abn: values.abn || null,
-            ...contractorExtras.current,
+            phone: values.phone || null,
+            email: values.email || null,
+            website: values.website || null,
+            address: values.address || null,
+            suburb: values.suburb || null,
+            state: values.state || null,
+            postcode: values.postcode || null,
           }),
         }).catch(() => {});
       }
@@ -220,7 +234,13 @@ export function ExpenseForm({
             expenseId: newExpense.id,
             name: supplierName,
             abn: values.abn || null,
-            ...contractorExtras.current,
+            phone: values.phone || null,
+            email: values.email || null,
+            website: values.website || null,
+            address: values.address || null,
+            suburb: values.suburb || null,
+            state: values.state || null,
+            postcode: values.postcode || null,
           }),
         }).catch(() => {});
       }
@@ -374,6 +394,73 @@ export function ExpenseForm({
                 id="abn"
                 placeholder="12 345 678 901"
                 {...register("abn")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="0400 000 000"
+                {...register("phone")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="contact@example.com"
+                {...register("email")}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              type="url"
+              placeholder="https://example.com"
+              {...register("website")}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="address">Street address</Label>
+            <Input
+              id="address"
+              placeholder="123 Main St"
+              {...register("address")}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5 col-span-1">
+              <Label htmlFor="suburb">Suburb</Label>
+              <Input
+                id="suburb"
+                placeholder="Sydney"
+                {...register("suburb")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                placeholder="NSW"
+                {...register("state")}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="postcode">Postcode</Label>
+              <Input
+                id="postcode"
+                placeholder="2000"
+                {...register("postcode")}
               />
             </div>
           </div>
