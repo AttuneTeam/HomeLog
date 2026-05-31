@@ -1,3 +1,41 @@
+export type Contractor = {
+  id: string;
+  user_id: string;
+  name: string;
+  abn: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  trade_category: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RenovationSummary = {
+  id: string;
+  renovation_id: string;
+  summary_text: string;
+  generated_at: string;
+  model_used: string | null;
+  is_edited: boolean;
+  updated_at: string;
+};
+
+export type ExpenseValueSummary = {
+  id: string;
+  expense_id: string;
+  summary_text: string;
+  generated_at: string;
+  model_used: string | null;
+  is_edited: boolean;
+  updated_at: string;
+};
+
 export type Classification =
   | "repair"
   | "capital_improvement"
@@ -399,6 +437,7 @@ export interface Database {
           raw_text: string | null;
           abn: string | null;
           gst_amount: number | null;
+          contractor_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -416,6 +455,7 @@ export interface Database {
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
+          contractor_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -431,6 +471,7 @@ export interface Database {
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
+          contractor_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -439,6 +480,13 @@ export interface Database {
             columns: ["renovation_id"];
             isOneToOne: false;
             referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "expenses_contractor_id_fkey";
+            columns: ["contractor_id"];
+            isOneToOne: false;
+            referencedRelation: "contractors";
             referencedColumns: ["id"];
           },
         ];
@@ -593,6 +641,7 @@ export interface Database {
           total_cost: number | null;
           contractor: string | null;
           file_path: string | null;
+          contractor_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -603,6 +652,7 @@ export interface Database {
           total_cost?: number | null;
           contractor?: string | null;
           file_path?: string | null;
+          contractor_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -611,6 +661,7 @@ export interface Database {
           total_cost?: number | null;
           contractor?: string | null;
           file_path?: string | null;
+          contractor_id?: string | null;
         };
         Relationships: [
           {
@@ -1134,6 +1185,93 @@ export interface Database {
             columns: ["property_id"];
             isOneToOne: false;
             referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contractors: {
+        Row: Contractor;
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          abn?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          website?: string | null;
+          address?: string | null;
+          suburb?: string | null;
+          state?: string | null;
+          postcode?: string | null;
+          trade_category?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          abn?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          website?: string | null;
+          address?: string | null;
+          suburb?: string | null;
+          state?: string | null;
+          postcode?: string | null;
+          trade_category?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      renovation_summaries: {
+        Row: RenovationSummary;
+        Insert: {
+          id?: string;
+          renovation_id: string;
+          summary_text: string;
+          generated_at?: string;
+          model_used?: string | null;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          summary_text?: string;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "renovation_summaries_renovation_id_fkey";
+            columns: ["renovation_id"];
+            isOneToOne: true;
+            referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      expense_value_summaries: {
+        Row: ExpenseValueSummary;
+        Insert: {
+          id?: string;
+          expense_id: string;
+          summary_text: string;
+          generated_at?: string;
+          model_used?: string | null;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          summary_text?: string;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expense_value_summaries_expense_id_fkey";
+            columns: ["expense_id"];
+            isOneToOne: true;
+            referencedRelation: "expenses";
             referencedColumns: ["id"];
           },
         ];

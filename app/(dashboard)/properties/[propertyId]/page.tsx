@@ -14,6 +14,9 @@ import {
   Wrench,
   FileBarChart,
   History,
+  StickyNote,
+  Home,
+  HardHat,
 } from "lucide-react";
 import { DeletePropertyButton } from "@/components/delete-property-button";
 import { PropertySharePanel } from "@/components/property-share-panel";
@@ -91,7 +94,46 @@ export default async function PropertyDetailPage({ params }: Props) {
       .order("created_at", { ascending: true }),
   ]);
 
+  // Fetch contractor data for this property's renovations
+  const renovationIds = (renovations ?? []).map((r) => r.id);
+  const { data: propertyExpensesWithContractors } =
+    renovationIds.length > 0
+      ? await supabase
+          .from("expenses")
+          .select("amount, contractor_id, contractors(id, name, abn, suburb, state, trade_category)")
+          .in("renovation_id", renovationIds)
+          .not("contractor_id", "is", null)
+      : { data: null };
+
   const totalSpend = calcTotalSpend(renovations ?? []);
+
+  // Aggregate per-property contractors: deduplicate by contractor id
+  type ContractorSummary = {
+    id: string;
+    name: string;
+    abn: string | null;
+    suburb: string | null;
+    state: string | null;
+    trade_category: string | null;
+    total: number;
+  };
+  type ExpenseWithContractor = {
+    amount: number;
+    contractor_id: string | null;
+    contractors: Omit<ContractorSummary, "total"> | null;
+  };
+  const contractorMap = new Map<string, ContractorSummary>();
+  for (const row of (propertyExpensesWithContractors ?? []) as ExpenseWithContractor[]) {
+    const c = row.contractors;
+    if (!c) continue;
+    if (!contractorMap.has(c.id)) {
+      contractorMap.set(c.id, { ...c, total: 0 });
+    }
+    contractorMap.get(c.id)!.total += Number(row.amount);
+  }
+  const propertyContractors = Array.from(contractorMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   const capitalTotal =
     renovations?.reduce((sum, r) => {
@@ -143,7 +185,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             </span>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <ButtonLink
             href={`/properties/${propertyId}/history`}
             variant="outline"
@@ -162,6 +204,7 @@ export default async function PropertyDetailPage({ params }: Props) {
           </ButtonLink>
           {property.user_id === user.id && (
             <>
+              <Separator orientation="vertical" className="h-6" />
               <PropertySharePanel propertyId={propertyId} />
               <ButtonLink
                 href={`/properties/${propertyId}/edit`}
@@ -178,7 +221,7 @@ export default async function PropertyDetailPage({ params }: Props) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-20">
         <Card>
           <CardContent>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -216,64 +259,70 @@ export default async function PropertyDetailPage({ params }: Props) {
             <p className="font-semibold mt-1">
               {formatCurrency(adjustedCostBase)}
             </p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              purchase + stamp duty + capital works
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-12">
-        {/* Files */}
-        <PropertyFilesSection
-          propertyId={propertyId}
-          userId={user.id}
-          initialFiles={propertyFiles ?? []}
-        />
-
-        {/* Loan Interest Rate History */}
+      <div className="space-y-20">
+        {/* Financing */}
         {property.property_type !== "primary_residence" && (
-          <>
-            <LoanInterestRatesSection
-              propertyId={propertyId}
-              initialRates={(loanRates ?? []).map((r) => ({
-                id: r.id,
-                property_id: r.property_id,
-                rate: Number(r.rate),
-                effective_date: r.effective_date,
-                notes: r.notes,
-              }))}
-              initialLoan={
-                propertyLoan
-                  ? {
-                      loan_amount: Number(propertyLoan.loan_amount),
-                      loan_term_years: propertyLoan.loan_term_years,
-                    }
-                  : null
-              }
-              initialOffsets={(offsetAccounts ?? []).map((o) => ({
-                id: o.id,
-                label: o.label,
-                balance: Number(o.balance),
-              }))}
-            />
-          </>
+          <LoanInterestRatesSection
+            propertyId={propertyId}
+            initialRates={(loanRates ?? []).map((r) => ({
+              id: r.id,
+              property_id: r.property_id,
+              rate: Number(r.rate),
+              effective_date: r.effective_date,
+              notes: r.notes,
+            }))}
+            initialLoan={
+              propertyLoan
+                ? {
+                    loan_amount: Number(propertyLoan.loan_amount),
+                    loan_term_years: propertyLoan.loan_term_years,
+                  }
+                : null
+            }
+            initialOffsets={(offsetAccounts ?? []).map((o) => ({
+              id: o.id,
+              label: o.label,
+              balance: Number(o.balance),
+            }))}
+          />
         )}
 
-        {/* Rental Periods */}
-        <RentalPeriodsSection
-          propertyId={propertyId}
-          initialPeriods={rentalPeriods ?? []}
-        />
+        {/* Rent */}
+        {property.property_type !== "primary_residence" && (
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <Home className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Rent</h2>
+            </div>
+            <Separator className="mb-6" />
+            <div className="space-y-8">
+              <RentalPeriodsSection
+                propertyId={propertyId}
+                initialPeriods={rentalPeriods ?? []}
+              />
+              <RentalExpensesSection
+                propertyId={propertyId}
+                userId={user.id}
+                initialExpenses={rentalExpenses ?? []}
+              />
+            </div>
+          </div>
+        )}
 
-        {/* Rental Operating Expenses */}
-        <RentalExpensesSection
-          propertyId={propertyId}
-          userId={user.id}
-          initialExpenses={rentalExpenses ?? []}
-        />
-
-        {/* Renovations */}
+        {/* Renovations & Capital Works */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Renovations</h2>
+            <div className="flex items-center gap-2.5">
+              <Wrench className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">Renovations</h2>
+            </div>
             <ButtonLink
               href={`/properties/${propertyId}/renovations/new`}
               size="sm"
@@ -283,6 +332,7 @@ export default async function PropertyDetailPage({ params }: Props) {
               Add renovation
             </ButtonLink>
           </div>
+          <Separator className="mb-6" />
 
           {!renovations || renovations.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
@@ -310,14 +360,80 @@ export default async function PropertyDetailPage({ params }: Props) {
           )}
         </div>
 
-        {property.notes && (
+        {/* Contractors */}
+        {propertyContractors.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium mb-1.5">Notes</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {property.notes}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <HardHat className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-xl font-semibold">Contractors</h2>
+              </div>
+              <Link
+                href="/contractors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View all →
+              </Link>
+            </div>
+            <Separator className="mb-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {propertyContractors.map((c) => (
+                <div
+                  key={c.id}
+                  className="rounded-xl border border-[#E2E2E2] bg-white p-4 space-y-1"
+                >
+                  <p className="font-grotesk text-[14px] font-semibold text-[#030813]">
+                    {c.name}
+                  </p>
+                  {c.trade_category && (
+                    <p className="font-grotesk text-[12px] text-[#76777c]">
+                      {c.trade_category}
+                    </p>
+                  )}
+                  {(c.suburb || c.state) && (
+                    <p className="font-grotesk text-[12px] text-[#76777c]">
+                      {[c.suburb, c.state].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                  {c.abn && (
+                    <p className="font-grotesk text-[11px] text-[#76777c]">
+                      ABN {c.abn}
+                    </p>
+                  )}
+                  <p className="font-grotesk text-[13px] font-medium text-[#030813] pt-1">
+                    {formatCurrency(c.total)}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Documents & Notes */}
+        <div className="space-y-8">
+          <PropertyFilesSection
+            propertyId={propertyId}
+            userId={user.id}
+            initialFiles={propertyFiles ?? []}
+          />
+
+          {property.notes && (
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <StickyNote className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Notes</h2>
+              </div>
+              <Separator className="mb-6" />
+              <Card>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {property.notes}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

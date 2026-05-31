@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug } from "lucide-react";
+import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, HardHat } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,7 @@ import { useTheme } from "next-themes";
 const navItems = [
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/financial", label: "Financial Position", icon: TrendingUp },
+  { href: "/contractors", label: "Contractors", icon: HardHat },
   { href: "/settings/account", label: "Account", icon: UserCircle },
   { href: "/settings/xero", label: "Integrations", icon: Plug },
 ];

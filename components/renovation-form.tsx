@@ -61,6 +61,10 @@ export function RenovationForm({ propertyId, defaultValues }: RenovationFormProp
       const { error } = await supabase.from("renovations").update(payload).eq("id", defaultValues!.id!)
       if (error) { toast.error(error.message); setLoading(false); return }
       toast.success("Renovation updated")
+      // Auto-generate renovation summary when status transitions to completed
+      if (values.status === "completed" && defaultValues?.status !== "completed") {
+        fetch(`/api/renovation-summary/${defaultValues!.id}`, { method: "POST" }).catch(() => {})
+      }
       router.push(`/properties/${propertyId}/renovations/${defaultValues!.id}`)
     } else {
       const { data, error } = await supabase.from("renovations").insert({ ...payload, property_id: propertyId, classification: "repair" }).select().single()

@@ -42,7 +42,7 @@ export default async function PropertyStoryPage({ params }: Props) {
     supabase
       .from("renovations")
       .select(
-        "*, expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification)",
+        "*, renovation_summaries(summary_text), expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification, expense_value_summaries(summary_text))",
       )
       .eq("property_id", propertyId)
       .order("start_date", { ascending: false }),
@@ -80,6 +80,7 @@ export default async function PropertyStoryPage({ params }: Props) {
         invoice_path: string | null;
         expense_date: string;
         manual_classification: string | null;
+        expense_value_summaries: { summary_text: string } | null;
       }) => ({
         id: e.id,
         description: e.description,
@@ -90,6 +91,7 @@ export default async function PropertyStoryPage({ params }: Props) {
         invoicePath: e.invoice_path,
         expenseDate: e.expense_date,
         manualClassification: e.manual_classification,
+        valueSummary: e.expense_value_summaries?.summary_text ?? null,
       }),
     );
     const earliestExpenseDate =
@@ -120,6 +122,7 @@ export default async function PropertyStoryPage({ params }: Props) {
         endDate: r.end_date,
         status: r.status,
         notes: r.notes,
+        valueSummary: (r.renovation_summaries as { summary_text: string } | null)?.summary_text ?? null,
         expenses,
       },
     });

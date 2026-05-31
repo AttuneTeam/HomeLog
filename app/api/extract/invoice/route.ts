@@ -12,6 +12,13 @@ const invoiceFieldsSchema = z.object({
   description: z.string().nullable().describe("Brief description of what was purchased or the work performed"),
   supplier: z.string().nullable().describe("Supplier or contractor business name"),
   abn: z.string().nullable().describe("Supplier ABN, digits only with spaces removed"),
+  contractor_phone: z.string().nullable().describe("Supplier phone number as printed on the invoice"),
+  contractor_email: z.string().nullable().describe("Supplier email address as printed on the invoice"),
+  contractor_website: z.string().nullable().describe("Supplier website URL as printed on the invoice"),
+  contractor_address: z.string().nullable().describe("Supplier street address as printed on the invoice header"),
+  contractor_suburb: z.string().nullable().describe("Suburb of the supplier address"),
+  contractor_state: z.string().nullable().describe("State abbreviation of the supplier address (e.g. NSW, VIC)"),
+  contractor_postcode: z.string().nullable().describe("Postcode of the supplier address"),
 });
 
 export async function POST(req: NextRequest) {
