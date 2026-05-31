@@ -25,6 +25,7 @@ import type {
   TaxReportData,
 } from "@/components/tax-report-pdf";
 import { TaxReportDocument } from "@/components/tax-report-pdf";
+import { XeroExportButton } from "@/components/xero-export-button";
 
 export type { TaxExpense, TaxRentalExpense, TaxReportData };
 
@@ -304,7 +305,23 @@ function ExpenseTable({ expenses }: { expenses: TaxExpense[] }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function TaxReport({ data }: { data: TaxReportData }) {
+interface XeroConnection {
+  tenantId: string;
+  tenantName: string | null;
+  propertyAddress: string;
+  fyStart: string;
+  fyEnd: string;
+  financialYear: string;
+  propertyId: string;
+}
+
+export function TaxReport({
+  data,
+  xeroConnection,
+}: {
+  data: TaxReportData;
+  xeroConnection?: XeroConnection;
+}) {
   const {
     property,
     roiInputs,
@@ -532,32 +549,45 @@ export function TaxReport({ data }: { data: TaxReportData }) {
             Generated {generatedAt}
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button disabled={downloading || xlsxDownloading} />}
-          >
-            <Download className="h-4 w-4 mr-1.5" />
-            {downloading
-              ? "Generating PDF…"
-              : xlsxDownloading
-                ? "Generating…"
-                : "Download"}
-            <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={handleExcelDownload}
-              disabled={xlsxDownloading}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button variant="outline" disabled={downloading || xlsxDownloading} />}
             >
-              <Sheet className="h-4 w-4" />
-              Excel
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDownload} disabled={downloading}>
-              <FileText className="h-4 w-4" />
-              PDF
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <Download className="h-4 w-4 mr-1.5" />
+              {downloading
+                ? "Generating PDF…"
+                : xlsxDownloading
+                  ? "Generating…"
+                  : "Download"}
+              <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleExcelDownload}
+                disabled={xlsxDownloading}
+              >
+                <Sheet className="h-4 w-4" />
+                Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownload} disabled={downloading}>
+                <FileText className="h-4 w-4" />
+                PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {xeroConnection && (
+            <XeroExportButton
+              tenantId={xeroConnection.tenantId}
+              tenantName={xeroConnection.tenantName}
+              propertyId={xeroConnection.propertyId}
+              propertyAddress={xeroConnection.propertyAddress}
+              fyStart={xeroConnection.fyStart}
+              fyEnd={xeroConnection.fyEnd}
+              financialYear={xeroConnection.financialYear}
+            />
+          )}
+        </div>
       </div>
 
       {/* Disclaimer */}

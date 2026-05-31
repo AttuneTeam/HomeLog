@@ -1057,6 +1057,87 @@ export interface Database {
           },
         ];
       };
+      xero_connections: {
+        Row: XeroConnection;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          tenant_name?: string | null;
+          access_token: string;
+          refresh_token: string;
+          token_expires_at: string;
+          scopes?: string[];
+          connected_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          tenant_name?: string | null;
+          access_token?: string;
+          refresh_token?: string;
+          token_expires_at?: string;
+          scopes?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      xero_account_mappings: {
+        Row: XeroAccountMapping;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          home_base_category: string;
+          xero_account_code: string;
+          xero_account_name?: string | null;
+          xero_tracking_category_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          xero_account_code?: string;
+          xero_account_name?: string | null;
+          xero_tracking_category_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      xero_sync_logs: {
+        Row: XeroSyncLog;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          property_id?: string | null;
+          financial_year: string;
+          fy_start: string;
+          fy_end: string;
+          status?: XeroSyncStatus;
+          xero_journal_ids?: string[];
+          records_pushed?: number;
+          error_message?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: XeroSyncStatus;
+          xero_journal_ids?: string[];
+          records_pushed?: number;
+          error_message?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "xero_sync_logs_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -1083,9 +1164,55 @@ export interface Database {
       expense_category: ExpenseCategory;
       ai_tax_classification: AiTaxClassification;
       rental_expense_category: RentalExpenseCategory;
+      xero_sync_status: XeroSyncStatus;
     };
     CompositeTypes: {
       [_ in never]: never;
     };
   };
 }
+
+// Xero integration types
+export type XeroSyncStatus = "pending" | "in_progress" | "completed" | "failed";
+
+export type XeroConnection = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  tenant_name: string | null;
+  access_token: string;
+  refresh_token: string;
+  token_expires_at: string;
+  scopes: string[];
+  connected_at: string;
+  updated_at: string;
+};
+
+export type XeroAccountMapping = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  home_base_category: string;
+  xero_account_code: string;
+  xero_account_name: string | null;
+  xero_tracking_category_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type XeroSyncLog = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  property_id: string | null;
+  financial_year: string;
+  fy_start: string;
+  fy_end: string;
+  status: XeroSyncStatus;
+  xero_journal_ids: string[];
+  records_pushed: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+};
