@@ -15,11 +15,13 @@ export default async function EditExpensePage({ params }: Props) {
 
   const { data: expense } = await supabase
     .from("expenses")
-    .select("*")
+    .select("*, contractor:contractor_id(phone, email, website, address, suburb, state, postcode)")
     .eq("id", expenseId)
     .single()
 
   if (!expense) notFound()
+
+  const contractor = Array.isArray(expense.contractor) ? expense.contractor[0] : expense.contractor
 
   const { data: renovation } = await supabase
     .from("renovations")
@@ -61,6 +63,13 @@ export default async function EditExpensePage({ params }: Props) {
           abn: expense.abn ?? "",
           invoice_path: expense.invoice_path,
           context_notes: expense.context_notes ?? "",
+          phone: contractor?.phone ?? "",
+          email: contractor?.email ?? "",
+          website: contractor?.website ?? "",
+          address: contractor?.address ?? "",
+          suburb: contractor?.suburb ?? "",
+          state: contractor?.state ?? "",
+          postcode: contractor?.postcode ?? "",
         }}
       />
     </div>

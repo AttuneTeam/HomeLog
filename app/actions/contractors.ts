@@ -30,19 +30,18 @@ export async function upsertContractorFromExpense(
   const cleanAbn = input.abn?.replace(/\s/g, "") || null;
   const name = input.name.trim();
 
-  // Merge helper: only overwrite nulls/blanks with new data
+  // Only fill in fields that are currently blank — never overwrite known data
   function merge<T>(existing: T | null, incoming: T | null | undefined): T | null {
     return existing ?? incoming ?? null;
   }
 
   let contractorId: string | null = null;
 
-  // 1. Try match by ABN
+  // 1. Match globally by ABN (authoritative dedup key)
   if (cleanAbn) {
     const { data: byAbn } = await supabase
       .from("contractors")
-      .select("id, name, phone, email, website, address, suburb, state, postcode")
-      .eq("user_id", user.id)
+      .select("id, phone, email, website, address, suburb, state, postcode")
       .eq("abn", cleanAbn)
       .maybeSingle();
 
@@ -63,39 +62,47 @@ export async function upsertContractorFromExpense(
     }
   }
 
-  // 2. Try match by name (case-insensitive)
+  // 2. Match by name within this user's existing contractors
   if (!contractorId) {
-    const { data: byName } = await supabase
-      .from("contractors")
-      .select("id, phone, email, website, address, suburb, state, postcode, abn")
-      .eq("user_id", user.id)
-      .ilike("name", name)
-      .maybeSingle();
+    const { data: userLinks } = await supabase
+      .from("user_contractors")
+      .select("contractor_id")
+      .eq("user_id", user.id);
 
-    if (byName) {
-      contractorId = byName.id;
-      await supabase
+    const userContractorIds = (userLinks ?? []).map((l) => l.contractor_id);
+
+    if (userContractorIds.length > 0) {
+      const { data: byName } = await supabase
         .from("contractors")
-        .update({
-          abn: merge(byName.abn, cleanAbn),
-          phone: merge(byName.phone, input.phone),
-          email: merge(byName.email, input.email),
-          website: merge(byName.website, input.website),
-          address: merge(byName.address, input.address),
-          suburb: merge(byName.suburb, input.suburb),
-          state: merge(byName.state, input.state),
-          postcode: merge(byName.postcode, input.postcode),
-        })
-        .eq("id", contractorId);
+        .select("id, phone, email, website, address, suburb, state, postcode, abn")
+        .in("id", userContractorIds)
+        .ilike("name", name)
+        .maybeSingle();
+
+      if (byName) {
+        contractorId = byName.id;
+        await supabase
+          .from("contractors")
+          .update({
+            abn: merge(byName.abn, cleanAbn),
+            phone: merge(byName.phone, input.phone),
+            email: merge(byName.email, input.email),
+            website: merge(byName.website, input.website),
+            address: merge(byName.address, input.address),
+            suburb: merge(byName.suburb, input.suburb),
+            state: merge(byName.state, input.state),
+            postcode: merge(byName.postcode, input.postcode),
+          })
+          .eq("id", contractorId);
+      }
     }
   }
 
-  // 3. Create new contractor
+  // 3. Create new global contractor record
   if (!contractorId) {
-    const { data: created } = await supabase
+    const { data: created, error } = await supabase
       .from("contractors")
       .insert({
-        user_id: user.id,
         name,
         abn: cleanAbn,
         phone: input.phone || null,
@@ -109,16 +116,34 @@ export async function upsertContractorFromExpense(
       .select("id")
       .single();
 
-    contractorId = created?.id ?? null;
+    if (error && cleanAbn) {
+      // Race condition: another user inserted the same ABN — find it
+      const { data: existing } = await supabase
+        .from("contractors")
+        .select("id")
+        .eq("abn", cleanAbn)
+        .maybeSingle();
+      contractorId = existing?.id ?? null;
+    } else {
+      contractorId = created?.id ?? null;
+    }
   }
 
-  // 4. Link contractor to the expense
-  if (contractorId) {
-    await supabase
-      .from("expenses")
-      .update({ contractor_id: contractorId })
-      .eq("id", expenseId);
-  }
+  if (!contractorId) return;
+
+  // 4. Ensure the user has a link to this contractor
+  await supabase
+    .from("user_contractors")
+    .upsert(
+      { user_id: user.id, contractor_id: contractorId },
+      { onConflict: "user_id,contractor_id", ignoreDuplicates: true },
+    );
+
+  // 5. Link contractor to the expense
+  await supabase
+    .from("expenses")
+    .update({ contractor_id: contractorId })
+    .eq("id", expenseId);
 
   revalidatePath("/contractors");
 }

@@ -10,15 +10,35 @@ export default async function ContractorsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Fetch all contractors for this user with aggregated stats
-  const { data: contractors } = await supabase
-    .from("contractors")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("name");
+  // Fetch all contractors this user has worked with via the join table
+  const { data: userLinks } = await supabase
+    .from("user_contractors")
+    .select(
+      "contractor:contractor_id(id, name, abn, email, phone, website, address, suburb, state, postcode, trade_category)",
+    )
+    .eq("user_id", user.id);
+
+  type ContractorRow = {
+    id: string;
+    name: string;
+    abn: string | null;
+    email: string | null;
+    phone: string | null;
+    website: string | null;
+    address: string | null;
+    suburb: string | null;
+    state: string | null;
+    postcode: string | null;
+    trade_category: string | null;
+  };
+
+  const contractors = (userLinks ?? [])
+    .map((l) => l.contractor as ContractorRow | null)
+    .filter((c): c is ContractorRow => c !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // For each contractor, fetch linked expense totals and last engaged date
-  const contractorIds = (contractors ?? []).map((c) => c.id);
+  const contractorIds = contractors.map((c) => c.id);
 
   type ExpenseRow = {
     contractor_id: string;

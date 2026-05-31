@@ -1,6 +1,5 @@
 export type Contractor = {
   id: string;
-  user_id: string;
   name: string;
   abn: string | null;
   email: string | null;
@@ -11,9 +10,16 @@ export type Contractor = {
   state: string | null;
   postcode: string | null;
   trade_category: string | null;
-  notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type UserContractor = {
+  id: string;
+  user_id: string;
+  contractor_id: string;
+  notes: string | null;
+  created_at: string;
 };
 
 export type RenovationSummary = {
@@ -1193,7 +1199,6 @@ export interface Database {
         Row: Contractor;
         Insert: {
           id?: string;
-          user_id: string;
           name: string;
           abn?: string | null;
           email?: string | null;
@@ -1204,7 +1209,6 @@ export interface Database {
           state?: string | null;
           postcode?: string | null;
           trade_category?: string | null;
-          notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1219,10 +1223,38 @@ export interface Database {
           state?: string | null;
           postcode?: string | null;
           trade_category?: string | null;
-          notes?: string | null;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      user_contractors: {
+        Row: UserContractor;
+        Insert: {
+          id?: string;
+          user_id: string;
+          contractor_id: string;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          notes?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_contractors_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_contractors_contractor_id_fkey";
+            columns: ["contractor_id"];
+            isOneToOne: false;
+            referencedRelation: "contractors";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       renovation_summaries: {
         Row: RenovationSummary;
