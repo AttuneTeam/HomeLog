@@ -16,7 +16,14 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FileText, Upload, Trash2, Plus, Pencil, FolderOpen } from "lucide-react";
+import {
+  FileText,
+  Upload,
+  Trash2,
+  Plus,
+  Pencil,
+  FolderOpen,
+} from "lucide-react";
 
 function FolderInput({
   value,
@@ -40,7 +47,10 @@ function FolderInput({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -217,7 +227,10 @@ export function PropertyFilesSection({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Files attached</h2>
+        <div className="flex items-center gap-2.5">
+          <FolderOpen className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">Files</h2>
+        </div>
         <Dialog
           open={uploadOpen}
           onOpenChange={(open) => {
@@ -338,7 +351,7 @@ export function PropertyFilesSection({
                     >
                       <button
                         type="button"
-                        className="flex items-center gap-2 text-sm text-left hover:underline truncate"
+                        className="flex items-center gap-2 text-sm text-left hover:underline truncate "
                         onClick={() => handleDownload(file.storage_path)}
                       >
                         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -353,11 +366,12 @@ export function PropertyFilesSection({
                           minute: "2-digit",
                         })}
                       </span>
-                      <div className="flex gap-2 justify-end">
+                      <div className="flex gap-1 justify-end">
                         <Button
                           type="button"
                           size="icon-sm"
                           variant="ghost"
+                          className="text-muted-foreground"
                           onClick={() => {
                             setEditFile(file);
                             setEditName(file.display_name ?? fileLabel(file));
@@ -369,7 +383,8 @@ export function PropertyFilesSection({
                         <Button
                           type="button"
                           size="icon-sm"
-                          variant="destructive"
+                          className="text-muted-foreground hover:text-destructive"
+                          variant="ghost"
                           onClick={() => setConfirmDeleteFile(file)}
                         >
                           <Trash2 className="h-4 w-4" />

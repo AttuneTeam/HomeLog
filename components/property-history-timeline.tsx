@@ -29,6 +29,7 @@ export type RenovationExpense = {
   invoicePath: string | null;
   expenseDate: string;
   manualClassification: string | null;
+  valueSummary: string | null;
 };
 
 export type TimelineEvent = {
@@ -48,6 +49,7 @@ export type TimelineEvent = {
     endDate: string | null;
     status: string;
     notes: string | null;
+    valueSummary: string | null;
     expenses: RenovationExpense[];
   };
 };
@@ -340,6 +342,11 @@ function RenovationCard({
                   {reno.description ?? reno.notes}
                 </p>
               )}
+              {reno.valueSummary && (
+                <p className="font-grotesk text-[15px] italic text-[#45474c] mb-4 max-w-2xl leading-relaxed">
+                  &ldquo;{reno.valueSummary}&rdquo;
+                </p>
+              )}
               {reno.contractor && (
                 <div className="flex items-center gap-2 pt-2 border-t border-[#E2E2E2]/50">
                   <span className="font-grotesk text-[11px] uppercase tracking-[0.08em] text-[#76777c]">
@@ -386,7 +393,7 @@ function RenovationCard({
                       key={e.id}
                       className="flex items-start justify-between gap-4 px-6 md:px-8 py-3"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-grotesk text-[14px] font-medium text-[#1b1c1c] truncate">
                           {e.description ??
                             CATEGORY_LABELS[e.category] ??
@@ -412,6 +419,11 @@ function RenovationCard({
                             <InvoiceButton invoicePath={e.invoicePath} />
                           )}
                         </div>
+                        {e.valueSummary && (
+                          <p className="font-grotesk text-[12px] italic text-[#76777c] mt-1.5 leading-relaxed">
+                            {e.valueSummary}
+                          </p>
+                        )}
                       </div>
                       <span className="font-grotesk text-[14px] font-semibold tabular-nums text-[#030813] shrink-0">
                         {formatCurrency(e.amount)}

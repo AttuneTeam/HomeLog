@@ -8,6 +8,7 @@ import { Pencil, FileText } from "lucide-react";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
 import { InvoiceViewer } from "@/components/invoice-viewer";
 import { AiTaxClassificationPanel } from "@/components/ai-tax-classification-panel";
+import { ExpenseValueSummary } from "@/components/expense-value-summary";
 
 interface Props {
   params: Promise<{
@@ -58,6 +59,12 @@ export default async function ExpenseDetailPage({ params }: Props) {
     .select(
       "classification, deduction_strategy, legal_citation, environmental_flag, confidence_score, created_at, model_used",
     )
+    .eq("expense_id", expenseId)
+    .maybeSingle();
+
+  const { data: valueSummary } = await supabase
+    .from("expense_value_summaries")
+    .select("summary_text, is_edited")
     .eq("expense_id", expenseId)
     .maybeSingle();
 

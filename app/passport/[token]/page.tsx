@@ -96,6 +96,7 @@ export default async function PassportPage({ params }: Props) {
         invoicePath: e.invoice_path,
         expenseDate: e.expense_date,
         manualClassification: e.manual_classification,
+        valueSummary: null,
       }),
     );
     const earliestExpenseDate =
@@ -122,6 +123,7 @@ export default async function PassportPage({ params }: Props) {
         endDate: r.end_date,
         status: r.status,
         notes: r.notes,
+        valueSummary: null,
         expenses,
       },
     });

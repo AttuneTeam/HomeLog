@@ -39,8 +39,8 @@ export default async function TaxReportPage({ params }: Props) {
     .neq("status", "planned")
     .order("start_date", { ascending: true });
 
-  // Fetch ROI calculator inputs, rental periods, and profile in parallel
-  const [{ data: roiInputs }, { data: rentalPeriods }, { data: profile }] =
+  // Fetch ROI calculator inputs, rental periods, profile, and Xero connection in parallel
+  const [{ data: roiInputs }, { data: rentalPeriods }, { data: profile }, { data: xeroConnection }] =
     await Promise.all([
       supabase
         .from("roi_calculator_inputs")
@@ -57,6 +57,13 @@ export default async function TaxReportPage({ params }: Props) {
         .from("profiles")
         .select("financial_year_start_month, financial_year_start_day")
         .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("xero_connections")
+        .select("tenant_id, tenant_name")
+        .eq("user_id", user.id)
+        .order("connected_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
 
@@ -214,6 +221,10 @@ export default async function TaxReportPage({ params }: Props) {
     }),
   };
 
+  const propertyAddress = [property.address, property.suburb, property.state]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <div className="p-6">
       {/* Breadcrumb */}
@@ -229,7 +240,22 @@ export default async function TaxReportPage({ params }: Props) {
         <span>Tax Report</span>
       </div>
 
-      <TaxReport data={reportData} />
+      <TaxReport
+        data={reportData}
+        xeroConnection={
+          xeroConnection
+            ? {
+                tenantId: xeroConnection.tenant_id,
+                tenantName: xeroConnection.tenant_name,
+                propertyId,
+                propertyAddress,
+                fyStart: fyStartStr,
+                fyEnd: fyEndStr,
+                financialYear,
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

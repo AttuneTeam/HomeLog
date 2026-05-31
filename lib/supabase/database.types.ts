@@ -1,3 +1,41 @@
+export type Contractor = {
+  id: string;
+  user_id: string;
+  name: string;
+  abn: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  suburb: string | null;
+  state: string | null;
+  postcode: string | null;
+  trade_category: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RenovationSummary = {
+  id: string;
+  renovation_id: string;
+  summary_text: string;
+  generated_at: string;
+  model_used: string | null;
+  is_edited: boolean;
+  updated_at: string;
+};
+
+export type ExpenseValueSummary = {
+  id: string;
+  expense_id: string;
+  summary_text: string;
+  generated_at: string;
+  model_used: string | null;
+  is_edited: boolean;
+  updated_at: string;
+};
+
 export type Classification =
   | "repair"
   | "capital_improvement"
@@ -399,6 +437,7 @@ export interface Database {
           raw_text: string | null;
           abn: string | null;
           gst_amount: number | null;
+          contractor_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -416,6 +455,7 @@ export interface Database {
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
+          contractor_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -431,6 +471,7 @@ export interface Database {
           raw_text?: string | null;
           abn?: string | null;
           gst_amount?: number | null;
+          contractor_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -439,6 +480,13 @@ export interface Database {
             columns: ["renovation_id"];
             isOneToOne: false;
             referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "expenses_contractor_id_fkey";
+            columns: ["contractor_id"];
+            isOneToOne: false;
+            referencedRelation: "contractors";
             referencedColumns: ["id"];
           },
         ];
@@ -593,6 +641,7 @@ export interface Database {
           total_cost: number | null;
           contractor: string | null;
           file_path: string | null;
+          contractor_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -603,6 +652,7 @@ export interface Database {
           total_cost?: number | null;
           contractor?: string | null;
           file_path?: string | null;
+          contractor_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -611,6 +661,7 @@ export interface Database {
           total_cost?: number | null;
           contractor?: string | null;
           file_path?: string | null;
+          contractor_id?: string | null;
         };
         Relationships: [
           {
@@ -1057,6 +1108,174 @@ export interface Database {
           },
         ];
       };
+      xero_connections: {
+        Row: XeroConnection;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          tenant_name?: string | null;
+          access_token: string;
+          refresh_token: string;
+          token_expires_at: string;
+          scopes?: string[];
+          connected_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          tenant_name?: string | null;
+          access_token?: string;
+          refresh_token?: string;
+          token_expires_at?: string;
+          scopes?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      xero_account_mappings: {
+        Row: XeroAccountMapping;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          home_base_category: string;
+          xero_account_code: string;
+          xero_account_name?: string | null;
+          xero_tracking_category_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          xero_account_code?: string;
+          xero_account_name?: string | null;
+          xero_tracking_category_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      xero_sync_logs: {
+        Row: XeroSyncLog;
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          property_id?: string | null;
+          financial_year: string;
+          fy_start: string;
+          fy_end: string;
+          status?: XeroSyncStatus;
+          xero_journal_ids?: string[];
+          records_pushed?: number;
+          error_message?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: XeroSyncStatus;
+          xero_journal_ids?: string[];
+          records_pushed?: number;
+          error_message?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "xero_sync_logs_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contractors: {
+        Row: Contractor;
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          abn?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          website?: string | null;
+          address?: string | null;
+          suburb?: string | null;
+          state?: string | null;
+          postcode?: string | null;
+          trade_category?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          abn?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          website?: string | null;
+          address?: string | null;
+          suburb?: string | null;
+          state?: string | null;
+          postcode?: string | null;
+          trade_category?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      renovation_summaries: {
+        Row: RenovationSummary;
+        Insert: {
+          id?: string;
+          renovation_id: string;
+          summary_text: string;
+          generated_at?: string;
+          model_used?: string | null;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          summary_text?: string;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "renovation_summaries_renovation_id_fkey";
+            columns: ["renovation_id"];
+            isOneToOne: true;
+            referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      expense_value_summaries: {
+        Row: ExpenseValueSummary;
+        Insert: {
+          id?: string;
+          expense_id: string;
+          summary_text: string;
+          generated_at?: string;
+          model_used?: string | null;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          summary_text?: string;
+          is_edited?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expense_value_summaries_expense_id_fkey";
+            columns: ["expense_id"];
+            isOneToOne: true;
+            referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -1083,9 +1302,55 @@ export interface Database {
       expense_category: ExpenseCategory;
       ai_tax_classification: AiTaxClassification;
       rental_expense_category: RentalExpenseCategory;
+      xero_sync_status: XeroSyncStatus;
     };
     CompositeTypes: {
       [_ in never]: never;
     };
   };
 }
+
+// Xero integration types
+export type XeroSyncStatus = "pending" | "in_progress" | "completed" | "failed";
+
+export type XeroConnection = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  tenant_name: string | null;
+  access_token: string;
+  refresh_token: string;
+  token_expires_at: string;
+  scopes: string[];
+  connected_at: string;
+  updated_at: string;
+};
+
+export type XeroAccountMapping = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  home_base_category: string;
+  xero_account_code: string;
+  xero_account_name: string | null;
+  xero_tracking_category_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type XeroSyncLog = {
+  id: string;
+  user_id: string;
+  tenant_id: string;
+  property_id: string | null;
+  financial_year: string;
+  fy_start: string;
+  fy_end: string;
+  status: XeroSyncStatus;
+  xero_journal_ids: string[];
+  records_pushed: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+};

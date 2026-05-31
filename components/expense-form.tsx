@@ -55,6 +55,16 @@ export function ExpenseForm({
   const [aiPrefilled, setAiPrefilled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = !!defaultValues?.id;
+  // Contractor contact fields extracted from invoice — passed to contractor upsert
+  const contractorExtras = useRef<{
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+    address?: string | null;
+    suburb?: string | null;
+    state?: string | null;
+    postcode?: string | null;
+  }>({});
 
   const {
     register,
@@ -114,6 +124,16 @@ export function ExpenseForm({
       if (data.description) setValue("description", data.description);
       if (data.supplier) setValue("supplier", data.supplier);
       if (data.abn) setValue("abn", data.abn);
+      // Store contractor contact details for post-save upsert
+      contractorExtras.current = {
+        phone: data.contractor_phone ?? null,
+        email: data.contractor_email ?? null,
+        website: data.contractor_website ?? null,
+        address: data.contractor_address ?? null,
+        suburb: data.contractor_suburb ?? null,
+        state: data.contractor_state ?? null,
+        postcode: data.contractor_postcode ?? null,
+      };
       setAiPrefilled(true);
     } catch {
       // silent — user can fill in manually
@@ -158,6 +178,20 @@ export function ExpenseForm({
         return;
       }
       toast.success("Expense updated");
+      // Upsert contractor from existing form fields (name + ABN at minimum)
+      const supplierName = values.supplier?.trim();
+      if (supplierName) {
+        fetch("/api/contractors/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expenseId: defaultValues!.id!,
+            name: supplierName,
+            abn: values.abn || null,
+            ...contractorExtras.current,
+          }),
+        }).catch(() => {});
+      }
       router.push(
         `/properties/${propertyId}/renovations/${renovationId}/expenses/${defaultValues!.id!}`,
       );
@@ -174,10 +208,24 @@ export function ExpenseForm({
       }
       toast.success("Expense added");
       if (invoicePath) {
-        fetch(`/api/extract/${newExpense.id}`, { method: "POST" }).catch(
-          () => {},
-        );
+        fetch(`/api/extract/${newExpense.id}`, { method: "POST" }).catch(() => {});
       }
+      // Auto-build contractor record from extracted invoice data
+      const supplierName = values.supplier?.trim();
+      if (supplierName) {
+        fetch("/api/contractors/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expenseId: newExpense.id,
+            name: supplierName,
+            abn: values.abn || null,
+            ...contractorExtras.current,
+          }),
+        }).catch(() => {});
+      }
+      // Auto-generate value-add summary
+      fetch(`/api/value-summary/${newExpense.id}`, { method: "POST" }).catch(() => {});
       router.push(
         `/properties/${propertyId}/renovations/${renovationId}/expenses/${newExpense.id}`,
       );

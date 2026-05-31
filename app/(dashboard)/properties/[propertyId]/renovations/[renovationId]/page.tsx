@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, classificationLabel } from "@/lib/utils";
 import { Plus, Pencil, Receipt } from "lucide-react";
 import { DeleteRenovationButton } from "@/components/delete-renovation-button";
 import { RenovationQuotesSection } from "@/components/renovation-quotes-section";
+import { RenovationValueSummary } from "@/components/renovation-value-summary";
 import { ManualTaxClassification } from "@/lib/supabase/database.types";
 
 interface Props {
@@ -41,11 +42,18 @@ export default async function RenovationDetailPage({ params }: Props) {
     .eq("renovation_id", renovationId)
     .order("expense_date", { ascending: false });
 
-  const { data: quotes } = await supabase
-    .from("renovation_quotes")
-    .select("*, quote_ai_classifications(*)")
-    .eq("renovation_id", renovationId)
-    .order("created_at", { ascending: false });
+  const [{ data: quotes }, { data: renovationSummary }] = await Promise.all([
+    supabase
+      .from("renovation_quotes")
+      .select("*, quote_ai_classifications(*)")
+      .eq("renovation_id", renovationId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("renovation_summaries")
+      .select("summary_text, is_edited")
+      .eq("renovation_id", renovationId)
+      .maybeSingle(),
+  ]);
 
   const totalSpend = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
 
@@ -142,6 +150,17 @@ export default async function RenovationDetailPage({ params }: Props) {
             <p className="font-semibold mt-1">{formatCurrency(totalSpend)}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Renovation summary */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Renovation summary
+        </h2>
+        <RenovationValueSummary
+          renovationId={renovationId}
+          initial={renovationSummary ?? null}
+        />
       </div>
 
       {/* Expenses */}
