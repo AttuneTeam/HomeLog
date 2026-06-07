@@ -34,7 +34,7 @@ export default async function XeroSettingsPage({
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Integrations</h1>
+        <h1 className="text-2xl font-caslon font-bold">Integrations</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Connect external services to sync your financial data
         </p>

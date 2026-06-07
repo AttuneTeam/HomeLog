@@ -21,7 +21,7 @@ export default async function PropertiesPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Properties</h1>
+          <h1 className="text-2xl font-caslon font-bold">Properties</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Manage your investment properties</p>
         </div>
         <ButtonLink href="/properties/new">

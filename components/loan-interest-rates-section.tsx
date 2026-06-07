@@ -183,7 +183,7 @@ export function LoanInterestRatesSection({
     <div>
       <div className="flex items-center gap-2.5 mb-3">
         <Landmark className="h-5 w-5 text-muted-foreground" />
-        <h2 className="text-xl font-semibold">Loan</h2>
+        <h2 className="text-xl font-bold">Loan</h2>
       </div>
       <Separator className="mb-6" />
 
@@ -418,9 +418,15 @@ export function LoanInterestRatesSection({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
-              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">Rate (p.a.)</th>
-              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground whitespace-nowrap">Effective from</th>
-              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground w-full">Notes</th>
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Rate (p.a.)
+              </th>
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                Effective from
+              </th>
+              <th className="px-1 pb-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground w-full">
+                Notes
+              </th>
               <th className="w-0" />
             </tr>
           </thead>

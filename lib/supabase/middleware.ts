@@ -33,6 +33,7 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const isPublic =
+    pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
@@ -48,10 +49,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from auth pages (but not invite/passport)
-  if (user && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+  // Redirect authenticated users away from auth pages and the landing page
+  if (user && (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
     const url = request.nextUrl.clone()
-    url.pathname = "/"
+    url.pathname = "/properties"
     return NextResponse.redirect(url)
   }
 

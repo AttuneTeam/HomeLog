@@ -347,7 +347,7 @@ export function PropertyFilesSection({
                   {groupFiles.map((file) => (
                     <div
                       key={file.id}
-                      className="grid grid-cols-[1fr_auto_auto_auto] gap-x-8 items-center px-1 py-1"
+                      className="grid grid-cols-[1fr_auto_auto] gap-x-8 items-center px-1 py-1"
                     >
                       <button
                         type="button"

@@ -166,7 +166,7 @@ export default async function PropertyDetailPage({ params }: Props) {
             </Link>
             <span>/</span>
           </div>
-          <h1 className="text-2xl font-bold">{property.address}</h1>
+          <h1 className="text-2xl font-caslon font-bold">{property.address}</h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {(property.suburb || property.state) && (
               <p className="text-muted-foreground flex items-center gap-1 text-sm">

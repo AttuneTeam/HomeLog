@@ -44,7 +44,7 @@ export default async function AccountSettingsPage() {
   return (
     <div className="p-6 max-w-lg mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Account</h1>
+        <h1 className="text-2xl font-caslon font-bold">Account</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Manage your name, account details, and sharing settings
         </p>

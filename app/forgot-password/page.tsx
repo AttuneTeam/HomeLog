@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Reset password</CardTitle>
+            <CardTitle className="font-caslon text-2xl font-normal">Reset password</CardTitle>
             <CardDescription>
               {sent
                 ? "Check your email for a reset link."

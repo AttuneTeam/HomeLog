@@ -144,7 +144,7 @@ export function RenovationsList({
               })}
               {sectionTotal > 0 && (
                 <tr className="border-t">
-                  <td colSpan={2} className="px-1 py-1.5">
+                  <td colSpan={2} className="px-1 py-1.5 pb-8">
                     <span className="text-muted-foreground">Total</span>
                   </td>
                   <td className="px-1 py-1.5 text-right font-semibold tabular-nums">
