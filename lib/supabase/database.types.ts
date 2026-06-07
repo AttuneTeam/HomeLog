@@ -1005,6 +1005,47 @@ export interface Database {
           },
         ];
       };
+      household_expenses: {
+        Row: {
+          id: string;
+          user_id: string;
+          label: string;
+          amount: number;
+          frequency: "monthly" | "quarterly" | "yearly";
+          financial_year_end: number;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          label: string;
+          amount: number;
+          frequency?: "monthly" | "quarterly" | "yearly";
+          financial_year_end: number;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          label?: string;
+          amount?: number;
+          frequency?: "monthly" | "quarterly" | "yearly";
+          financial_year_end?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "household_expenses_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       account_members: {
         Row: {
           id: string;
