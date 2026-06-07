@@ -1,13 +1,15 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancialPositionView } from "@/components/financial-position-view";
 import {
   IncomeSourcesPanel,
   type IncomeSource,
 } from "@/components/income-sources-panel";
-import { RoiCalculator, type RoiInputs } from "@/components/roi-calculator";
-import { ScenarioComparisonTab } from "@/components/scenario-comparison-tab";
+import {
+  HouseholdExpensesPanel,
+  type HouseholdExpense,
+} from "@/components/household-expenses-panel";
+import { type RoiInputs } from "@/components/roi-calculator";
 
 interface Property {
   id: string;
@@ -64,7 +66,6 @@ interface PropertyLoanRow {
 }
 
 interface Props {
-  userId: string;
   properties: Property[];
   financialYearStartMonth: number;
   financialYearStartDay: number;
@@ -75,12 +76,12 @@ interface Props {
   propertyLoanByPropertyId: Record<string, PropertyLoanRow>;
   offsetsByPropertyId: Record<string, number>;
   incomeSources: IncomeSource[];
-  prepaidTax: number;
+  householdExpenses: HouseholdExpense[];
   financialYearEnd: number;
+  prepaidTax: number;
 }
 
 export function FinancialTabs({
-  userId,
   properties,
   financialYearStartMonth,
   financialYearStartDay,
@@ -91,6 +92,7 @@ export function FinancialTabs({
   propertyLoanByPropertyId,
   offsetsByPropertyId,
   incomeSources,
+  householdExpenses,
   prepaidTax,
   financialYearEnd,
 }: Props) {
@@ -98,59 +100,41 @@ export function FinancialTabs({
     (p) => p.property_type !== "primary_residence",
   );
 
+  function toMonthly(amount: number, frequency: string): number {
+    if (frequency === "quarterly") return amount / 3;
+    if (frequency === "yearly") return amount / 12;
+    return amount;
+  }
+
+  const monthlyHouseholdExpenses = householdExpenses.reduce(
+    (sum, e) => sum + toMonthly(e.amount, e.frequency),
+    0,
+  );
+
   return (
-    <div>
-      <div className="px-6 pt-6">
-        <Tabs defaultValue="position">
-          <TabsList>
-            <TabsTrigger value="position">Financial Position</TabsTrigger>
-            <TabsTrigger value="scenarios">Scenario Comparison</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="position">
-            <div className="space-y-0">
-              <div className="pt-6">
-                <IncomeSourcesPanel initialSources={incomeSources} />
-              </div>
-              <FinancialPositionView
-                properties={properties}
-                financialYearStartMonth={financialYearStartMonth}
-                financialYearStartDay={financialYearStartDay}
-                roiInputsByPropertyId={roiInputsByPropertyId}
-                rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
-                rentalExpensesByPropertyId={rentalExpensesByPropertyId}
-                loanRatesByPropertyId={loanRatesByPropertyId}
-                propertyLoanByPropertyId={propertyLoanByPropertyId}
-                offsetsByPropertyId={offsetsByPropertyId}
-                incomeSources={incomeSources}
-                prepaidTax={prepaidTax}
-                financialYearEnd={financialYearEnd}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="calculator" className="py-6">
-            <RoiCalculator
-              userId={userId}
-              properties={investmentProperties}
-              roiInputsByPropertyId={roiInputsByPropertyId}
-              financialYearStartMonth={financialYearStartMonth}
-              financialYearStartDay={financialYearStartDay}
-            />
-          </TabsContent>
-
-          <TabsContent value="scenarios" className="py-6">
-            <ScenarioComparisonTab
-              properties={investmentProperties}
-              propertyLoanByPropertyId={propertyLoanByPropertyId}
-              loanRatesByPropertyId={loanRatesByPropertyId}
-              offsetsByPropertyId={offsetsByPropertyId}
-              rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
-              incomeSources={incomeSources}
-            />
-          </TabsContent>
-        </Tabs>
+    <div className="px-6 pt-6 pb-12">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Household Finances</h1>
       </div>
+      <div className="space-y-4">
+        <IncomeSourcesPanel initialSources={incomeSources} />
+        <HouseholdExpensesPanel initialExpenses={householdExpenses} financialYearEnd={financialYearEnd} />
+      </div>
+      <FinancialPositionView
+        properties={properties}
+        financialYearStartMonth={financialYearStartMonth}
+        financialYearStartDay={financialYearStartDay}
+        roiInputsByPropertyId={roiInputsByPropertyId}
+        rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
+        rentalExpensesByPropertyId={rentalExpensesByPropertyId}
+        loanRatesByPropertyId={loanRatesByPropertyId}
+        propertyLoanByPropertyId={propertyLoanByPropertyId}
+        offsetsByPropertyId={offsetsByPropertyId}
+        incomeSources={incomeSources}
+        monthlyHouseholdExpenses={monthlyHouseholdExpenses}
+        prepaidTax={prepaidTax}
+        financialYearEnd={financialYearEnd}
+      />
     </div>
   );
 }

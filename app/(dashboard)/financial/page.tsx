@@ -67,6 +67,7 @@ export default async function FinancialPage() {
     { data: incomeSourceRows },
     { data: taxPrepaymentRow },
     { data: offsetRows },
+    { data: householdExpenseRows },
   ] = await Promise.all([
     investmentPropertyIds.length
       ? supabase
@@ -116,7 +117,42 @@ export default async function FinancialPage() {
           .select("property_id, balance")
           .in("property_id", investmentPropertyIds)
       : Promise.resolve({ data: [] }),
+    supabase
+      .from("household_expenses")
+      .select("id, label, amount, frequency, sort_order")
+      .eq("user_id", incomeOwnerId)
+      .eq("financial_year_end", fyEndYear)
+      .order("sort_order"),
   ]);
+
+  // Auto-seed household expenses from the prior FY if this FY has no rows yet.
+  // Only seed for the account owner (co-owners read the owner's data but can't write it).
+  let activeHouseholdExpenseRows = householdExpenseRows ?? [];
+  if (activeHouseholdExpenseRows.length === 0 && user.id === incomeOwnerId) {
+    const { data: priorRows } = await supabase
+      .from("household_expenses")
+      .select("label, amount, frequency, sort_order")
+      .eq("user_id", user.id)
+      .eq("financial_year_end", fyEndYear - 1)
+      .order("sort_order");
+
+    if (priorRows && priorRows.length > 0) {
+      const { data: seeded } = await supabase
+        .from("household_expenses")
+        .insert(
+          priorRows.map((r) => ({
+            user_id: user.id,
+            label: r.label,
+            amount: r.amount,
+            frequency: r.frequency,
+            financial_year_end: fyEndYear,
+            sort_order: r.sort_order,
+          })),
+        )
+        .select("id, label, amount, frequency, sort_order");
+      activeHouseholdExpenseRows = seeded ?? [];
+    }
+  }
 
   const roiInputsByPropertyId: Record<string, RoiInputs> = {};
   for (const row of roiRows ?? []) {
@@ -174,7 +210,6 @@ export default async function FinancialPage() {
 
   return (
     <FinancialTabs
-      userId={user.id}
       properties={properties ?? []}
       financialYearStartMonth={fyMonth}
       financialYearStartDay={fyDay}
@@ -190,8 +225,15 @@ export default async function FinancialPage() {
         amount: Number(r.amount),
         sort_order: r.sort_order,
       }))}
-      prepaidTax={Number(taxPrepaymentRow?.amount ?? 0)}
+      householdExpenses={activeHouseholdExpenseRows.map((r) => ({
+        id: r.id,
+        label: r.label,
+        amount: Number(r.amount),
+        frequency: r.frequency as "monthly" | "quarterly" | "yearly",
+        sort_order: r.sort_order,
+      }))}
       financialYearEnd={fyEndYear}
+      prepaidTax={Number(taxPrepaymentRow?.amount ?? 0)}
     />
   );
 }

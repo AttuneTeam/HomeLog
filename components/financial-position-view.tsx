@@ -86,6 +86,7 @@ interface FinancialPositionViewProps {
   propertyLoanByPropertyId: Record<string, PropertyLoanRow>;
   offsetsByPropertyId: Record<string, number>;
   incomeSources: IncomeSource[];
+  monthlyHouseholdExpenses: number;
   prepaidTax: number;
   financialYearEnd: number;
 }
@@ -216,6 +217,7 @@ export function FinancialPositionView({
   propertyLoanByPropertyId,
   offsetsByPropertyId,
   incomeSources,
+  monthlyHouseholdExpenses,
   prepaidTax,
   financialYearEnd,
 }: FinancialPositionViewProps) {
@@ -539,6 +541,7 @@ export function FinancialPositionView({
         monthlyTaxBenefit: effectiveTaxBenefit,
         net,
         hasRepaymentData,
+        monthlyExpenses: monthlyHouseholdExpenses,
       };
     });
   }, [
@@ -915,13 +918,14 @@ export function FinancialPositionView({
           </CardHeader>
           <CardContent className="px-0 pb-0">
             {/* Column headers */}
-            <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 px-6 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 px-6 pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <span>Month</span>
               <span className="text-right">Repayment</span>
               <span className="text-right">
                 Household{" "}
                 <span className="normal-case font-normal">(after tax)</span>
               </span>
+              <span className="text-right">Expenses</span>
               <span className="text-right">Net rental</span>
               <span className="text-right">
                 Tax benefit{" "}
@@ -948,6 +952,7 @@ export function FinancialPositionView({
                   monthlyTaxBenefit,
                   net,
                   hasRepaymentData,
+                  monthlyExpenses,
                 }) => {
                   const label = ms.toLocaleString("en-AU", {
                     month: "short",
@@ -957,11 +962,11 @@ export function FinancialPositionView({
                   const monthlyHousehold =
                     (totalHouseholdIncome - calcAusTax(totalHouseholdIncome)) /
                     12;
-                  const fullNet = net + monthlyHousehold;
+                  const fullNet = net + monthlyHousehold - monthlyExpenses;
                   return (
                     <div
                       key={ms.toISOString()}
-                      className={`grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-2 text-sm ${isCurrent ? "bg-muted/40 font-medium" : ""}`}
+                      className={`grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-2 text-sm ${isCurrent ? "bg-muted/40 font-medium" : ""}`}
                     >
                       <span
                         className={`tabular-nums whitespace-nowrap ${isProjected ? "text-muted-foreground" : ""}`}
@@ -992,6 +997,13 @@ export function FinancialPositionView({
                       >
                         {monthlyHousehold > 0
                           ? formatCurrency(monthlyHousehold)
+                          : "—"}
+                      </span>
+                      <span
+                        className={`text-right tabular-nums ${isProjected ? "text-muted-foreground" : "text-red-600"}`}
+                      >
+                        {monthlyExpenses > 0
+                          ? `(${formatCurrency(monthlyExpenses)})`
                           : "—"}
                       </span>
                       <span
@@ -1057,13 +1069,16 @@ export function FinancialPositionView({
                 (s, m) => s + m.monthlyTaxBenefit,
                 0,
               );
+              const totExpenses = monthlyHouseholdExpenses * monthlyBreakdown.length;
               const totNet =
-                monthlyBreakdown.reduce((s, m) => s + m.net, 0) + totHousehold;
+                monthlyBreakdown.reduce((s, m) => s + m.net, 0) +
+                totHousehold -
+                totExpenses;
               const hasAnyRepayment = monthlyBreakdown.some(
                 (m) => m.hasRepaymentData,
               );
               return (
-                <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-3 border-t bg-muted/30 text-sm font-semibold">
+                <div className="grid grid-cols-[5rem_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-x-3 items-center px-6 py-3 border-t bg-muted/30 text-sm font-semibold">
                   <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
                     FY total
                   </span>
@@ -1081,6 +1096,9 @@ export function FinancialPositionView({
                   </div>
                   <span className="text-right tabular-nums text-emerald-700">
                     {totHousehold > 0 ? formatCurrency(totHousehold) : "—"}
+                  </span>
+                  <span className="text-right tabular-nums text-red-600">
+                    {totExpenses > 0 ? `(${formatCurrency(totExpenses)})` : "—"}
                   </span>
                   <span className="text-right tabular-nums">
                     {formatCurrency(totNetRental)}
