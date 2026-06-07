@@ -45,6 +45,7 @@ export default async function PropertyStoryPage({ params }: Props) {
         "*, renovation_summaries(summary_text), expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification, expense_value_summaries(summary_text))",
       )
       .eq("property_id", propertyId)
+      .neq("status", "planned")
       .order("start_date", { ascending: false }),
     supabase
       .from("property_enrichment")
