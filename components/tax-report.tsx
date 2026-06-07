@@ -475,10 +475,20 @@ export function TaxReport({
       if (rentalExpenses.length > 0) {
         type Row = (string | number)[];
         const rentalRows: Row[] = [
-          ["Date", "Category", "Supplier", "ABN", "Description", "Ex-GST", "GST", "Total"],
+          [
+            "Date",
+            "Category",
+            "Supplier",
+            "ABN",
+            "Description",
+            "Ex-GST",
+            "GST",
+            "Total",
+          ],
         ];
         for (const e of rentalExpenses) {
-          const exGst = e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
+          const exGst =
+            e.gst_amount != null ? e.amount - e.gst_amount : e.amount;
           rentalRows.push([
             formatDate(e.expense_date),
             categoryLabel(e.category),
@@ -492,8 +502,14 @@ export function TaxReport({
         }
         const wsRental = XLSX.utils.aoa_to_sheet(rentalRows);
         wsRental["!cols"] = [
-          { wch: 14 }, { wch: 20 }, { wch: 22 }, { wch: 16 },
-          { wch: 30 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+          { wch: 14 },
+          { wch: 20 },
+          { wch: 22 },
+          { wch: 16 },
+          { wch: 30 },
+          { wch: 12 },
+          { wch: 10 },
+          { wch: 12 },
         ];
         const currencyFmt = '"$"#,##0.00';
         const rRange = XLSX.utils.decode_range(wsRental["!ref"] ?? "A1");
@@ -516,7 +532,13 @@ export function TaxReport({
     } finally {
       setXlsxDownloading(false);
     }
-  }, [repairs, initialRepairs, capitalImprovements, rentalExpenses, property.address]);
+  }, [
+    repairs,
+    initialRepairs,
+    capitalImprovements,
+    rentalExpenses,
+    property.address,
+  ]);
 
   const handleDownload = useCallback(async () => {
     setDownloading(true);
@@ -552,7 +574,12 @@ export function TaxReport({
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger
-              render={<Button variant="outline" disabled={downloading || xlsxDownloading} />}
+              render={
+                <Button
+                  variant="outline"
+                  disabled={downloading || xlsxDownloading}
+                />
+              }
             >
               <Download className="h-4 w-4 mr-1.5" />
               {downloading
@@ -646,9 +673,9 @@ export function TaxReport({
         </div>
       </section>
 
-      {/* Rental Operating Expenses */}
+      {/* Operating Expenses */}
       <section>
-        <SectionHeading>Rental Operating Expenses</SectionHeading>
+        <SectionHeading>Operating Expenses</SectionHeading>
         <p className="text-xs text-muted-foreground mb-3">
           Immediately deductible property operating costs — water, council
           rates, insurance, repairs &amp; maintenance, strata fees, land tax,
@@ -687,31 +714,6 @@ export function TaxReport({
           the CGT cost base; may attract Division 43 depreciation deductions.
         </p>
         <ExpenseTable expenses={capitalImprovements} />
-      </section>
-
-      {/* CGT Cost Base */}
-      <section>
-        <SectionHeading>CGT Cost Base Calculation</SectionHeading>
-        <div className="divide-y max-w-sm">
-          <SummaryRow
-            label="Purchase price"
-            value={formatCurrency(purchasePrice)}
-          />
-          <SummaryRow label="Stamp duty" value={formatCurrency(stampDuty)} />
-          <SummaryRow
-            label={`Initial repairs (${initialRepairs.length} expense${initialRepairs.length !== 1 ? "s" : ""})`}
-            value={formatCurrency(initialRepairTotal)}
-          />
-          <SummaryRow
-            label={`Capital improvements (${capitalImprovements.length} expense${capitalImprovements.length !== 1 ? "s" : ""})`}
-            value={formatCurrency(capitalTotal)}
-          />
-          <SummaryRow
-            label="Total adjusted cost base"
-            value={formatCurrency(costBase)}
-            bold
-          />
-        </div>
       </section>
 
       {/* Depreciation */}

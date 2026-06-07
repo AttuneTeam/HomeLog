@@ -479,9 +479,7 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
               )}
               {totalOperatingExpenses > 0 && (
                 <View style={S.summaryRow}>
-                  <Text style={S.summaryLabel}>
-                    Less: Operating expenses
-                  </Text>
+                  <Text style={S.summaryLabel}>Less: Operating expenses</Text>
                   <Text style={S.summaryValue}>
                     ({fmt(totalOperatingExpenses)})
                   </Text>
@@ -502,8 +500,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
         {/* Rental Operating Expenses */}
         <View style={S.section}>
           <Text style={S.sectionTitle}>
-            Rental Operating Expenses (Immediately deductible — water, council
-            rates, insurance, etc.)
+            Operating Expenses (Immediately deductible — water, council rates,
+            insurance, etc.)
           </Text>
           <RentalExpenseTable expenses={rentalExpenses} />
         </View>
