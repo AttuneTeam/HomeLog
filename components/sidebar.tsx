@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, HardHat, Mail } from "lucide-react";
+import { useState } from "react";
+import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, Mail, Workflow, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +15,9 @@ const navItems = [
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/financial", label: "Household Finances", icon: TrendingUp },
   { href: "/settings/account", label: "Account", icon: UserCircle },
+];
+
+const automationItems = [
   { href: "/settings/xero", label: "Integrations", icon: Plug },
   { href: "/settings/email", label: "Email sync", icon: Mail },
 ];
@@ -28,6 +32,11 @@ export function Sidebar({ displayName, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+
+  const isAutomationActive = automationItems.some(
+    ({ href }) => pathname === href || pathname.startsWith(href + "/"),
+  );
+  const [automationsOpen, setAutomationsOpen] = useState(isAutomationActive);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -79,6 +88,50 @@ export function Sidebar({ displayName, isOpen, onClose }: SidebarProps) {
             {label}
           </Link>
         ))}
+
+        {/* Automations group */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setAutomationsOpen((open) => !open)}
+            aria-expanded={automationsOpen}
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              isAutomationActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Workflow className="h-4 w-4" />
+            Automations
+            <ChevronDown
+              className={cn(
+                "ml-auto h-4 w-4 transition-transform",
+                automationsOpen ? "rotate-180" : "",
+              )}
+            />
+          </button>
+          {automationsOpen && (
+            <div className="mt-1 ml-4 space-y-1 border-l pl-3">
+              {automationItems.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    pathname === href || pathname.startsWith(href + "/")
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="border-t pt-3 mt-3">
