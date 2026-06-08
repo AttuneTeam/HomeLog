@@ -17,6 +17,7 @@ import {
   StickyNote,
   Home,
   HardHat,
+  Banknote,
 } from "lucide-react";
 import { DeletePropertyButton } from "@/components/delete-property-button";
 import { PropertySharePanel } from "@/components/property-share-panel";
@@ -26,6 +27,7 @@ import { RentalExpensesSection } from "@/components/rental-expenses-section";
 import { RentalPaymentsSection, type RentalPayment } from "@/components/rental-payments-section";
 import { LoanInterestRatesSection } from "@/components/loan-interest-rates-section";
 import { RenovationsList } from "@/components/renovations-list";
+import { PropertyTabs } from "@/components/property-tabs";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -230,7 +232,7 @@ export default async function PropertyDetailPage({ params }: Props) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-20">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -275,42 +277,43 @@ export default async function PropertyDetailPage({ params }: Props) {
         </Card>
       </div>
 
-      <div className="space-y-20">
-        {/* Financing */}
-        {property.property_type !== "primary_residence" && (
-          <LoanInterestRatesSection
-            propertyId={propertyId}
-            initialRates={(loanRates ?? []).map((r) => ({
-              id: r.id,
-              property_id: r.property_id,
-              rate: Number(r.rate),
-              effective_date: r.effective_date,
-              notes: r.notes,
-            }))}
-            initialLoan={
-              propertyLoan
-                ? {
-                    loan_amount: Number(propertyLoan.loan_amount),
-                    loan_term_years: propertyLoan.loan_term_years,
-                  }
-                : null
-            }
-            initialOffsets={(offsetAccounts ?? []).map((o) => ({
-              id: o.id,
-              label: o.label,
-              balance: Number(o.balance),
-            }))}
-          />
-        )}
-
-        {/* Rent */}
-        {property.property_type !== "primary_residence" && (
-          <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <Home className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Rent</h2>
+      <PropertyTabs
+        loan={
+          property.property_type !== "primary_residence" ? (
+            <LoanInterestRatesSection
+              propertyId={propertyId}
+              initialRates={(loanRates ?? []).map((r) => ({
+                id: r.id,
+                property_id: r.property_id,
+                rate: Number(r.rate),
+                effective_date: r.effective_date,
+                notes: r.notes,
+              }))}
+              initialLoan={
+                propertyLoan
+                  ? {
+                      loan_amount: Number(propertyLoan.loan_amount),
+                      loan_term_years: propertyLoan.loan_term_years,
+                    }
+                  : null
+              }
+              initialOffsets={(offsetAccounts ?? []).map((o) => ({
+                id: o.id,
+                label: o.label,
+                balance: Number(o.balance),
+              }))}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
+              <Banknote className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                Loan tracking is only available for investment properties
+              </p>
             </div>
-            <Separator className="mb-6" />
+          )
+        }
+        rent={
+          property.property_type !== "primary_residence" ? (
             <div className="space-y-8">
               <RentalPeriodsSection
                 propertyId={propertyId}
@@ -326,128 +329,138 @@ export default async function PropertyDetailPage({ params }: Props) {
                 initialExpenses={rentalExpenses ?? []}
               />
             </div>
-          </div>
-        )}
-
-        {/* Renovations & Capital Works */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <Wrench className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Renovations</h2>
-            </div>
-            <ButtonLink
-              href={`/properties/${propertyId}/renovations/new`}
-              size="sm"
-              variant="outline"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Add renovation
-            </ButtonLink>
-          </div>
-          <Separator className="mb-6" />
-
-          {!renovations || renovations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
-              <Wrench className="h-8 w-8 text-muted-foreground/50" />
-              <div>
-                <p className="font-medium">No renovations yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Track your first renovation project
-                </p>
-              </div>
-              <ButtonLink
-                href={`/properties/${propertyId}/renovations/new`}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add renovation
-              </ButtonLink>
-            </div>
           ) : (
-            <RenovationsList
-              renovations={renovations}
-              propertyId={propertyId}
-            />
-          )}
-        </div>
-
-        {/* Contractors */}
-        {propertyContractors.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <HardHat className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-xl font-semibold">Contractors</h2>
-              </div>
-              <Link
-                href="/contractors"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                View all →
-              </Link>
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
+              <Home className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                Rent tracking is only available for investment properties
+              </p>
             </div>
-            <Separator className="mb-6" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {propertyContractors.map((c) => (
-                <div
-                  key={c.id}
-                  className="rounded-xl border border-[#E2E2E2] bg-white p-4 space-y-1"
-                >
-                  <p className="font-grotesk text-[14px] font-semibold text-[#030813]">
-                    {c.name}
-                  </p>
-                  {c.trade_category && (
-                    <p className="font-grotesk text-[12px] text-[#76777c]">
-                      {c.trade_category}
-                    </p>
-                  )}
-                  {(c.suburb || c.state) && (
-                    <p className="font-grotesk text-[12px] text-[#76777c]">
-                      {[c.suburb, c.state].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                  {c.abn && (
-                    <p className="font-grotesk text-[11px] text-[#76777c]">
-                      ABN {c.abn}
-                    </p>
-                  )}
-                  <p className="font-grotesk text-[13px] font-medium text-[#030813] pt-1">
-                    {formatCurrency(c.total)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Documents & Notes */}
-        <div className="space-y-8">
-          <PropertyFilesSection
-            propertyId={propertyId}
-            userId={user.id}
-            initialFiles={propertyFiles ?? []}
-          />
-
-          {property.notes && (
+          )
+        }
+        renovation={
+          <div className="space-y-20">
+            {/* Renovations & Capital Works */}
             <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <StickyNote className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Notes</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <Wrench className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-xl font-semibold">Renovations</h2>
+                </div>
+                <ButtonLink
+                  href={`/properties/${propertyId}/renovations/new`}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Add renovation
+                </ButtonLink>
               </div>
               <Separator className="mb-6" />
-              <Card>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {property.notes}
-                  </p>
-                </CardContent>
-              </Card>
+
+              {!renovations || renovations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center gap-3">
+                  <Wrench className="h-8 w-8 text-muted-foreground/50" />
+                  <div>
+                    <p className="font-medium">No renovations yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Track your first renovation project
+                    </p>
+                  </div>
+                  <ButtonLink
+                    href={`/properties/${propertyId}/renovations/new`}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    Add renovation
+                  </ButtonLink>
+                </div>
+              ) : (
+                <RenovationsList
+                  renovations={renovations}
+                  propertyId={propertyId}
+                />
+              )}
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Contractors */}
+            {propertyContractors.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <HardHat className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-xl font-semibold">Contractors</h2>
+                  </div>
+                  <Link
+                    href="/contractors"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                <Separator className="mb-6" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {propertyContractors.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-xl border border-[#E2E2E2] bg-white p-4 space-y-1"
+                    >
+                      <p className="font-grotesk text-[14px] font-semibold text-[#030813]">
+                        {c.name}
+                      </p>
+                      {c.trade_category && (
+                        <p className="font-grotesk text-[12px] text-[#76777c]">
+                          {c.trade_category}
+                        </p>
+                      )}
+                      {(c.suburb || c.state) && (
+                        <p className="font-grotesk text-[12px] text-[#76777c]">
+                          {[c.suburb, c.state].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                      {c.abn && (
+                        <p className="font-grotesk text-[11px] text-[#76777c]">
+                          ABN {c.abn}
+                        </p>
+                      )}
+                      <p className="font-grotesk text-[13px] font-medium text-[#030813] pt-1">
+                        {formatCurrency(c.total)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        }
+        files={
+          <div className="space-y-8">
+            <PropertyFilesSection
+              propertyId={propertyId}
+              userId={user.id}
+              initialFiles={propertyFiles ?? []}
+            />
+
+            {property.notes && (
+              <div>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <StickyNote className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">Notes</h2>
+                </div>
+                <Separator className="mb-6" />
+                <Card>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {property.notes}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+        }
+      />
     </div>
   );
 }
