@@ -156,16 +156,16 @@ export default function LandingPage() {
                 Your Property&apos;s Digital Home.
               </h1>
               <p className="font-grotesk text-lg leading-7 text-[#45474c] mb-10 max-w-lg">
-                The smart ledger for your property. Effortlessly track expenses,
-                manage rent income, and simplify tax time. When it's time to
-                sell, pass on your ledger to maximise your ROI.
+                Inspired by the Nordic tradition of the house book, a living
+                record that accompanies a property throughout its life: our
+                platform reimagines home ownership for the digital age.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   href="/login"
                   className="bg-[#030813] text-white px-10 py-4 label-caps hover:bg-[#1a202c] transition-all flex items-center justify-center gap-2"
                 >
-                  Start Your Ledger
+                  Start Your Free Ledger
                   <span className="ms text-[18px]">arrow_forward</span>
                 </Link>
                 <button className="border border-[#76777c] px-10 py-4 label-caps hover:bg-[#e9e8e7] transition-all">
@@ -240,7 +240,8 @@ export default function LandingPage() {
                 <p className="font-grotesk text-lg text-[#45474c] mb-8 leading-relaxed">
                   Managing an investment shouldn&apos;t be a second job. Home
                   Base provides a simple tool to log every detail, from routine
-                  maintenance to major value-add renovations.
+                  maintenance to major value-add renovations building a smart
+                  ledger for your property.
                 </p>
                 <ul className="space-y-4">
                   {[
@@ -333,18 +334,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              {/* Quote bento */}
-              <div className="md:col-span-4 bg-[#030813] text-white p-8 flex flex-col justify-between">
-                <p className="font-caslon text-2xl italic leading-8">
-                  &ldquo;The value of an investment lies in the quality of its
-                  upkeep.&rdquo;
-                </p>
-                <div className="mt-8">
-                  <button className="label-caps text-[#e9c176] hover:underline">
-                    Find trusted professionals
-                  </button>
-                </div>
-              </div>
               {/* Sharing bento */}
               <div className="md:col-span-8 bg-[#e3e2e2] h-[300px] overflow-hidden flex">
                 <div className="w-1/2 p-8 flex flex-col justify-center">
@@ -353,7 +342,9 @@ export default function LandingPage() {
                   </h4>
                   <p className="font-grotesk text-base text-[#45474c]">
                     Export a comprehensive &lsquo;Property Bio&rsquo; to share
-                    with banks, insurers or potential buyers.
+                    with banks, insurers or potential buyers. Beatifully
+                    designed it enhances your sale listing making your property
+                    stand out from the rest.
                   </p>
                 </div>
                 <div className="w-1/2 relative">

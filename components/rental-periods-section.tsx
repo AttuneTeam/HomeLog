@@ -91,6 +91,7 @@ const schema = z.object({
   weekly_rent: z.string().min(1, "Weekly rent is required"),
   management_company: z.string().optional(),
   agent_name: z.string().optional(),
+  agent_email: z.string().optional(),
   management_fee_pct: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -137,6 +138,7 @@ export function RentalPeriodsSection({
       weekly_rent: "",
       management_company: "",
       agent_name: "",
+      agent_email: "",
       management_fee_pct: "",
       notes: "",
     });
@@ -150,6 +152,7 @@ export function RentalPeriodsSection({
       weekly_rent: String(period.weekly_rent),
       management_company: period.management_company ?? "",
       agent_name: period.agent_name ?? "",
+      agent_email: (period as RentalPeriod & { agent_email?: string }).agent_email ?? "",
       management_fee_pct:
         period.management_fee_pct != null
           ? String(period.management_fee_pct)
@@ -173,6 +176,7 @@ export function RentalPeriodsSection({
       weekly_rent: parseFloat(values.weekly_rent),
       management_company: values.management_company?.trim() || null,
       agent_name: values.agent_name?.trim() || null,
+      agent_email: values.agent_email?.trim().toLowerCase() || null,
       management_fee_pct: values.management_fee_pct?.trim()
         ? parseFloat(values.management_fee_pct)
         : null,
@@ -509,6 +513,19 @@ export function RentalPeriodsSection({
                     {...register("agent_name")}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="agent_email">Agent email</Label>
+                <Input
+                  id="agent_email"
+                  type="email"
+                  placeholder="agent@raywhite.com.au"
+                  {...register("agent_email")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used to automatically match incoming emails to this property
+                </p>
               </div>
 
               <div className="space-y-1.5">

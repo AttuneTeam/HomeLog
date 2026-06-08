@@ -118,7 +118,7 @@ export function RenovationsList({
                         <tr key={expense.id} className="border-t bg-muted/20">
                           <td className="py-1" />
                           <td className="px-1 py-1 pl-4">
-                            <div className="flex items-center gap-2">
+                            <div className="space-y-1">
                               <span className="text-muted-foreground">
                                 {expense.description ?? "Expense"}
                               </span>
