@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/invite") ||
     pathname.startsWith("/api/invite") ||
+    pathname.startsWith("/api/auth/forgot-password") ||
     pathname.startsWith("/passport")
 
   // Redirect unauthenticated users away from protected routes
