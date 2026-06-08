@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { sendAccountInviteEmail } from "@/lib/email";
 
 export async function GET() {
   const supabase = await createClient();
@@ -76,8 +77,8 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "";
   const inviteUrl = `${origin}/invite/${member.invite_token}`;
 
-  const adminSupabase = createAdminClient();
-  adminSupabase.auth.admin.inviteUserByEmail(email, { redirectTo: inviteUrl }).catch(() => null);
+  const inviterName = user.user_metadata?.display_name ?? user.email ?? "Someone";
+  await sendAccountInviteEmail({ to: email, inviterName, inviteUrl });
 
   return NextResponse.json({ member, inviteUrl }, { status: 201 });
 }

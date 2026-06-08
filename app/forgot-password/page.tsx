@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,13 +39,17 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email }),
     });
     setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    if (!res.ok) {
+      const { error } = await res
+        .json()
+        .catch(() => ({ error: "Something went wrong" }));
+      toast.error(error ?? "Something went wrong");
       return;
     }
     setSent(true);
@@ -67,7 +70,9 @@ export default function ForgotPasswordPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-caslon text-2xl font-normal">Reset password</CardTitle>
+            <CardTitle className="font-caslon text-2xl font-normal">
+              Reset password
+            </CardTitle>
             <CardDescription>
               {sent
                 ? "Check your email for a reset link."
