@@ -23,6 +23,7 @@ import { PropertySharePanel } from "@/components/property-share-panel";
 import { PropertyFilesSection } from "@/components/property-files-section";
 import { RentalPeriodsSection } from "@/components/rental-periods-section";
 import { RentalExpensesSection } from "@/components/rental-expenses-section";
+import { RentalPaymentsSection, type RentalPayment } from "@/components/rental-payments-section";
 import { LoanInterestRatesSection } from "@/components/loan-interest-rates-section";
 import { RenovationsList } from "@/components/renovations-list";
 
@@ -51,6 +52,7 @@ export default async function PropertyDetailPage({ params }: Props) {
     { data: propertyFiles },
     { data: rentalPeriods },
     { data: rentalExpenses },
+    { data: rentalPayments },
     { data: loanRates },
     { data: propertyLoan },
     { data: offsetAccounts },
@@ -77,6 +79,13 @@ export default async function PropertyDetailPage({ params }: Props) {
       .select("*")
       .eq("property_id", propertyId)
       .order("expense_date", { ascending: false }),
+    // rental_payments not yet in generated DB types — cast until types are regenerated
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("rental_payments")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("payment_date", { ascending: false }),
     supabase
       .from("loan_interest_rates")
       .select("id, property_id, rate, effective_date, notes")
@@ -306,6 +315,10 @@ export default async function PropertyDetailPage({ params }: Props) {
               <RentalPeriodsSection
                 propertyId={propertyId}
                 initialPeriods={rentalPeriods ?? []}
+              />
+              <RentalPaymentsSection
+                propertyId={propertyId}
+                initialPayments={(rentalPayments ?? []) as unknown as RentalPayment[]}
               />
               <RentalExpensesSection
                 propertyId={propertyId}

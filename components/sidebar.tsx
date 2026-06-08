@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, HardHat } from "lucide-react";
+import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, HardHat, Mail } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +15,7 @@ const navItems = [
   { href: "/financial", label: "Household Finances", icon: TrendingUp },
   { href: "/settings/account", label: "Account", icon: UserCircle },
   { href: "/settings/xero", label: "Integrations", icon: Plug },
+  { href: "/settings/email", label: "Email sync", icon: Mail },
 ];
 
 interface SidebarProps {
