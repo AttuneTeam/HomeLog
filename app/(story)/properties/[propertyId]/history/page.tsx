@@ -46,6 +46,7 @@ export default async function PropertyStoryPage({ params }: Props) {
       )
       .eq("property_id", propertyId)
       .neq("status", "planned")
+      .neq("status", "in_progress")
       .order("start_date", { ascending: false }),
     supabase
       .from("property_enrichment")

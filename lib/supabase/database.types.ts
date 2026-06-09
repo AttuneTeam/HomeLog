@@ -190,9 +190,33 @@ export type PropertyPassportLink = {
   created_at: string;
 };
 
+export type UserStorageUsage = {
+  user_id: string;
+  total_bytes: number;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
+      user_storage_usage: {
+        Row: {
+          user_id: string;
+          total_bytes: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          total_bytes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          total_bytes?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       property_offset_accounts: {
         Row: {
           id: string;
