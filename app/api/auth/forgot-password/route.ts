@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -17,22 +16,16 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "";
 
   try {
-    const adminSupabase = createAdminClient();
-    const { data, error } = await adminSupabase.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: `${origin}/auth/update-password`,
-      },
+    // Using the SSR client (not admin) so that the PKCE code verifier is stored
+    // in the response cookies. The callback route then reads that cookie when
+    // exchanging the code Supabase appends to the redirect URL.
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=/auth/update-password`,
     });
 
-    if (error || !data.properties?.action_link) {
-      console.error("[forgot-password] generateLink failed:", error?.message);
-    } else {
-      await sendPasswordResetEmail({
-        to: email,
-        resetUrl: data.properties.action_link,
-      });
+    if (error) {
+      console.error("[forgot-password] resetPasswordForEmail failed:", error.message);
     }
   } catch (err) {
     console.error("[forgot-password] unexpected error:", err);
