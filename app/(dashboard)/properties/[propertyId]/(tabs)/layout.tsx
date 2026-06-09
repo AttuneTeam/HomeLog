@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, calcTotalSpend } from "@/lib/utils";
 import {
   Pencil,
@@ -11,12 +10,9 @@ import {
   Calendar,
   DollarSign,
   Wrench,
-  FileBarChart,
-  History,
   Info,
 } from "lucide-react";
-import { DeletePropertyButton } from "@/components/delete-property-button";
-import { PropertySharePanel } from "@/components/property-share-panel";
+import { PropertyActionsMenu } from "@/components/property-actions-menu";
 import { PropertyTabNav } from "@/components/property-tab-nav";
 import {
   Tooltip,
@@ -99,37 +95,20 @@ export default async function PropertyLayout({ params, children }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-          <ButtonLink
-            href={`/properties/${propertyId}/history`}
-            variant="outline"
-            size="sm"
-          >
-            <History className="h-3.5 w-3.5 mr-1.5" />
-            History
-          </ButtonLink>
-          <ButtonLink
-            href={`/properties/${propertyId}/tax-report`}
-            variant="outline"
-            size="sm"
-          >
-            <FileBarChart className="h-3.5 w-3.5 mr-1.5" />
-            Tax Report
-          </ButtonLink>
           {property.user_id === user.id && (
-            <>
-              <Separator orientation="vertical" className="h-6" />
-              {/* <PropertySharePanel propertyId={propertyId} /> */}
-              <ButtonLink
-                href={`/properties/${propertyId}/edit`}
-                variant="outline"
-                size="sm"
-              >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </ButtonLink>
-              <DeletePropertyButton propertyId={propertyId} />
-            </>
+            <ButtonLink
+              href={`/properties/${propertyId}/edit`}
+              variant="outline"
+              size="sm"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Edit
+            </ButtonLink>
           )}
+          <PropertyActionsMenu
+            propertyId={propertyId}
+            canDelete={property.user_id === user.id}
+          />
         </div>
       </div>
 
@@ -187,7 +166,10 @@ export default async function PropertyLayout({ params, children }: Props) {
       </div>
 
       {/* Tab navigation */}
-      <PropertyTabNav propertyId={propertyId} />
+      <PropertyTabNav
+        propertyId={propertyId}
+        isPrimaryResidence={property.property_type === "primary_residence"}
+      />
 
       {children}
     </div>

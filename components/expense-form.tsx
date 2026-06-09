@@ -338,7 +338,6 @@ export function ExpenseForm({
                 id="amount"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
                 {...register("amount")}
               />
               {errors.amount && (
@@ -353,7 +352,6 @@ export function ExpenseForm({
                 id="gst_amount"
                 type="number"
                 step="0.01"
-                placeholder="0.00"
                 {...register("gst_amount")}
               />
             </div>
@@ -377,7 +375,6 @@ export function ExpenseForm({
             <Label htmlFor="description">Description</Label>
             <Input
               id="description"
-              placeholder="What was this expense for?"
               {...register("description")}
             />
           </div>
@@ -387,7 +384,6 @@ export function ExpenseForm({
               <Label htmlFor="supplier">Supplier / contractor</Label>
               <Input
                 id="supplier"
-                placeholder="ABC Plumbing"
                 {...register("supplier")}
               />
             </div>
@@ -395,7 +391,6 @@ export function ExpenseForm({
               <Label htmlFor="abn">Supplier ABN</Label>
               <Input
                 id="abn"
-                placeholder="12 345 678 901"
                 {...register("abn")}
               />
             </div>
@@ -407,7 +402,6 @@ export function ExpenseForm({
               <Input
                 id="phone"
                 type="tel"
-                placeholder="0400 000 000"
                 {...register("phone")}
               />
             </div>
@@ -416,7 +410,6 @@ export function ExpenseForm({
               <Input
                 id="email"
                 type="email"
-                placeholder="contact@example.com"
                 {...register("email")}
               />
             </div>
@@ -427,7 +420,6 @@ export function ExpenseForm({
             <Input
               id="website"
               type="url"
-              placeholder="https://example.com"
               {...register("website")}
             />
           </div>
@@ -436,7 +428,6 @@ export function ExpenseForm({
             <Label htmlFor="address">Street address</Label>
             <Input
               id="address"
-              placeholder="123 Main St"
               {...register("address")}
             />
           </div>
@@ -446,7 +437,6 @@ export function ExpenseForm({
               <Label htmlFor="suburb">Suburb</Label>
               <Input
                 id="suburb"
-                placeholder="Sydney"
                 {...register("suburb")}
               />
             </div>
@@ -454,7 +444,6 @@ export function ExpenseForm({
               <Label htmlFor="state">State</Label>
               <Input
                 id="state"
-                placeholder="NSW"
                 {...register("state")}
               />
             </div>
@@ -462,7 +451,6 @@ export function ExpenseForm({
               <Label htmlFor="postcode">Postcode</Label>
               <Input
                 id="postcode"
-                placeholder="2000"
                 {...register("postcode")}
               />
             </div>
@@ -543,7 +531,6 @@ export function ExpenseForm({
             </p>
             <Textarea
               id="context_notes"
-              placeholder="e.g. Asbestos sheeting on garage was damaged and required removal. Replacement with blueboard was necessary as the structure could not be left exposed."
               rows={3}
               {...register("context_notes")}
             />
