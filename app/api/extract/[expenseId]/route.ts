@@ -30,45 +30,54 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
   }
 
-  if (!expense.invoice_path) {
-    return NextResponse.json({ error: 'No invoice attached to this expense' }, { status: 400 })
-  }
+  // Skip if embeddings already exist for this expense
+  const { count: embeddingCount } = await supabase
+    .from('expense_embeddings')
+    .select('id', { count: 'exact', head: true })
+    .eq('expense_id', expenseId)
 
-  // Return cached text if already extracted
-  if (expense.raw_text) {
+  if (embeddingCount && embeddingCount > 0) {
     return NextResponse.json({ ok: true, cached: true })
   }
 
-  // Download invoice file from storage
-  const { data: fileData, error: fileError } = await supabase.storage
-    .from('invoices')
-    .download(expense.invoice_path)
-
-  if (fileError || !fileData) {
-    return NextResponse.json({ error: `Storage download failed: ${fileError?.message}` }, { status: 500 })
-  }
-
-  const arrayBuffer = await fileData.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-  const mimeType = mimeTypeFromPath(expense.invoice_path)
-
-  // Extract text from invoice
-  let rawText: string
-  try {
-    rawText = await extractTextFromBuffer(buffer, mimeType)
-  } catch (err) {
-    return NextResponse.json({ error: `Text extraction failed: ${(err as Error).message}` }, { status: 500 })
-  }
+  // Use already-extracted text if present (no vision pass); otherwise extract from the file
+  let rawText = expense.raw_text ?? ''
 
   if (!rawText) {
-    return NextResponse.json({ error: 'Could not extract any text from invoice' }, { status: 422 })
-  }
+    if (!expense.invoice_path) {
+      return NextResponse.json({ error: 'No invoice attached to this expense' }, { status: 400 })
+    }
 
-  // Store raw text on the expense record
-  await supabase
-    .from('expenses')
-    .update({ raw_text: rawText })
-    .eq('id', expenseId)
+    // Download invoice file from storage
+    const { data: fileData, error: fileError } = await supabase.storage
+      .from('invoices')
+      .download(expense.invoice_path)
+
+    if (fileError || !fileData) {
+      return NextResponse.json({ error: `Storage download failed: ${fileError?.message}` }, { status: 500 })
+    }
+
+    const arrayBuffer = await fileData.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const mimeType = mimeTypeFromPath(expense.invoice_path)
+
+    // Extract text from invoice (fallback vision pass for legacy expenses)
+    try {
+      rawText = await extractTextFromBuffer(buffer, mimeType)
+    } catch (err) {
+      return NextResponse.json({ error: `Text extraction failed: ${(err as Error).message}` }, { status: 500 })
+    }
+
+    if (!rawText) {
+      return NextResponse.json({ error: 'Could not extract any text from invoice' }, { status: 422 })
+    }
+
+    // Store raw text on the expense record
+    await supabase
+      .from('expenses')
+      .update({ raw_text: rawText })
+      .eq('id', expenseId)
+  }
 
   // Chunk and embed
   const chunks = chunkText(rawText)

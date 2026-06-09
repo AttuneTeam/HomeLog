@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateObject } from "ai";
-import { classificationModel } from "@/lib/ai/openai-client";
+import { extractionModel } from "@/lib/ai/openai-client";
 import { mimeTypeFromPath } from "@/lib/ai/extract-text";
 import { z } from "zod";
 
@@ -19,6 +19,7 @@ const invoiceFieldsSchema = z.object({
   contractor_suburb: z.string().nullable().describe("Suburb of the supplier address"),
   contractor_state: z.string().nullable().describe("State abbreviation of the supplier address (e.g. NSW, VIC)"),
   contractor_postcode: z.string().nullable().describe("Postcode of the supplier address"),
+  raw_text: z.string().nullable().describe("All text on the invoice transcribed verbatim, preserving line structure — every date, amount, line-item description, ABN, and supplier detail. The complete document text, in addition to the structured fields above."),
 });
 
 export async function POST(req: NextRequest) {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   const mimeType = mimeTypeFromPath(file.name);
 
   const { object } = await generateObject({
-    model: classificationModel,
+    model: extractionModel,
     output: "object",
     schema: invoiceFieldsSchema,
     messages: [
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
             : { type: "image" as const, image: `data:${mimeType};base64,${base64}` },
           {
             type: "text",
-            text: "Extract the expense fields from this invoice. Return null for any field not found.",
+            text: "Extract the structured expense fields from this invoice AND transcribe the full invoice text verbatim into raw_text. Return null for any field not found.",
           },
         ],
       },
