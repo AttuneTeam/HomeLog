@@ -17,22 +17,23 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "";
 
   try {
+    // generateLink mints the recovery token but we don't use its action_link
+    // (that routes through Supabase's verify endpoint + PKCE). Instead we take
+    // the raw hashed_token and build a link to our own /auth/confirm route,
+    // which verifies it with verifyOtp — no PKCE code verifier required. This
+    // keeps the email entirely in our own mailer.
     const adminSupabase = createAdminClient();
     const { data, error } = await adminSupabase.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: {
-        redirectTo: `${origin}/auth/update-password`,
-      },
     });
 
-    if (error || !data.properties?.action_link) {
+    const tokenHash = data.properties?.hashed_token;
+    if (error || !tokenHash) {
       console.error("[forgot-password] generateLink failed:", error?.message);
     } else {
-      await sendPasswordResetEmail({
-        to: email,
-        resetUrl: data.properties.action_link,
-      });
+      const resetUrl = `${origin}/auth/confirm?token_hash=${tokenHash}&type=recovery&next=/auth/update-password`;
+      await sendPasswordResetEmail({ to: email, resetUrl });
     }
   } catch (err) {
     console.error("[forgot-password] unexpected error:", err);
