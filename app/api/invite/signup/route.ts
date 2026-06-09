@@ -37,6 +37,11 @@ export async function POST(req: NextRequest) {
     if (!existing) {
       return NextResponse.json({ error: "Account already exists. Please sign in to accept." }, { status: 409 });
     }
+    // Ensure the email is confirmed and update password in case they're retrying
+    await admin.auth.admin.updateUserById(existing.id, {
+      email_confirm: true,
+      password,
+    });
     userId = existing.id;
   } else {
     userId = userData.user.id;
