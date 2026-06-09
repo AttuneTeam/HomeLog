@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -16,16 +17,23 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_APP_URL ?? req.headers.get("origin") ?? "";
 
   try {
-    // Using the SSR client (not admin) so that the PKCE code verifier is stored
-    // in the response cookies. The callback route then reads that cookie when
-    // exchanging the code Supabase appends to the redirect URL.
-    const supabase = await createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=/auth/update-password`,
+    // generateLink mints the recovery token but we don't use its action_link
+    // (that routes through Supabase's verify endpoint + PKCE). Instead we take
+    // the raw hashed_token and build a link to our own /auth/confirm route,
+    // which verifies it with verifyOtp — no PKCE code verifier required. This
+    // keeps the email entirely in our own mailer.
+    const adminSupabase = createAdminClient();
+    const { data, error } = await adminSupabase.auth.admin.generateLink({
+      type: "recovery",
+      email,
     });
 
-    if (error) {
-      console.error("[forgot-password] resetPasswordForEmail failed:", error.message);
+    const tokenHash = data.properties?.hashed_token;
+    if (error || !tokenHash) {
+      console.error("[forgot-password] generateLink failed:", error?.message);
+    } else {
+      const resetUrl = `${origin}/auth/confirm?token_hash=${tokenHash}&type=recovery&next=/auth/update-password`;
+      await sendPasswordResetEmail({ to: email, resetUrl });
     }
   } catch (err) {
     console.error("[forgot-password] unexpected error:", err);
