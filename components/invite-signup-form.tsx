@@ -31,9 +31,13 @@ interface Props {
   propertyId?: string;
 }
 
-export function InviteSignupForm({ token, inviteEmail, inviteType, propertyId }: Props) {
+export function InviteSignupForm({
+  token,
+  inviteEmail,
+  inviteType,
+  propertyId,
+}: Props) {
   const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
   const {
     register,
@@ -43,57 +47,41 @@ export function InviteSignupForm({ token, inviteEmail, inviteType, propertyId }:
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    const supabase = createClient();
 
-    const { data, error } = await supabase.auth.signUp({
-      email: inviteEmail,
-      password: values.password,
-      options: {
-        data: { display_name: values.displayName },
-        emailRedirectTo: `${window.location.origin}/invite/${token}`,
-      },
+    const res = await fetch("/api/invite/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        email: inviteEmail,
+        password: values.password,
+        displayName: values.displayName,
+        inviteType,
+        propertyId,
+      }),
     });
 
-    if (error) {
-      toast.error(error.message);
+    const json = await res.json();
+
+    if (!res.ok) {
+      toast.error(json.error ?? "Something went wrong");
       setLoading(false);
       return;
     }
 
-    // Session is available when email confirmation is disabled — accept the invite now
-    if (data.session && data.user) {
-      const table = inviteType === "account" ? "account_members" : "property_shares";
-      const { error: updateError } = await supabase
-        .from(table)
-        .update({ status: "active", grantee_user_id: data.user.id })
-        .eq("invite_token", token);
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: inviteEmail,
+      password: values.password,
+    });
 
-      if (updateError) {
-        toast.error("Account created but invite could not be accepted. Please try signing in.");
-        window.location.href = `/login?redirect=${encodeURIComponent(`/invite/${token}`)}`;
-        return;
-      }
-
-      const redirectTo =
-        inviteType === "property" && propertyId
-          ? `/properties/${propertyId}?invite=accepted`
-          : `/?invite=accepted`;
-      window.location.href = redirectTo;
+    if (signInError) {
+      toast.error("Account created — please sign in to continue.");
+      window.location.href = `/login?redirect=${encodeURIComponent(`/invite/${token}`)}`;
       return;
     }
 
-    // Email confirmation is required — wait for the user to verify
-    setEmailSent(true);
-    setLoading(false);
-  }
-
-  if (emailSent) {
-    return (
-      <p className="text-center text-sm text-muted-foreground">
-        We sent a confirmation link to <strong>{inviteEmail}</strong>. Click it to verify your
-        account, then return here to accept the invitation.
-      </p>
-    );
+    window.location.href = json.redirectTo;
   }
 
   return (
@@ -104,14 +92,20 @@ export function InviteSignupForm({ token, inviteEmail, inviteType, propertyId }:
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="displayName">Your name</Label>
-        <Input id="displayName" placeholder="Alex Smith" {...register("displayName")} />
+        <Input
+          id="displayName"
+          placeholder="Alex Smith"
+          {...register("displayName")}
+        />
         {errors.displayName && (
-          <p className="text-xs text-destructive">{errors.displayName.message}</p>
+          <p className="text-xs text-destructive">
+            {errors.displayName.message}
+          </p>
         )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
+        <Input id="password" type="password" {...register("password")} />
         {errors.password && (
           <p className="text-xs text-destructive">{errors.password.message}</p>
         )}
@@ -121,11 +115,12 @@ export function InviteSignupForm({ token, inviteEmail, inviteType, propertyId }:
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="••••••••"
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (
-          <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+          <p className="text-xs text-destructive">
+            {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 
