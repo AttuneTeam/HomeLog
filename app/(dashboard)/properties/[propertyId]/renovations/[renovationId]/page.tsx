@@ -44,24 +44,27 @@ export default async function RenovationDetailPage({ params }: Props) {
     .eq("renovation_id", renovationId)
     .order("expense_date", { ascending: false });
 
-  const [{ data: quotes }, { data: renovationSummary }, { data: allRenovations }] =
-    await Promise.all([
-      supabase
-        .from("renovation_quotes")
-        .select("*, quote_ai_classifications(*)")
-        .eq("renovation_id", renovationId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("renovation_summaries")
-        .select("summary_text, is_edited")
-        .eq("renovation_id", renovationId)
-        .maybeSingle(),
-      supabase
-        .from("renovations")
-        .select("id, name")
-        .eq("property_id", propertyId)
-        .order("name", { ascending: true }),
-    ]);
+  const [
+    { data: quotes },
+    { data: renovationSummary },
+    { data: allRenovations },
+  ] = await Promise.all([
+    supabase
+      .from("renovation_quotes")
+      .select("*, quote_ai_classifications(*)")
+      .eq("renovation_id", renovationId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("renovation_summaries")
+      .select("summary_text, is_edited")
+      .eq("renovation_id", renovationId)
+      .maybeSingle(),
+    supabase
+      .from("renovations")
+      .select("id, name")
+      .eq("property_id", propertyId)
+      .order("name", { ascending: true }),
+  ]);
 
   const otherRenovations =
     allRenovations?.filter((r) => r.id !== renovationId) ?? [];
@@ -183,6 +186,7 @@ export default async function RenovationDetailPage({ params }: Props) {
           <ButtonLink
             href={`/properties/${propertyId}/renovations/${renovationId}/expenses/new`}
             size="sm"
+            variant="outline"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Add expense
@@ -211,10 +215,8 @@ export default async function RenovationDetailPage({ params }: Props) {
           <div className=" overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground">
-                    Expense
-                  </th>
+                <tr className="border-b">
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground"></th>
                   <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
                   <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
                   <th className="text-right px-0 py-2.5 font-medium text-muted-foreground"></th>
@@ -247,10 +249,19 @@ export default async function RenovationDetailPage({ params }: Props) {
                         />
                       ) : (
                         (() => {
-                          const aiClass = Array.isArray(expense.expense_ai_classifications)
-                            ? expense.expense_ai_classifications[0]?.classification
-                            : (expense.expense_ai_classifications as { classification?: string } | null)?.classification;
-                          return aiClass ? <AiClassificationBadge classification={aiClass} /> : null;
+                          const aiClass = Array.isArray(
+                            expense.expense_ai_classifications,
+                          )
+                            ? expense.expense_ai_classifications[0]
+                                ?.classification
+                            : (
+                                expense.expense_ai_classifications as {
+                                  classification?: string;
+                                } | null
+                              )?.classification;
+                          return aiClass ? (
+                            <AiClassificationBadge classification={aiClass} />
+                          ) : null;
                         })()
                       )}
                     </td>
@@ -270,8 +281,10 @@ export default async function RenovationDetailPage({ params }: Props) {
                     </td>
                   </tr>
                 ))}
-                <tr className="border-t bg-muted/50">
-                  <td className="px-0 py-2.5 text-sm font-semibold text-right hidden sm:table-cell"></td>
+                <tr className="border-t">
+                  <td className="px-0 py-2.5 text-sm font-semibold sm:table-cell">
+                    Total
+                  </td>
                   <td className="px-4 py-2.5 text-sm font-semibold text-right sm:table-cell"></td>
                   <td className="px-4 py-2.5 text-sm font-semibold text-right sm:table-cell"></td>
                   <td className="px-0 py-2.5 text-right font-semibold tabular-nums">
@@ -317,7 +330,9 @@ function AiClassificationBadge({ classification }: { classification: string }) {
         ? "Immediate Deduction"
         : "Plant & Equipment";
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours} shrink-0`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours} shrink-0`}
+    >
       {label}
     </span>
   );
