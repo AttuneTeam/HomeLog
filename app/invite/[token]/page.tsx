@@ -5,6 +5,11 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { InviteAcceptButton } from "@/components/invite-accept-button";
 import { InviteSignupForm } from "@/components/invite-signup-form";
 
+async function emailHasAccount(admin: ReturnType<typeof createAdminClient>, email: string): Promise<boolean> {
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000, page: 1 });
+  return !!data?.users?.find((u) => u.email === email);
+}
+
 interface Props {
   params: Promise<{ token: string }>;
 }
@@ -40,6 +45,10 @@ export default async function InvitePage({ params }: Props) {
     const alreadyActive = accountMember.status === "active";
 
     if (!user) {
+      const accountExists = !isRevoked && !alreadyActive
+        ? await emailHasAccount(admin, accountMember.grantee_email)
+        : false;
+
       return (
         <InviteShell
           icon={<Users className="h-8 w-8 text-primary" />}
@@ -55,6 +64,8 @@ export default async function InvitePage({ params }: Props) {
                 Sign in
               </Link>
             </p>
+          ) : accountExists ? (
+            <SignInToAccept token={token} email={accountMember.grantee_email} />
           ) : (
             <InviteSignupForm token={token} inviteEmail={accountMember.grantee_email} inviteType="account" />
           )}
@@ -116,6 +127,10 @@ export default async function InvitePage({ params }: Props) {
     const alreadyActive = propertyShare.status === "active";
 
     if (!user) {
+      const accountExists = !isRevoked && !alreadyActive
+        ? await emailHasAccount(admin, propertyShare.grantee_email)
+        : false;
+
       return (
         <InviteShell
           icon={<Building2 className="h-8 w-8 text-primary" />}
@@ -131,6 +146,8 @@ export default async function InvitePage({ params }: Props) {
                 Sign in
               </Link>
             </p>
+          ) : accountExists ? (
+            <SignInToAccept token={token} email={propertyShare.grantee_email} />
           ) : (
             <InviteSignupForm token={token} inviteEmail={propertyShare.grantee_email} inviteType="property" propertyId={propertyShare.property_id} />
           )}
@@ -217,6 +234,22 @@ function InviteShell({
           {children}
         </div>
       </div>
+    </div>
+  );
+}
+
+function SignInToAccept({ token, email }: { token: string; email: string }) {
+  return (
+    <div className="space-y-3 text-center">
+      <p className="text-sm text-muted-foreground">
+        <strong>{email}</strong> already has an account. Sign in to accept this invitation.
+      </p>
+      <Link
+        href={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}
+        className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        Sign in to accept
+      </Link>
     </div>
   );
 }
