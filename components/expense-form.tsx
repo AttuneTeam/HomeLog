@@ -67,6 +67,7 @@ export function ExpenseForm({
     defaultValues?.invoice_path ?? null,
   );
   const [aiPrefilled, setAiPrefilled] = useState(false);
+  const [extractedRawText, setExtractedRawText] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = !!defaultValues?.id;
 
@@ -142,6 +143,7 @@ export function ExpenseForm({
       if (data.contractor_suburb) setValue("suburb", data.contractor_suburb);
       if (data.contractor_state) setValue("state", data.contractor_state);
       if (data.contractor_postcode) setValue("postcode", data.contractor_postcode);
+      if (data.raw_text) setExtractedRawText(data.raw_text);
       setAiPrefilled(true);
     } catch {
       // silent — user can fill in manually
@@ -173,6 +175,7 @@ export function ExpenseForm({
       abn: values.abn || null,
       invoice_path: invoicePath,
       context_notes: values.context_notes || null,
+      ...(extractedRawText ? { raw_text: extractedRawText } : {}),
     };
 
     if (isEdit) {

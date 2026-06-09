@@ -8,6 +8,7 @@ import { Plus, Pencil, Receipt } from "lucide-react";
 import { DeleteRenovationButton } from "@/components/delete-renovation-button";
 import { RenovationQuotesSection } from "@/components/renovation-quotes-section";
 import { RenovationValueSummary } from "@/components/renovation-value-summary";
+import { InvoiceBulkDropzone } from "@/components/invoice-bulk-dropzone";
 import { ManualTaxClassification } from "@/lib/supabase/database.types";
 
 interface Props {
@@ -38,7 +39,7 @@ export default async function RenovationDetailPage({ params }: Props) {
 
   const { data: expenses } = await supabase
     .from("expenses")
-    .select("*")
+    .select("*, expense_ai_classifications(classification)")
     .eq("renovation_id", renovationId)
     .order("expense_date", { ascending: false });
 
@@ -152,16 +153,18 @@ export default async function RenovationDetailPage({ params }: Props) {
         </Card>
       </div>
 
-      {/* Renovation summary */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Renovation summary
-        </h2>
-        <RenovationValueSummary
-          renovationId={renovationId}
-          initial={renovationSummary ?? null}
-        />
-      </div>
+      {/* Renovation summary — only when expenses exist */}
+      {expenses && expenses.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Renovation summary
+          </h2>
+          <RenovationValueSummary
+            renovationId={renovationId}
+            initial={renovationSummary ?? null}
+          />
+        </div>
+      )}
 
       {/* Expenses */}
       <div>
@@ -227,10 +230,17 @@ export default async function RenovationDetailPage({ params }: Props) {
                       )}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell whitespace-nowrap">
-                      {expense.manual_classification && (
+                      {expense.manual_classification ? (
                         <ClassificationBadge
                           classification={expense.manual_classification}
                         />
+                      ) : (
+                        (() => {
+                          const aiClass = Array.isArray(expense.expense_ai_classifications)
+                            ? expense.expense_ai_classifications[0]?.classification
+                            : (expense.expense_ai_classifications as { classification?: string } | null)?.classification;
+                          return aiClass ? <AiClassificationBadge classification={aiClass} /> : null;
+                        })()
                       )}
                     </td>
                     <td className="text-left px-4 py-3 text-muted-foreground whitespace-nowrap hidden sm:table-cell">
@@ -255,6 +265,13 @@ export default async function RenovationDetailPage({ params }: Props) {
         )}
       </div>
 
+      {/* Bulk invoice import */}
+      <InvoiceBulkDropzone
+        renovationId={renovationId}
+        propertyId={propertyId}
+        userId={user.id}
+      />
+
       {/* Quotes */}
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <RenovationQuotesSection
@@ -263,6 +280,26 @@ export default async function RenovationDetailPage({ params }: Props) {
         initialQuotes={(quotes ?? []) as any}
       />
     </div>
+  );
+}
+
+function AiClassificationBadge({ classification }: { classification: string }) {
+  const colours =
+    classification === "Capital Works (Div 43)"
+      ? "bg-amber-100 text-amber-800"
+      : classification === "Immediate Deduction"
+        ? "bg-purple-100 text-purple-800"
+        : "bg-sky-100 text-sky-800";
+  const label =
+    classification === "Capital Works (Div 43)"
+      ? "Capital Works"
+      : classification === "Immediate Deduction"
+        ? "Immediate Deduction"
+        : "Plant & Equipment";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colours} shrink-0`}>
+      {label}
+    </span>
   );
 }
 
