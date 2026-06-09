@@ -7,21 +7,46 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   propertyId: string;
+  isPrimaryResidence?: boolean;
 }
 
 const tabs = [
-  { label: "Rent", value: "rent", href: (id: string) => `/properties/${id}/rent`, icon: Home },
-  { label: "Renovation", value: "renovations", href: (id: string) => `/properties/${id}/renovations`, icon: Wrench },
-  { label: "Files", value: "files", href: (id: string) => `/properties/${id}/files`, icon: FolderClosed },
-  { label: "Loan", value: "loan", href: (id: string) => `/properties/${id}/loan`, icon: Banknote },
+  {
+    label: "Renovation",
+    value: "renovations",
+    href: (id: string) => `/properties/${id}/renovations`,
+    icon: Wrench,
+  },
+  {
+    label: "Rent",
+    value: "rent",
+    href: (id: string) => `/properties/${id}/rent`,
+    icon: Home,
+  },
+  {
+    label: "Files",
+    value: "files",
+    href: (id: string) => `/properties/${id}/files`,
+    icon: FolderClosed,
+  },
+  {
+    label: "Loan",
+    value: "loan",
+    href: (id: string) => `/properties/${id}/loan`,
+    icon: Banknote,
+  },
 ] as const;
 
-export function PropertyTabNav({ propertyId }: Props) {
+export function PropertyTabNav({ propertyId, isPrimaryResidence }: Props) {
   const pathname = usePathname();
+
+  const visibleTabs = isPrimaryResidence
+    ? tabs.filter((tab) => tab.value !== "rent")
+    : tabs;
 
   return (
     <div className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground mb-6">
-      {tabs.map(({ label, value, href, icon: Icon }) => {
+      {visibleTabs.map(({ label, value, href, icon: Icon }) => {
         const isActive = pathname === href(propertyId);
         return (
           <Link

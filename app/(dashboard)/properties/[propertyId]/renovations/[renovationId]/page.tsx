@@ -9,6 +9,7 @@ import { DeleteRenovationButton } from "@/components/delete-renovation-button";
 import { RenovationQuotesSection } from "@/components/renovation-quotes-section";
 import { RenovationValueSummary } from "@/components/renovation-value-summary";
 import { InvoiceBulkDropzone } from "@/components/invoice-bulk-dropzone";
+import { MoveExpenseMenu } from "@/components/move-expense-menu";
 import { ManualTaxClassification } from "@/lib/supabase/database.types";
 
 interface Props {
@@ -43,18 +44,27 @@ export default async function RenovationDetailPage({ params }: Props) {
     .eq("renovation_id", renovationId)
     .order("expense_date", { ascending: false });
 
-  const [{ data: quotes }, { data: renovationSummary }] = await Promise.all([
-    supabase
-      .from("renovation_quotes")
-      .select("*, quote_ai_classifications(*)")
-      .eq("renovation_id", renovationId)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("renovation_summaries")
-      .select("summary_text, is_edited")
-      .eq("renovation_id", renovationId)
-      .maybeSingle(),
-  ]);
+  const [{ data: quotes }, { data: renovationSummary }, { data: allRenovations }] =
+    await Promise.all([
+      supabase
+        .from("renovation_quotes")
+        .select("*, quote_ai_classifications(*)")
+        .eq("renovation_id", renovationId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("renovation_summaries")
+        .select("summary_text, is_edited")
+        .eq("renovation_id", renovationId)
+        .maybeSingle(),
+      supabase
+        .from("renovations")
+        .select("id, name")
+        .eq("property_id", propertyId)
+        .order("name", { ascending: true }),
+    ]);
+
+  const otherRenovations =
+    allRenovations?.filter((r) => r.id !== renovationId) ?? [];
 
   const totalSpend = expenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
 
@@ -208,6 +218,7 @@ export default async function RenovationDetailPage({ params }: Props) {
                   <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
                   <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
                   <th className="text-right px-0 py-2.5 font-medium text-muted-foreground"></th>
+                  <th className="w-10 px-0 py-2.5"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -249,6 +260,14 @@ export default async function RenovationDetailPage({ params }: Props) {
                     <td className="px-0 py-3 text-right tabular-nums font-medium">
                       {formatCurrency(Number(expense.amount))}
                     </td>
+                    <td className="px-0 py-1 text-right">
+                      <MoveExpenseMenu
+                        expenseId={expense.id}
+                        currentRenovationId={renovationId}
+                        propertyId={propertyId}
+                        renovations={otherRenovations}
+                      />
+                    </td>
                   </tr>
                 ))}
                 <tr className="border-t bg-muted/50">
@@ -258,6 +277,7 @@ export default async function RenovationDetailPage({ params }: Props) {
                   <td className="px-0 py-2.5 text-right font-semibold tabular-nums">
                     {formatCurrency(totalSpend)}
                   </td>
+                  <td className="px-0 py-2.5"></td>
                 </tr>
               </tbody>
             </table>

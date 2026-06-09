@@ -490,6 +490,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          renovation_id?: string;
           amount?: number;
           category?: ExpenseCategory;
           expense_date?: string;
