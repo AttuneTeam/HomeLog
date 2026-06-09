@@ -87,7 +87,7 @@ export function MoveExpenseMenu({
             onClick={() => setMoveOpen(true)}
           >
             <FolderInput className="h-3.5 w-3.5 mr-2" />
-            Move to another renovation
+            Move
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
