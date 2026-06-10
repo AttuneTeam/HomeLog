@@ -9,7 +9,8 @@
     "db:migrate": "supabase migration up",
     "db:reset": "supabase db reset",
     "db:sync": "bash scripts/sync-from-prod.sh",
-    "seed:ato": "tsx scripts/seed-ato-rulings.ts"
+    "seed:ato": "tsx scripts/seed-ato-rulings.ts",
+    "seed:demo": "tsx scripts/seed-demo-property.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.63",
@@ -27,6 +28,7 @@
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "openai": "^6.33.0",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.2",

@@ -217,6 +217,82 @@ export interface Database {
         };
         Relationships: [];
       };
+      staged_receipts: {
+        Row: {
+          id: string;
+          user_id: string;
+          property_id: string | null;
+          renovation_id: string | null;
+          source: string;
+          storage_path: string;
+          original_filename: string | null;
+          content_type: string | null;
+          status: string;
+          extracted: Record<string, unknown> | null;
+          confidence: number | null;
+          error: string | null;
+          source_ref: string | null;
+          committed_expense_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          property_id?: string | null;
+          renovation_id?: string | null;
+          source?: string;
+          storage_path: string;
+          original_filename?: string | null;
+          content_type?: string | null;
+          status?: string;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          error?: string | null;
+          source_ref?: string | null;
+          committed_expense_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          property_id?: string | null;
+          renovation_id?: string | null;
+          source?: string;
+          storage_path?: string;
+          original_filename?: string | null;
+          content_type?: string | null;
+          status?: string;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          error?: string | null;
+          source_ref?: string | null;
+          committed_expense_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "staged_receipts_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "staged_receipts_renovation_id_fkey";
+            columns: ["renovation_id"];
+            isOneToOne: false;
+            referencedRelation: "renovations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "staged_receipts_committed_expense_id_fkey";
+            columns: ["committed_expense_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       property_offset_accounts: {
         Row: {
           id: string;
