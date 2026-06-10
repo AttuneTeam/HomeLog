@@ -58,7 +58,9 @@ export function AccountSettingsClient({ email, displayName }: Props) {
     setChangingPassword(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
       if (error) {
         toast.error(error.message);
         return;
@@ -113,7 +115,6 @@ export function AccountSettingsClient({ email, displayName }: Props) {
           <Input
             id="new-password"
             type="password"
-            placeholder="••••••••"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
@@ -124,7 +125,6 @@ export function AccountSettingsClient({ email, displayName }: Props) {
           <Input
             id="confirm-password"
             type="password"
-            placeholder="••••••••"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />

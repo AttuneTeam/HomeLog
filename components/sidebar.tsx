@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, Mail, Workflow, ChevronDown } from "lucide-react";
+import { Building2, LogOut, TrendingUp, Sun, Moon, UserCircle, X, Plug, Mail, Workflow, ChevronDown, Upload } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,7 @@ import { useTheme } from "next-themes";
 const navItems = [
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/financial", label: "Household Finances", icon: TrendingUp },
+  { href: "/import", label: "Bulk import", icon: Upload },
   { href: "/settings/account", label: "Account", icon: UserCircle },
 ];
 
