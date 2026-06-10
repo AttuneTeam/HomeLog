@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 
@@ -228,17 +228,14 @@ export default async function TaxReportPage({ params }: Props) {
   return (
     <div className="p-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-6">
-        <Link href="/properties" className="hover:underline">
-          Properties
-        </Link>
-        <span>/</span>
-        <Link href={`/properties/${propertyId}`} className="hover:underline">
-          {property.address}
-        </Link>
-        <span>/</span>
-        <span>Tax Report</span>
-      </div>
+      <Breadcrumb
+        className="mb-6"
+        items={[
+          { label: "Properties", href: "/properties" },
+          { label: property.address, href: `/properties/${propertyId}` },
+          { label: "Tax Report" },
+        ]}
+      />
 
       <TaxReport
         data={reportData}

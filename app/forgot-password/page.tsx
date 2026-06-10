@@ -6,17 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import Image from "next/image";
 
 const schema = z.object({
@@ -56,68 +47,126 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Image
-            src="/logo.png"
-            alt="Home Base"
-            width={160}
-            height={125}
-            className="h-14 w-auto"
-          />
+    <main
+      className="min-h-screen flex flex-col justify-center px-6 md:px-16 py-20 relative"
+      style={{ backgroundColor: "#fbf9f9", color: "#1b1c1c" }}
+    >
+      <div className="absolute top-8 left-6 md:left-16">
+        <Link
+          href="/login"
+          className="flex items-center gap-2 text-xs uppercase tracking-widest font-semibold transition-colors"
+          style={{ color: "#45474c" }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            arrow_back
+          </span>
+          Back to sign in
+        </Link>
+      </div>
+
+      <div className="max-w-md mx-auto w-full">
+        <div className="flex justify-center mb-10">
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="Home Base"
+              width={160}
+              height={125}
+              className="h-12 w-auto"
+            />
+          </Link>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-caslon text-2xl font-normal">
-              Reset password
-            </CardTitle>
-            <CardDescription>
-              {sent
-                ? "Check your email for a reset link."
-                : "Enter your email and we'll send you a reset link."}
-            </CardDescription>
-          </CardHeader>
+        <h1
+          className="font-caslon text-[32px] leading-10 mb-2"
+          style={{ color: "#030813" }}
+        >
+          Reset Password
+        </h1>
+        <p className="text-base mb-8" style={{ color: "#45474c" }}>
+          {sent
+            ? "Check your email for a reset link. It may take a minute to arrive."
+            : "Enter your email and we'll send you a link to reset your password."}
+        </p>
 
-          {!sent && (
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <CardContent className="space-y-4 pb-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-destructive">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending…" : "Send reset link"}
-                </Button>
-              </CardFooter>
-            </form>
-          )}
+        {!sent ? (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@domain.com"
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-xs" style={{ color: "#ba1a1a" }}>
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-          <CardFooter className={sent ? "pt-0" : "pt-0 -mt-2"}>
-            <p className="text-sm text-muted-foreground text-center w-full pt-3">
-              <Link
-                href="/login"
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                Back to sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-5 text-[11px] uppercase tracking-widest font-semibold transition-all flex justify-center items-center gap-2 group"
+              style={{
+                backgroundColor: "#030813",
+                color: "#ffffff",
+                fontFamily: "var(--font-grotesk)",
+              }}
+            >
+              {loading ? "Sending…" : "Send Reset Link"}
+              {!loading && (
+                <span
+                  className="material-symbols-outlined group-hover:translate-x-1 transition-transform"
+                  style={{ fontSize: 20 }}
+                >
+                  chevron_right
+                </span>
+              )}
+            </button>
+          </form>
+        ) : (
+          <div
+            className="border p-6 text-sm"
+            style={{
+              borderColor: "rgba(198,198,204,0.6)",
+              color: "#45474c",
+              backgroundColor: "#f5f3f3",
+              fontFamily: "var(--font-grotesk)",
+            }}
+          >
+            We&apos;ve sent a reset link to your inbox. Didn&apos;t get it?
+            Check your spam folder or{" "}
+            <button
+              type="button"
+              onClick={() => setSent(false)}
+              className="font-bold hover:underline"
+              style={{ color: "#030813" }}
+            >
+              try again
+            </button>
+            .
+          </div>
+        )}
+
+        <div className="mt-12 text-center">
+          <p
+            className="text-sm"
+            style={{ color: "#45474c", fontFamily: "var(--font-grotesk)" }}
+          >
+            Remember your password?{" "}
+            <Link
+              href="/login"
+              className="font-bold hover:underline"
+              style={{ color: "#030813" }}
+            >
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

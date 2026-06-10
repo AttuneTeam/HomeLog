@@ -155,7 +155,7 @@ function SignupForm() {
           <p className="text-base mb-8" style={{ color: "#45474c" }}>
             {redirectTo.startsWith("/invite")
               ? "Create an account to accept your invitation."
-              : "Begin your journey in professional property stewardship."}
+              : "Create your free account. No credit card required"}
           </p>
 
           {/* Social sign-in */}
@@ -225,12 +225,7 @@ function SignupForm() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Create Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register("password")}
-              />
+              <Input id="password" type="password" {...register("password")} />
               {errors.password && (
                 <p className="text-xs" style={{ color: "#ba1a1a" }}>
                   {errors.password.message}
@@ -242,7 +237,6 @@ function SignupForm() {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="••••••••"
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (

@@ -10,6 +10,7 @@ import { RenovationQuotesSection } from "@/components/renovation-quotes-section"
 import { RenovationValueSummary } from "@/components/renovation-value-summary";
 import { InvoiceBulkDropzone } from "@/components/invoice-bulk-dropzone";
 import { MoveExpenseMenu } from "@/components/move-expense-menu";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ManualTaxClassification } from "@/lib/supabase/database.types";
 
 interface Props {
@@ -96,20 +97,17 @@ export default async function RenovationDetailPage({ params }: Props) {
       {/* Breadcrumb + header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1 flex-wrap">
-            <Link href="/properties" className="hover:underline">
-              Properties
-            </Link>
-            <span>/</span>
-            <Link
-              href={`/properties/${propertyId}`}
-              className="hover:underline"
-            >
-              {property?.address}
-            </Link>
-            <span>/</span>
-            <span>{renovation.name}</span>
-          </div>
+          <Breadcrumb
+            className="mb-1"
+            items={[
+              { label: "Properties", href: "/properties" },
+              {
+                label: property?.address ?? "Property",
+                href: `/properties/${propertyId}`,
+              },
+              { label: renovation.name },
+            ]}
+          />
           <h1 className="text-2xl font-bold">{renovation.name}</h1>
           {renovation.description && (
             <div>
@@ -217,8 +215,8 @@ export default async function RenovationDetailPage({ params }: Props) {
               <thead>
                 <tr className="border-b">
                   <th className="text-left px-0 py-2.5 font-medium text-muted-foreground"></th>
-                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
-                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground hidden sm:table-cell"></th>
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground"></th>
+                  <th className="text-left px-0 py-2.5 font-medium text-muted-foreground"></th>
                   <th className="text-right px-0 py-2.5 font-medium text-muted-foreground"></th>
                   <th className="w-10 px-0 py-2.5"></th>
                 </tr>
@@ -242,7 +240,7 @@ export default async function RenovationDetailPage({ params }: Props) {
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {expense.manual_classification ? (
                         <ClassificationBadge
                           classification={expense.manual_classification}
@@ -265,7 +263,7 @@ export default async function RenovationDetailPage({ params }: Props) {
                         })()
                       )}
                     </td>
-                    <td className="text-left px-4 py-3 text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                    <td className="text-left px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {formatDate(expense.expense_date)}
                     </td>
                     <td className="px-0 py-3 text-right tabular-nums font-medium">
