@@ -35,13 +35,27 @@ export async function POST(req: NextRequest) {
 
   const { email_id, from, to, subject, message_id } = event.data;
 
-  // Extract userId from the +tag in the To address (e.g. sync+abc123@mail.homebase.app)
+  const supabase = createAdminClient();
+
+  // Extract propertyId from the +tag in the To address (e.g. sync+{propertyId}@mail.homebase.app)
   const toAddress = Array.isArray(to) ? to[0] : to;
   const tagMatch = toAddress?.match(/sync\+([^@]+)@/);
   if (!tagMatch) {
     return NextResponse.json({ ok: true }); // Not addressed to sync+*, ignore
   }
-  const userId = tagMatch[1];
+  const propertyId = tagMatch[1];
+
+  // Look up the property to get the owner's userId (admin client bypasses RLS)
+  const { data: property } = await supabase
+    .from("properties")
+    .select("user_id")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (!property) {
+    return NextResponse.json({ ok: true }); // Unknown property, ignore
+  }
+  const userId = property.user_id;
 
   // Fetch full received email (body + attachment metadata) via Resend API
   let bodyText = "";
@@ -78,11 +92,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const supabase = createAdminClient();
-
   try {
     const result = await handleInboundEmail(supabase, {
       userId,
+      propertyId,
       sender: from,
       to: toAddress,
       subject: subject ?? "",

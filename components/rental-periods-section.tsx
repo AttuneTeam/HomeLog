@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   Calendar,
+  Copy,
+  CheckCircle2,
   Plus,
   Pencil,
   Trash2,
@@ -106,13 +108,16 @@ type DialogState =
 interface RentalPeriodsSectionProps {
   propertyId: string;
   initialPeriods: RentalPeriod[];
+  inboundDomain: string;
 }
 
 export function RentalPeriodsSection({
   propertyId,
   initialPeriods,
+  inboundDomain,
 }: RentalPeriodsSectionProps) {
   const [periods, setPeriods] = useState<RentalPeriod[]>(initialPeriods);
+  const [addressCopied, setAddressCopied] = useState(false);
   const [dialogState, setDialogState] = useState<DialogState>({
     mode: "closed",
   });
@@ -238,6 +243,13 @@ export function RentalPeriodsSection({
   }
 
   const timeline = buildTimeline(periods);
+  const syncAddress = `sync+${propertyId}@${inboundDomain}`;
+
+  function copyAddress() {
+    navigator.clipboard.writeText(syncAddress);
+    setAddressCopied(true);
+    setTimeout(() => setAddressCopied(false), 2000);
+  }
 
   return (
     <div>
@@ -249,6 +261,19 @@ export function RentalPeriodsSection({
         <Button size="sm" onClick={openAdd} variant="outline">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
           Add period
+        </Button>
+      </div>
+
+      {/* Per-property inbound email address */}
+      <div className="mb-4 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+        <span className="text-xs text-muted-foreground shrink-0">Forward agent emails to:</span>
+        <span className="flex-1 font-mono text-xs truncate">{syncAddress}</span>
+        <Button variant="ghost" size="icon-sm" onClick={copyAddress} className="shrink-0">
+          {addressCopied ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
         </Button>
       </div>
 

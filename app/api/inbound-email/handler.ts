@@ -1,6 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { parseEmailStatement } from "@/lib/email-parser/parse-statement";
-import { matchPropertyBySender } from "@/lib/email-parser/match-property";
 import { extractTextFromBuffer, mimeTypeFromPath } from "@/lib/ai/extract-text";
 
 export interface InboundAttachmentData {
@@ -11,6 +10,7 @@ export interface InboundAttachmentData {
 
 export interface InboundEmailPayload {
   userId: string;
+  propertyId: string;
   sender: string;
   to: string;
   subject: string;
@@ -32,7 +32,7 @@ export async function handleInboundEmail(
   supabase: SupabaseClient,
   payload: InboundEmailPayload,
 ): Promise<{ status: string; recordId?: string }> {
-  const { userId, sender, subject, messageId, rawEmail, attachments = [] } = payload;
+  const { userId, propertyId, sender, subject, messageId, rawEmail, attachments = [] } = payload;
 
   // Dedup: check if we've already processed this message
   const { data: existing } = await supabase
@@ -69,21 +69,15 @@ export async function handleInboundEmail(
   // Parse with Claude (body + attachment text combined)
   const parsed = await parseEmailStatement(sender, subject, body + attachmentText);
 
-  // Match to a property
-  const match = await matchPropertyBySender(supabase, userId, sender, parsed.propertyAddress);
-
-  if (!match.matched) {
-    await supabase.from("email_ingestion_log").insert({
-      user_id: userId,
-      source_email_id: messageId,
-      sender_address: sender,
-      raw_subject: subject,
-      status: "unmatched",
-      extracted_type: parsed.type,
-      parse_notes: match.reason,
-    });
-    return { status: "unmatched" };
-  }
+  // Look up the most recent rental period for this property (for associating payments)
+  const { data: latestPeriod } = await supabase
+    .from("rental_periods")
+    .select("id")
+    .eq("property_id", propertyId)
+    .order("start_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const rentalPeriodId = latestPeriod?.id ?? null;
 
   let targetTable: string | null = null;
   let targetRecordId: string | null = null;
@@ -92,8 +86,8 @@ export async function handleInboundEmail(
     const { data: inserted } = await supabase
       .from("rental_payments")
       .insert({
-        property_id: match.propertyId,
-        rental_period_id: match.rentalPeriodId,
+        property_id: propertyId,
+        rental_period_id: rentalPeriodId,
         payment_date: parsed.paymentDate,
         amount: parsed.amount,
         period_start: parsed.periodStart,
@@ -113,7 +107,7 @@ export async function handleInboundEmail(
     const primary = parseableAttachments[0];
     if (primary) {
       const ext = primary.filename.split(".").pop()?.toLowerCase() ?? "pdf";
-      const path = `${userId}/rental-expenses/${match.propertyId}/${Date.now()}.${ext}`;
+      const path = `${userId}/rental-expenses/${propertyId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("invoices")
         .upload(path, primary.buffer, { contentType: primary.contentType });
@@ -123,7 +117,7 @@ export async function handleInboundEmail(
     const { data: inserted } = await supabase
       .from("rental_operating_expenses")
       .insert({
-        property_id: match.propertyId,
+        property_id: propertyId,
         category: parsed.category ?? "other",
         amount: parsed.amount,
         gst_amount: parsed.gstAmount,
