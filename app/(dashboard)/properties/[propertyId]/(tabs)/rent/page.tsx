@@ -57,7 +57,11 @@ export default async function RentTab({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <RentalPeriodsSection propertyId={propertyId} initialPeriods={rentalPeriods ?? []} />
+      <RentalPeriodsSection
+        propertyId={propertyId}
+        initialPeriods={rentalPeriods ?? []}
+        inboundDomain={process.env.INBOUND_EMAIL_DOMAIN ?? "mail.homebase.app"}
+      />
       <RentalPaymentsSection
         propertyId={propertyId}
         initialPayments={(rentalPayments ?? []) as unknown as RentalPayment[]}

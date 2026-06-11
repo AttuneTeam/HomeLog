@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Mail, CheckCircle2, AlertCircle, FlaskConical } from "lucide-react";
+import { Mail, AlertCircle, FlaskConical } from "lucide-react";
 
 interface IngestionLogEntry {
   id: string;
@@ -27,7 +27,6 @@ interface IngestionLogEntry {
 }
 
 interface Props {
-  userId: string;
   inboundDomain: string;
   recentLog: IngestionLogEntry[];
   isDev: boolean;
@@ -40,27 +39,19 @@ const STATUS_BADGE: Record<string, { label: string; variant: "default" | "second
   error: { label: "Error", variant: "destructive" },
 };
 
-export function EmailSyncPanel({ userId, inboundDomain, recentLog, isDev }: Props) {
-  const inboundAddress = `sync+${userId}@${inboundDomain}`;
-  const [copied, setCopied] = useState(false);
-
+export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
   // Simulate form state
   const [simSender, setSimSender] = useState("");
   const [simSubject, setSimSubject] = useState("");
   const [simBody, setSimBody] = useState("");
+  const [simPropertyId, setSimPropertyId] = useState("");
   const [simFile, setSimFile] = useState<File | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [simResult, setSimResult] = useState<{ status: string; log?: IngestionLogEntry } | null>(null);
 
-  function copyAddress() {
-    navigator.clipboard.writeText(inboundAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   async function handleSimulate() {
-    if (!simSender || !simSubject || (!simBody && !simFile)) {
-      toast.error("Fill in sender, subject, and a body or attachment");
+    if (!simSender || !simSubject || !simPropertyId || (!simBody && !simFile)) {
+      toast.error("Fill in sender, subject, property ID, and a body or attachment");
       return;
     }
     setSimulating(true);
@@ -70,7 +61,7 @@ export function EmailSyncPanel({ userId, inboundDomain, recentLog, isDev }: Prop
       form.set("sender", simSender);
       form.set("subject", simSubject);
       form.set("bodyText", simBody);
-      form.set("userId", userId);
+      form.set("propertyId", simPropertyId);
       if (simFile) form.set("file", simFile);
 
       const res = await fetch("/api/inbound-email/simulate", {
@@ -105,26 +96,16 @@ export function EmailSyncPanel({ userId, inboundDomain, recentLog, isDev }: Prop
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Your inbound address</Label>
-            <div className="flex gap-2">
-              <Input value={inboundAddress} readOnly className="font-mono text-sm" />
-              <Button variant="outline" size="sm" onClick={copyAddress} className="shrink-0 gap-1.5">
-                {copied ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-          </div>
-
           <div className="rounded-md bg-muted/50 p-4 space-y-2 text-sm">
             <p className="font-medium">Setup instructions</p>
             <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
               <li>Open your email client (Gmail, Outlook, Apple Mail, etc.)</li>
-              <li>Create a forwarding rule: <em>when sender is your agent&apos;s email</em>, forward to the address above</li>
-              <li>Add your agent&apos;s email address to each rental period (Properties → select property → Rental periods → Edit)</li>
+              <li>Go to <strong>Properties → select a property → Rent tab</strong> to find that property&apos;s unique inbound address</li>
+              <li>Create a forwarding rule that forwards agent emails to that address — forwarded emails are matched by address, not sender</li>
             </ol>
             <p className="text-xs text-muted-foreground pt-1">
-              Once set up, agent emails are automatically parsed and recorded — no manual entry needed.
+              Each property has its own inbound address (<code className="font-mono">sync+&#123;propertyId&#125;@{inboundDomain}</code>),
+              so forwarded emails go directly to the right property with no sender matching needed.
             </p>
           </div>
         </CardContent>
@@ -186,6 +167,10 @@ export function EmailSyncPanel({ userId, inboundDomain, recentLog, isDev }: Prop
             <CardDescription className="text-xs">Dev only — test the parse pipeline without Cloudflare</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="sim-property-id">Property ID</Label>
+              <Input id="sim-property-id" placeholder="uuid of the property" value={simPropertyId} onChange={(e) => setSimPropertyId(e.target.value)} />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="sim-sender">Sender email</Label>
               <Input id="sim-sender" placeholder="agent@raywhite.com.au" value={simSender} onChange={(e) => setSimSender(e.target.value)} />

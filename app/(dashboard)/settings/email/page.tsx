@@ -30,7 +30,6 @@ export default async function EmailSyncSettingsPage() {
       </div>
 
       <EmailSyncPanel
-        userId={user.id}
         inboundDomain={inboundDomain}
         recentLog={log ?? []}
         isDev={isDev}

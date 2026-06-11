@@ -13,15 +13,29 @@ export async function POST(req: NextRequest) {
   const sender = form.get("sender") as string | null;
   const subject = form.get("subject") as string | null;
   const bodyText = form.get("bodyText") as string | null;
-  const userId = form.get("userId") as string | null;
+  const propertyId = form.get("propertyId") as string | null;
   const file = form.get("file") as File | null;
 
-  if (!sender || !subject || !userId || (!bodyText && !file)) {
+  if (!sender || !subject || !propertyId || (!bodyText && !file)) {
     return NextResponse.json(
-      { error: "Missing required fields: sender, subject, userId, and bodyText or file" },
+      { error: "Missing required fields: sender, subject, propertyId, and bodyText or file" },
       { status: 400 },
     );
   }
+
+  const supabase = createAdminClient();
+
+  // Look up the property to get the owner's userId
+  const { data: property } = await supabase
+    .from("properties")
+    .select("user_id")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (!property) {
+    return NextResponse.json({ error: "Property not found" }, { status: 404 });
+  }
+  const userId = property.user_id;
 
   // Read optional attachment into a buffer so it flows through the same path as a real inbound email
   const attachments: InboundAttachmentData[] = [];
@@ -34,13 +48,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const supabase = createAdminClient();
   const messageId = `simulate-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   const result = await handleInboundEmail(supabase, {
     userId,
+    propertyId,
     sender,
-    to: `sync+${userId}@mail.homebase.app`,
+    to: `sync+${propertyId}@mail.homebase.app`,
     subject,
     messageId,
     rawEmail: `From: ${sender}\r\nSubject: ${subject}\r\n\r\n${bodyText ?? ""}`,
