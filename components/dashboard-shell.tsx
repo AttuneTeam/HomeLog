@@ -39,7 +39,7 @@ export function DashboardShell({ displayName, children }: DashboardShellProps) {
           </Button>
           <span className="ml-2 font-bold text-base tracking-tight">Home Base</span>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="relative flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );

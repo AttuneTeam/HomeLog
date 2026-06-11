@@ -77,7 +77,10 @@ export function XeroConnectPanel({ connections, justConnected, connectError }: P
             <span className="text-white font-bold text-sm">X</span>
           </div>
           <div>
-            <CardTitle className="text-base">Xero</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">Xero</CardTitle>
+              <Badge variant="secondary" className="text-xs">Coming soon</Badge>
+            </div>
             <CardDescription className="text-xs">
               Export your property financials directly into Xero for tax return preparation
             </CardDescription>
@@ -106,12 +109,9 @@ export function XeroConnectPanel({ connections, justConnected, connectError }: P
               Connect your Xero account to export property investment data as Manual Journals,
               ready for your accountant to use in a tax return.
             </p>
-            <a
-              href="/api/xero/connect"
-              className={cn(buttonVariants({ variant: "default" }))}
-            >
+            <Button variant="default" disabled aria-disabled="true">
               Connect to Xero
-            </a>
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -160,12 +160,9 @@ export function XeroConnectPanel({ connections, justConnected, connectError }: P
               </div>
             ))}
 
-            <a
-              href="/api/xero/connect"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
+            <Button variant="outline" size="sm" disabled aria-disabled="true">
               Connect another organisation
-            </a>
+            </Button>
           </div>
         )}
       </CardContent>
