@@ -146,16 +146,16 @@ export default function LandingPage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative min-h-[90vh] flex items-center overflow-hidden hero-gradient">
-          <div className="max-w-[1280px] mx-auto px-16 w-full grid lg:grid-cols-2 gap-16 items-center py-20">
+        <section className="relative h-[calc(100vh-80px)] flex items-center overflow-hidden hero-gradient">
+          <div className="max-w-[1280px] mx-auto px-16 w-full grid lg:grid-cols-2 gap-12 items-center py-10">
             <div data-observe className="opacity-0">
-              <span className="label-caps text-[#775a19] mb-6 inline-block bg-[#fed488] px-2 py-0.5">
+              <span className="label-caps text-[#775a19] mb-4 inline-block bg-[#fed488] px-2 py-0.5">
                 For properties with nothing to hide
               </span>
-              <h1 className="font-caslon text-[48px] leading-[56px] tracking-[-0.02em] text-[#030813] mb-8 max-w-xl">
+              <h1 className="font-caslon text-[48px] leading-[56px] tracking-[-0.02em] text-[#030813] mb-5 max-w-xl">
                 Your Property&apos;s Digital Home.
               </h1>
-              <p className="font-grotesk text-lg leading-7 text-[#45474c] mb-10 max-w-lg">
+              <p className="font-grotesk text-lg leading-7 text-[#45474c] mb-7 max-w-lg">
                 Inspired by the Nordic tradition of the house book, a living
                 record that accompanies a property throughout its life: our
                 platform reimagines home ownership for the digital age.
