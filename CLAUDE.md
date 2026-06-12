@@ -45,6 +45,10 @@ Local Supabase runs via the `supabase` CLI (`supabase start`); local DB is at
   isolation is enforced by Postgres RLS**, not app code. Ownership/sharing is modelled via
   `account_members`, `property_shares`, and `property_passport_links` tables with RLS policies
   (see migrations 027–034).
+- **Account/property deletion** has non-obvious invariants (storage must be deleted by data
+  ownership, not by upload path prefix; auth-user deletion uses an RPC, not the GoTrue admin
+  API). See `docs/account-deletion.md` before changing any deletion logic or adding a
+  file-bearing table.
 
 ### Mutations vs. reads
 - **Server Actions** live in `app/actions/*.ts` (`"use server"`) — used for form submissions and

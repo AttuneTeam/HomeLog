@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Separator } from "@/components/ui/separator";
 import { AccountSettingsClient } from "@/components/account-settings-client";
 import { SharingSettingsClient } from "@/components/sharing-settings-client";
+import { DeleteAccountClient } from "@/components/delete-account-client";
 
 export default async function AccountSettingsPage() {
   const supabase = await createClient();
@@ -68,6 +69,16 @@ export default async function AccountSettingsPage() {
           currentUserEmail={user.email ?? ""}
           isGuest={isGuest}
         />
+      </div>
+
+      <Separator />
+
+      <div>
+        <h2 className="text-lg font-semibold mb-1 text-destructive">Danger Zone</h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          Irreversible actions that permanently affect your account and data.
+        </p>
+        <DeleteAccountClient isGuest={isGuest} />
       </div>
     </div>
   );

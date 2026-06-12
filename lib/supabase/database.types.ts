@@ -1455,6 +1455,18 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      delete_auth_user: {
+        Args: { user_id: string };
+        Returns: void;
+      };
+      user_storage_objects: {
+        Args: { p_user_id: string };
+        Returns: { bucket: string; path: string }[];
+      };
+      property_storage_objects: {
+        Args: { p_property_id: string };
+        Returns: { bucket: string; path: string }[];
+      };
       match_ato_rulings: {
         Args: {
           query_embedding: number[];
