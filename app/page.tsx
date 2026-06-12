@@ -165,12 +165,12 @@ export default function LandingPage() {
                   href="/login"
                   className="bg-[#030813] text-white px-10 py-4 label-caps hover:bg-[#1a202c] transition-all flex items-center justify-center gap-2"
                 >
-                  Start Your Free Ledger
+                  Start for Free
                   <span className="ms text-[18px]">arrow_forward</span>
                 </Link>
-                <button className="border border-[#76777c] px-10 py-4 label-caps hover:bg-[#e9e8e7] transition-all">
+                {/* <button className="border border-[#76777c] px-10 py-4 label-caps hover:bg-[#e9e8e7] transition-all">
                   Tour the Platform
-                </button>
+                </button> */}
               </div>
             </div>
             <div
@@ -453,10 +453,10 @@ export default function LandingPage() {
                 href="/login"
                 className="inline-block bg-[#030813] text-white px-12 py-5 label-caps hover:bg-[#775a19] hover:text-white transition-all scale-110"
               >
-                Start Your Free Ledger
+                Start for Free
               </Link>
               <p className="mt-8 label-caps text-[10px] text-[#45474c] opacity-60">
-                NO CREDIT CARD REQUIRED. FULL ACCESS FOR 14 DAYS.
+                NO CREDIT CARD REQUIRED. FULL ACCESS FOR A LIMITED TIME.
               </p>
             </div>
           </div>
