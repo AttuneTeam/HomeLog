@@ -35,6 +35,7 @@ export interface RentalPayment {
 }
 
 const schema = z.object({
+  raw_subject: z.string().optional(),
   payment_date: z.string().min(1, "Payment date is required"),
   amount: z.string().min(1, "Amount is required"),
   period_start: z.string().optional(),
@@ -69,13 +70,14 @@ export function RentalPaymentsSection({
 
   function openAdd() {
     setEditingPayment(null);
-    reset({ payment_date: "", amount: "", period_start: "", period_end: "", notes: "" });
+    reset({ raw_subject: "", payment_date: "", amount: "", period_start: "", period_end: "", notes: "" });
     setDialogOpen(true);
   }
 
   function openEdit(payment: RentalPayment) {
     setEditingPayment(payment);
     reset({
+      raw_subject: payment.raw_subject ?? "",
       payment_date: payment.payment_date,
       amount: String(payment.amount),
       period_start: payment.period_start ?? "",
@@ -90,6 +92,7 @@ export function RentalPaymentsSection({
     const supabase = createClient();
     const payload = {
       property_id: propertyId,
+      raw_subject: values.raw_subject?.trim() || null,
       payment_date: values.payment_date,
       amount: parseFloat(values.amount),
       period_start: values.period_start?.trim() || null,
@@ -287,6 +290,10 @@ export function RentalPaymentsSection({
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="raw_subject">Title</Label>
+                <Input id="raw_subject" placeholder="Rental income statement #1" {...register("raw_subject")} />
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="payment_date">Payment date *</Label>
                 <Input id="payment_date" type="date" {...register("payment_date")} />
