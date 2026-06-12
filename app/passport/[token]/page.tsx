@@ -29,7 +29,9 @@ export default async function PassportPage({ params }: Props) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F1EA] p-4">
         <div className="text-center space-y-2">
-          <p className="font-grotesk font-medium text-[#030813]">This passport link has expired.</p>
+          <p className="font-grotesk font-medium text-[#030813]">
+            This passport link has expired.
+          </p>
           <p className="font-grotesk text-sm text-[#76777c]">
             Ask the property owner to generate a new link.
           </p>
@@ -40,23 +42,22 @@ export default async function PassportPage({ params }: Props) {
 
   const propertyId = link.property_id;
 
-  const [
-    { data: property },
-    { data: renovations },
-    { data: enrichment },
-  ] = await Promise.all([
-    admin.from("properties").select("*").eq("id", propertyId).single(),
-    admin
-      .from("renovations")
-      .select("*, expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification)")
-      .eq("property_id", propertyId)
-      .order("start_date", { ascending: false }),
-    admin
-      .from("property_enrichment")
-      .select("*")
-      .eq("property_id", propertyId)
-      .maybeSingle(),
-  ]);
+  const [{ data: property }, { data: renovations }, { data: enrichment }] =
+    await Promise.all([
+      admin.from("properties").select("*").eq("id", propertyId).single(),
+      admin
+        .from("renovations")
+        .select(
+          "*, expenses(id, description, expense_date, amount, category, supplier, abn, invoice_path, manual_classification)",
+        )
+        .eq("property_id", propertyId)
+        .order("start_date", { ascending: false }),
+      admin
+        .from("property_enrichment")
+        .select("*")
+        .eq("property_id", propertyId)
+        .maybeSingle(),
+    ]);
 
   if (!property) notFound();
 
@@ -104,7 +105,8 @@ export default async function PassportPage({ params }: Props) {
         .map((e) => e.expenseDate)
         .filter(Boolean)
         .sort()[0] ?? null;
-    const date = r.end_date ?? r.start_date ?? earliestExpenseDate ?? r.created_at;
+    const date =
+      r.end_date ?? r.start_date ?? earliestExpenseDate ?? r.created_at;
     if (!date) continue;
     events.push({
       id: `renovation-${r.id}`,
@@ -132,7 +134,9 @@ export default async function PassportPage({ params }: Props) {
   // Oldest first — tells the value story chronologically
   events.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
 
-  const completedRenovations = (renovations ?? []).filter((r) => r.status === "completed");
+  const completedRenovations = (renovations ?? []).filter(
+    (r) => r.status === "completed",
+  );
 
   const summary: HistorySummary = {
     capitalInvested: 0,
@@ -176,7 +180,8 @@ export default async function PassportPage({ params }: Props) {
     type: string | null;
     notes: string | null;
   }[];
-  const suburbProfile = (enrichment?.suburb_profile ?? null) as SuburbProfile | null;
+  const suburbProfile = (enrichment?.suburb_profile ??
+    null) as SuburbProfile | null;
   const streetHistory = enrichment?.street_and_council_history ?? null;
 
   const hasContextSection =
@@ -385,7 +390,8 @@ export default async function PassportPage({ params }: Props) {
                 Character &amp; Neighbourhood
               </h2>
               <p className="font-grotesk text-[16px] text-[#76777c]">
-                Neighbourhood context and notable features for {property.address}.
+                Neighbourhood context and notable features for{" "}
+                {property.address}.
               </p>
             </div>
 
@@ -405,7 +411,8 @@ export default async function PassportPage({ params }: Props) {
                       </div>
                     )}
 
-                    {(suburbProfile.distance_to_cbd || suburbProfile.median_house_price) && (
+                    {(suburbProfile.distance_to_cbd ||
+                      suburbProfile.median_house_price) && (
                       <div className="grid grid-cols-2 gap-4">
                         {suburbProfile.distance_to_cbd && (
                           <div className="bg-white p-6 rounded-lg border border-[#E2E2E2] flex flex-col gap-2 hover:bg-[#fbf9f9] transition-colors duration-300">
@@ -443,7 +450,9 @@ export default async function PassportPage({ params }: Props) {
                               {suburbProfile.transport.map((t, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{t}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {t}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -458,7 +467,9 @@ export default async function PassportPage({ params }: Props) {
                               {suburbProfile.schools.map((s, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{s}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {s}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -473,7 +484,9 @@ export default async function PassportPage({ params }: Props) {
                               {suburbProfile.parks.map((p, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                   <span className="mt-[9px] h-1 w-1 rounded-full bg-[#76777c] flex-shrink-0" />
-                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">{p}</span>
+                                  <span className="font-grotesk text-[14px] text-[#1b1c1c] leading-relaxed">
+                                    {p}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -482,7 +495,8 @@ export default async function PassportPage({ params }: Props) {
                       </div>
                     )}
 
-                    {(suburbProfile.dining_shopping || suburbProfile.lifestyle) && (
+                    {(suburbProfile.dining_shopping ||
+                      suburbProfile.lifestyle) && (
                       <div className="space-y-6">
                         {suburbProfile.dining_shopping && (
                           <div>
@@ -562,7 +576,10 @@ export default async function PassportPage({ params }: Props) {
                         </thead>
                         <tbody className="divide-y divide-[#E2E2E2]">
                           {saleHistory.map((s, i) => (
-                            <tr key={i} className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200">
+                            <tr
+                              key={i}
+                              className="bg-white hover:bg-[#fbf9f9] transition-colors duration-200"
+                            >
                               <td className="px-4 py-3 font-grotesk text-[14px] font-medium text-[#030813] tabular-nums">
                                 {s.year ?? "—"}
                               </td>
@@ -589,7 +606,7 @@ export default async function PassportPage({ params }: Props) {
           <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 gap-4">
             <div>
               <h2 className="font-caslon text-[32px] md:text-[48px] leading-tight text-[#030813] mb-2">
-                Evolution of the Residence
+                Property History
               </h2>
               <p className="font-grotesk text-[16px] text-[#76777c]">
                 A chronological record of the property lifecycle for{" "}

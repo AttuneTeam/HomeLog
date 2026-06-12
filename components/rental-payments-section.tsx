@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Banknote, Plus, Trash2, Mail } from "lucide-react";
+import { Banknote, Plus, Pencil, Trash2, Mail } from "lucide-react";
 
 export interface RentalPayment {
   id: string;
@@ -55,6 +55,7 @@ export function RentalPaymentsSection({
 }: RentalPaymentsSectionProps) {
   const [payments, setPayments] = useState<RentalPayment[]>(initialPayments);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<RentalPayment | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<RentalPayment | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -67,7 +68,20 @@ export function RentalPaymentsSection({
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   function openAdd() {
+    setEditingPayment(null);
     reset({ payment_date: "", amount: "", period_start: "", period_end: "", notes: "" });
+    setDialogOpen(true);
+  }
+
+  function openEdit(payment: RentalPayment) {
+    setEditingPayment(payment);
+    reset({
+      payment_date: payment.payment_date,
+      amount: String(payment.amount),
+      period_start: payment.period_start ?? "",
+      period_end: payment.period_end ?? "",
+      notes: payment.notes ?? "",
+    });
     setDialogOpen(true);
   }
 
@@ -82,24 +96,47 @@ export function RentalPaymentsSection({
       period_end: values.period_end?.trim() || null,
       notes: values.notes?.trim() || null,
     };
-    // rental_payments not yet in generated DB types — cast until types are regenerated
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from("rental_payments")
-      .insert(payload)
-      .select()
-      .single();
-    if (error) {
-      toast.error(error.message);
-      setSaving(false);
-      return;
+
+    if (editingPayment) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("rental_payments")
+        .update(payload)
+        .eq("id", editingPayment.id)
+        .select()
+        .single();
+      if (error) {
+        toast.error(error.message);
+        setSaving(false);
+        return;
+      }
+      setPayments((prev) =>
+        prev
+          .map((p) => (p.id === editingPayment.id ? (data as RentalPayment) : p))
+          .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()),
+      );
+      toast.success("Rental payment updated");
+    } else {
+      // rental_payments not yet in generated DB types — cast until types are regenerated
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("rental_payments")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) {
+        toast.error(error.message);
+        setSaving(false);
+        return;
+      }
+      setPayments((prev) =>
+        [...prev, data as RentalPayment].sort(
+          (a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime(),
+        ),
+      );
+      toast.success("Rental payment added");
     }
-    setPayments((prev) =>
-      [...prev, data as RentalPayment].sort(
-        (a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime(),
-      ),
-    );
-    toast.success("Rental payment added");
+
     setSaving(false);
     setDialogOpen(false);
   }
@@ -208,6 +245,14 @@ export function RentalPaymentsSection({
                       <Button
                         variant="ghost"
                         size="icon-sm"
+                        className="text-muted-foreground"
+                        onClick={() => openEdit(payment)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         className="text-muted-foreground hover:text-destructive"
                         disabled={deletingId === payment.id}
                         onClick={() => setConfirmDelete(payment)}
@@ -234,11 +279,11 @@ export function RentalPaymentsSection({
         </div>
       )}
 
-      {/* Add dialog */}
+      {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add rental payment</DialogTitle>
+            <DialogTitle>{editingPayment ? "Edit rental payment" : "Add rental payment"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-4 py-2">
@@ -283,7 +328,7 @@ export function RentalPaymentsSection({
                 Cancel
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? "Saving…" : "Add payment"}
+                {saving ? "Saving…" : editingPayment ? "Save changes" : "Add payment"}
               </Button>
             </DialogFooter>
           </form>

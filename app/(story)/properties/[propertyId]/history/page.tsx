@@ -101,7 +101,8 @@ export default async function PropertyStoryPage({ params }: Props) {
         .map((e) => e.expenseDate)
         .filter(Boolean)
         .sort()[0] ?? null;
-    const date = r.end_date ?? r.start_date ?? earliestExpenseDate ?? r.created_at;
+    const date =
+      r.end_date ?? r.start_date ?? earliestExpenseDate ?? r.created_at;
     if (!date) continue;
     const totalCost = expenses.reduce(
       (s: number, e: { amount: number }) => s + e.amount,
@@ -124,7 +125,9 @@ export default async function PropertyStoryPage({ params }: Props) {
         endDate: r.end_date,
         status: r.status,
         notes: r.notes,
-        valueSummary: (r.renovation_summaries as { summary_text: string } | null)?.summary_text ?? null,
+        valueSummary:
+          (r.renovation_summaries as { summary_text: string } | null)
+            ?.summary_text ?? null,
         expenses,
       },
     });
@@ -650,12 +653,12 @@ export default async function PropertyStoryPage({ params }: Props) {
           </section>
         )}
 
-        {/* Section D: Evolution of the Residence */}
+        {/* Section D: Property History */}
         <section>
           <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 gap-4">
             <div>
               <h2 className="font-caslon text-[32px] md:text-[48px] leading-tight text-[#030813] mb-2">
-                Evolution of the Residence
+                Property History
               </h2>
               <p className="font-grotesk text-[16px] text-[#76777c]">
                 A chronological record of the property lifecycle{" "}
