@@ -165,16 +165,12 @@ async function main() {
   await putFile("invoices", fileB);
   await putFile("invoices", fileC);
 
-  die(
-    "insert expenses",
-    (
-      await admin.from("expenses").insert([
-        { renovation_id: ownerRenoId, amount: 100, category: "materials", expense_date: "2026-01-01", invoice_path: fileA },
-        { renovation_id: ownerRenoId, amount: 200, category: "materials", expense_date: "2026-01-02", invoice_path: fileB },
-        { renovation_id: guestRenoId, amount: 300, category: "materials", expense_date: "2026-01-03", invoice_path: fileC },
-      ])
-    ).error,
-  );
+  const expenseRows: Database["public"]["Tables"]["expenses"]["Insert"][] = [
+    { renovation_id: ownerRenoId, amount: 100, category: "materials", expense_date: "2026-01-01", invoice_path: fileA, context_notes: null },
+    { renovation_id: ownerRenoId, amount: 200, category: "materials", expense_date: "2026-01-02", invoice_path: fileB, context_notes: null },
+    { renovation_id: guestRenoId, amount: 300, category: "materials", expense_date: "2026-01-03", invoice_path: fileC, context_notes: null },
+  ];
+  die("insert expenses", (await admin.from("expenses").insert(expenseRows)).error);
 
   console.log("Setup complete: owner + co-owner guest, 3 files staged.\n");
 
