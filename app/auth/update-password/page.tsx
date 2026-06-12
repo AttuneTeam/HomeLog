@@ -18,11 +18,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PasswordStrengthIndicator } from "@/components/password-strength-indicator";
 import { Home } from "lucide-react";
 
 const schema = z
   .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Must include an uppercase letter")
+      .regex(/[a-z]/, "Must include a lowercase letter")
+      .regex(/[0-9]/, "Must include a number"),
     confirmPassword: z.string(),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -39,10 +45,13 @@ export default function UpdatePasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+
+  const watchedPassword = watch("password") ?? "";
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -80,11 +89,14 @@ export default function UpdatePasswordPage() {
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="password">New password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register("password")}
-                />
+                <div className="relative group">
+                  <Input
+                    id="password"
+                    type="password"
+                    {...register("password")}
+                  />
+                  <PasswordStrengthIndicator password={watchedPassword} />
+                </div>
                 {errors.password && (
                   <p className="text-xs text-destructive">
                     {errors.password.message}

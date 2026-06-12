@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { PasswordStrengthIndicator } from "@/components/password-strength-indicator";
 
 interface Props {
   email: string;
@@ -49,6 +50,18 @@ export function AccountSettingsClient({ email, displayName }: Props) {
     e.preventDefault();
     if (newPassword.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      toast.error("Password must include an uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      toast.error("Password must include a lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      toast.error("Password must include a number");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -112,12 +125,15 @@ export function AccountSettingsClient({ email, displayName }: Props) {
 
         <div className="space-y-1.5">
           <Label htmlFor="new-password">New password</Label>
-          <Input
-            id="new-password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
+          <div className="relative group">
+            <Input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <PasswordStrengthIndicator password={newPassword} />
+          </div>
         </div>
 
         <div className="space-y-1.5">
