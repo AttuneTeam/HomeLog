@@ -9,13 +9,24 @@ export default async function EmailSyncSettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: log } = await (supabase as any)
-    .from("email_ingestion_log")
-    .select("id, received_at, sender_address, raw_subject, status, extracted_type, parse_notes")
-    .eq("user_id", user.id)
-    .order("received_at", { ascending: false })
-    .limit(20);
+  const [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { data: log },
+    { data: properties },
+  ] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("email_ingestion_log")
+      .select("id, received_at, sender_address, raw_subject, status, extracted_type, parse_notes")
+      .eq("user_id", user.id)
+      .order("received_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("properties")
+      .select("id, address, suburb")
+      .eq("user_id", user.id)
+      .order("address", { ascending: true }),
+  ]);
 
   const inboundDomain = process.env.INBOUND_EMAIL_DOMAIN ?? "mail.homebase.app";
   const isDev = process.env.NODE_ENV !== "production";
@@ -31,6 +42,7 @@ export default async function EmailSyncSettingsPage() {
 
       <EmailSyncPanel
         inboundDomain={inboundDomain}
+        properties={(properties ?? []) as { id: string; address: string | null; suburb: string | null }[]}
         recentLog={log ?? []}
         isDev={isDev}
       />

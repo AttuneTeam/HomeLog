@@ -48,6 +48,8 @@ Rules:
 - type is "rental_payment" if the email is about rent received or a rental statement
 - type is "expense" if the email is about an invoice, bill, or property operating expense (water, council rates, repairs, strata, insurance)
 - type is "unknown" if unclear
+- For rental_payment (owner/landlord statements): amount is the net amount disbursed to the owner — look for "You Received", "Withdrawal by EFT", or "Net to owner", NOT the gross rent income figure
+- For rental_payment (owner/landlord statements): paymentDate is the statement date or EFT disbursement date (the date the agent paid the owner), NOT the dates the tenant paid rent
 - For dates, today is ${new Date().toISOString().split("T")[0]}`;
 
   const { text } = await generateText({

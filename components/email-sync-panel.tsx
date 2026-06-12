@@ -14,7 +14,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, FlaskConical } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Mail,
+  AlertCircle,
+  FlaskConical,
+  Copy,
+  CheckCircle2,
+} from "lucide-react";
 
 interface IngestionLogEntry {
   id: string;
@@ -26,32 +39,71 @@ interface IngestionLogEntry {
   parse_notes: string | null;
 }
 
+interface PropertyOption {
+  id: string;
+  address: string | null;
+  suburb: string | null;
+}
+
 interface Props {
   inboundDomain: string;
+  properties: PropertyOption[];
   recentLog: IngestionLogEntry[];
   isDev: boolean;
 }
 
-const STATUS_BADGE: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const STATUS_BADGE: Record<
+  string,
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
+> = {
   parsed: { label: "Parsed", variant: "default" },
   unmatched: { label: "Unmatched", variant: "outline" },
   duplicate: { label: "Duplicate", variant: "secondary" },
   error: { label: "Error", variant: "destructive" },
 };
 
-export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
+export function EmailSyncPanel({
+  inboundDomain,
+  properties,
+  recentLog,
+  isDev,
+}: Props) {
+  const [selectedPropertyId, setSelectedPropertyId] = useState(
+    properties[0]?.id ?? "",
+  );
+  const [copied, setCopied] = useState(false);
+
+  const syncAddress = selectedPropertyId
+    ? `sync+${selectedPropertyId}@${inboundDomain}`
+    : null;
+
+  function copyAddress() {
+    if (!syncAddress) return;
+    navigator.clipboard.writeText(syncAddress);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   // Simulate form state
   const [simSender, setSimSender] = useState("");
   const [simSubject, setSimSubject] = useState("");
   const [simBody, setSimBody] = useState("");
-  const [simPropertyId, setSimPropertyId] = useState("");
+  const [simPropertyId, setSimPropertyId] = useState(properties[0]?.id ?? "");
   const [simFile, setSimFile] = useState<File | null>(null);
   const [simulating, setSimulating] = useState(false);
-  const [simResult, setSimResult] = useState<{ status: string; log?: IngestionLogEntry } | null>(null);
+  const [simResult, setSimResult] = useState<{
+    status: string;
+    log?: IngestionLogEntry;
+  } | null>(null);
 
   async function handleSimulate() {
     if (!simSender || !simSubject || !simPropertyId || (!simBody && !simFile)) {
-      toast.error("Fill in sender, subject, property ID, and a body or attachment");
+      toast.error(
+        "Fill in sender, subject, property ID, and a body or attachment",
+      );
       return;
     }
     setSimulating(true);
@@ -78,6 +130,8 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
     }
   }
 
+  const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
+
   return (
     <div className="space-y-6">
       {/* Inbound address */}
@@ -90,24 +144,75 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
             <div>
               <CardTitle className="text-base">Email sync</CardTitle>
               <CardDescription className="text-xs">
-                Forward agent emails to automatically record payments and expenses
+                Forward agent emails to automatically record payments and
+                expenses
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-md bg-muted/50 p-4 space-y-2 text-sm">
-            <p className="font-medium">Setup instructions</p>
-            <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
-              <li>Open your email client (Gmail, Outlook, Apple Mail, etc.)</li>
-              <li>Go to <strong>Properties → select a property → Rent tab</strong> to find that property&apos;s unique inbound address</li>
-              <li>Create a forwarding rule that forwards agent emails to that address — forwarded emails are matched by address, not sender</li>
-            </ol>
-            <p className="text-xs text-muted-foreground pt-1">
-              Each property has its own inbound address (<code className="font-mono">sync+&#123;propertyId&#125;@{inboundDomain}</code>),
-              so forwarded emails go directly to the right property with no sender matching needed.
+          {properties.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Add a property first to get your inbound sync address.
             </p>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Property</Label>
+                <Select
+                  value={selectedPropertyId}
+                  onValueChange={(v) => setSelectedPropertyId(v ?? "")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a property">
+                      {selectedProperty
+                        ? `${selectedProperty.address}, ${selectedProperty.suburb}`
+                        : ""}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.address ?? p.id}
+                        {p.suburb ? `, ${p.suburb}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {syncAddress && (
+                <div className="space-y-1.5">
+                  <Label>Forward agent emails to</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={syncAddress}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyAddress}
+                      className="shrink-0 gap-1.5"
+                    >
+                      {copied ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Create a forwarding rule in your email client to forward
+                    agent emails to this address. Forwarded emails are matched
+                    by address, not sender.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -115,7 +220,9 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Recent activity</CardTitle>
-          <CardDescription className="text-xs">Last 20 processed emails</CardDescription>
+          <CardDescription className="text-xs">
+            Last 20 processed emails
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {recentLog.length === 0 ? (
@@ -125,15 +232,31 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
           ) : (
             <div className="space-y-2">
               {recentLog.map((entry) => {
-                const badge = STATUS_BADGE[entry.status] ?? { label: entry.status, variant: "secondary" as const };
+                const badge = STATUS_BADGE[entry.status] ?? {
+                  label: entry.status,
+                  variant: "secondary" as const,
+                };
                 return (
-                  <div key={entry.id} className="flex items-start justify-between rounded-md border px-3 py-2.5 gap-3">
+                  <div
+                    key={entry.id}
+                    className="flex items-start justify-between rounded-md border px-3 py-2.5 gap-3"
+                  >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{entry.raw_subject ?? "(no subject)"}</p>
+                      <p className="text-sm font-medium truncate">
+                        {entry.raw_subject ?? "(no subject)"}
+                      </p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {entry.sender_address} · {new Date(entry.received_at).toLocaleDateString("en-AU", {
-                          day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-                        })}
+                        {entry.sender_address} ·{" "}
+                        {new Date(entry.received_at).toLocaleDateString(
+                          "en-AU",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
                       </p>
                       {entry.parse_notes && (
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -143,9 +266,13 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Badge variant={badge.variant} className="text-xs">{badge.label}</Badge>
+                      <Badge variant={badge.variant} className="text-xs">
+                        {badge.label}
+                      </Badge>
                       {entry.extracted_type && (
-                        <span className="text-xs text-muted-foreground">{entry.extracted_type.replace("_", " ")}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {entry.extracted_type.replace("_", " ")}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -162,29 +289,56 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
           <CardHeader>
             <div className="flex items-center gap-2">
               <FlaskConical className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">Simulate incoming email</CardTitle>
+              <CardTitle className="text-base">
+                Simulate incoming email
+              </CardTitle>
             </div>
-            <CardDescription className="text-xs">Dev only — test the parse pipeline without Cloudflare</CardDescription>
+            <CardDescription className="text-xs">
+              Dev only — test the parse pipeline without Cloudflare
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="sim-property-id">Property ID</Label>
-              <Input id="sim-property-id" placeholder="uuid of the property" value={simPropertyId} onChange={(e) => setSimPropertyId(e.target.value)} />
+              <Input
+                id="sim-property-id"
+                placeholder="uuid of the property"
+                value={simPropertyId}
+                onChange={(e) => setSimPropertyId(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sim-sender">Sender email</Label>
-              <Input id="sim-sender" placeholder="agent@raywhite.com.au" value={simSender} onChange={(e) => setSimSender(e.target.value)} />
+              <Input
+                id="sim-sender"
+                placeholder="agent@raywhite.com.au"
+                value={simSender}
+                onChange={(e) => setSimSender(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sim-subject">Subject</Label>
-              <Input id="sim-subject" placeholder="Rental statement — 123 Main St" value={simSubject} onChange={(e) => setSimSubject(e.target.value)} />
+              <Input
+                id="sim-subject"
+                placeholder="Rental statement — 123 Main St"
+                value={simSubject}
+                onChange={(e) => setSimSubject(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sim-body">Email body</Label>
-              <Textarea id="sim-body" placeholder="Paste email body here…" rows={5} value={simBody} onChange={(e) => setSimBody(e.target.value)} />
+              <Textarea
+                id="sim-body"
+                placeholder="Paste email body here…"
+                rows={5}
+                value={simBody}
+                onChange={(e) => setSimBody(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sim-file">Attachment (PDF or image, optional)</Label>
+              <Label htmlFor="sim-file">
+                Attachment (PDF or image, optional)
+              </Label>
               <Input
                 id="sim-file"
                 type="file"
@@ -192,7 +346,8 @@ export function EmailSyncPanel({ inboundDomain, recentLog, isDev }: Props) {
                 onChange={(e) => setSimFile(e.target.files?.[0] ?? null)}
               />
               <p className="text-xs text-muted-foreground">
-                Attach a water bill or repair invoice to test attachment OCR end-to-end
+                Attach a water bill or repair invoice to test attachment OCR
+                end-to-end
               </p>
             </div>
             <Button onClick={handleSimulate} disabled={simulating} size="sm">
