@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { deleteProperty } from "@/app/actions/properties";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,13 +35,9 @@ export function PropertyActionsMenu({ propertyId, canDelete }: Props) {
 
   async function handleDelete() {
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("properties")
-      .delete()
-      .eq("id", propertyId);
+    const { error } = await deleteProperty(propertyId);
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
       setLoading(false);
       return;
     }

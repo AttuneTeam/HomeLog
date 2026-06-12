@@ -10,7 +10,8 @@
     "db:reset": "supabase db reset",
     "db:sync": "bash scripts/sync-from-prod.sh",
     "seed:ato": "tsx scripts/seed-ato-rulings.ts",
-    "seed:demo": "tsx scripts/seed-demo-property.ts"
+    "seed:demo": "tsx scripts/seed-demo-property.ts",
+    "verify:deletion": "tsx scripts/verify-account-deletion.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.63",
