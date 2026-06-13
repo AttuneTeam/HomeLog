@@ -153,12 +153,18 @@ export default function LandingPage() {
                 For properties with nothing to hide
               </span>
               <h1 className="font-caslon text-[48px] leading-[56px] tracking-[-0.02em] text-[#030813] mb-5 max-w-xl">
-                Your Property&apos;s Digital Home.
+                Your Property&apos;s Home Passport.
               </h1>
               <p className="font-grotesk text-lg leading-7 text-[#45474c] mb-7 max-w-lg">
-                Inspired by the Nordic tradition of the house book, a living
-                record that accompanies a property throughout its life: our
-                platform reimagines home ownership for the digital age.
+                Inspired by the Nordic tradition of the <i>house book</i>, build
+                a living record that accompanies a property throughout its life.
+                Home Base provides a simple tool to log every detail, from
+                routine maintenance to major value-add renovations building a
+                smart ledger for your property.
+              </p>
+              <p className="font-grotesk text-lg leading-7 text-[#45474c] mb-7 max-w-lg">
+                Our platform reimagines home ownership for the digital age and
+                supports you on your renovation journey.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
@@ -168,9 +174,6 @@ export default function LandingPage() {
                   Start for Free
                   <span className="ms text-[18px]">arrow_forward</span>
                 </Link>
-                {/* <button className="border border-[#76777c] px-10 py-4 label-caps hover:bg-[#e9e8e7] transition-all">
-                  Tour the Platform
-                </button> */}
               </div>
             </div>
             <div
@@ -198,12 +201,36 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Quality Management ── */}
-        <section className="py-20 bg-[#fbf9f9]">
+        {/* ── Build your Base through Quality Management ── */}
+        <section className="py-20 bg-[#f0eeec]">
           <div className="max-w-[1280px] mx-auto px-16">
+            <div data-observe className="opacity-0 text-center mb-16">
+              <h2 className="font-caslon text-[40px] leading-[48px] tracking-[-0.02em] text-[#030813] mb-4">
+                Build your Base through Quality Management
+              </h2>
+              <p className="font-grotesk text-lg text-[#45474c] max-w-2xl mx-auto">
+                Managing an investment shouldn&apos;t be a second job. Home Base
+                gives you the tools to plan renovations, track every cost, and
+                stay tax-ready — all in one place.
+              </p>
+            </div>
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div data-observe className="opacity-0 order-2 md:order-1">
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white p-8 border border-[#c6c6cc]/20 aspect-square flex flex-col justify-between">
+                    <span className="ms text-[#775a19] text-4xl">
+                      construction
+                    </span>
+                    <div>
+                      <h3 className="font-caslon text-2xl text-[#030813] mb-2">
+                        Renovation Planning
+                      </h3>
+                      <p className="font-grotesk text-base text-[#45474c]">
+                        Scope, schedule, and track every project from quote to
+                        completion.
+                      </p>
+                    </div>
+                  </div>
                   <div className="bg-white p-8 border border-[#c6c6cc]/20 aspect-square flex flex-col justify-between">
                     <span className="ms text-[#775a19] text-4xl">
                       account_balance_wallet
@@ -217,8 +244,8 @@ export default function LandingPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="bg-white p-8 border border-[#c6c6cc]/20 aspect-square flex flex-col justify-between">
-                    <span className="ms text-[#775a19] text-4xl">
+                  <div className="bg-white p-8 border border-[#c6c6cc]/20 col-span-2 flex flex-col sm:flex-row items-start gap-6">
+                    <span className="ms text-[#775a19] text-4xl shrink-0">
                       receipt_long
                     </span>
                     <div>
@@ -226,27 +253,27 @@ export default function LandingPage() {
                         Tax-Ready
                       </h3>
                       <p className="font-grotesk text-base text-[#45474c]">
-                        Instant exports formatted for professional accounting
-                        standards.
+                        AI-powered classification against ATO rulings — instant
+                        exports formatted for professional accounting standards.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
               <div data-observe className="opacity-0 order-1 md:order-2">
-                <h2 className="font-caslon text-[32px] leading-10 text-[#030813] mb-6">
+                <span className="label-caps text-[#775a19] mb-4 inline-block">
                   Quality Management
-                </h2>
+                </span>
                 <p className="font-grotesk text-lg text-[#45474c] mb-8 leading-relaxed">
-                  Managing an investment shouldn&apos;t be a second job. Home
-                  Base provides a simple tool to log every detail, from routine
-                  maintenance to major value-add renovations building a smart
-                  ledger for your property.
+                  From scoping a kitchen reno to filing your tax return, Home
+                  Base builds a smart ledger that grows with your property —
+                  capturing every detail, receipt, and milestone along the way.
                 </p>
                 <ul className="space-y-4">
                   {[
                     "Smart receipt capture and digital filing",
-                    "Seamless rent and expense sycning",
+                    "Renovation projects with contractor management",
+                    "Seamless rent and expense syncing",
                     "Monthly cash-flow performance view",
                   ].map((item) => (
                     <li
@@ -276,17 +303,236 @@ export default function LandingPage() {
                 The Home Passport
               </h2>
               <p className="font-grotesk text-lg text-[#45474c] max-w-2xl mx-auto">
-                Document the improvements, maintenance, and professionals that
-                grow your assets value compiled into a beautiful transferable
-                ledger
+                Your &ldquo;base&rdquo; is a beautiful, data-rich shareable
+                asset showcasing every improvement you&apos;ve made. Add it to
+                your sales listing or share your expertise with others on the
+                platform.
               </p>
             </div>
             <div
               data-observe
-              className="opacity-0 grid grid-cols-1 md:grid-cols-12 gap-6"
+              className="opacity-0 grid grid-cols-1 md:grid-cols-12 md:grid-rows-[auto_auto] md:items-start gap-6"
             >
-              {/* Hero bento */}
-              <div className="md:col-span-8 group relative h-[400px] overflow-hidden">
+              {/* Investment Insights bento — moved up */}
+              <div className="md:col-span-8 md:col-start-1 md:row-start-1 bg-[#e3e2e2] overflow-hidden flex flex-col sm:flex-row">
+                <div className="sm:w-1/2 p-8 flex flex-col justify-center">
+                  <h4 className="font-caslon text-2xl text-[#030813] mb-4">
+                    Investment Insights
+                  </h4>
+                  <p className="font-grotesk text-base text-[#45474c]">
+                    Export a comprehensive &lsquo;Property Bio&rsquo; to share
+                    with banks, insurers, or potential buyers. Beautifully
+                    designed, it enhances your sale listing and makes your
+                    property stand out from the rest.
+                  </p>
+                </div>
+                {/* Listing mockup — illustrative realestate.com / Domain card */}
+                <div className="sm:w-1/2 p-6 flex items-center">
+                  <div className="w-full bg-white border border-[#c6c6cc]/30 overflow-hidden flex flex-col shadow-sm">
+                    <div className="relative h-[120px] bg-gradient-to-br from-[#dcd6cb] to-[#b9a88c]">
+                      <img
+                        src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80"
+                        alt="Listing exterior"
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Home Base verified badge */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
+                        <span
+                          className="ms text-[#1a7a4a] text-[16px]"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          verified
+                        </span>
+                        <span className="label-caps text-[9px] text-[#030813]">
+                          Home Base Verified
+                        </span>
+                      </div>
+                      <span className="absolute bottom-3 right-3 label-caps text-[9px] text-white bg-[#030813]/70 px-2 py-0.5 rounded">
+                        For Sale
+                      </span>
+                    </div>
+                    <div className="p-5 flex flex-col gap-3 grow">
+                      <div>
+                        <p className="font-caslon text-xl text-[#030813]">
+                          $1,150,000
+                        </p>
+                        <p className="font-grotesk text-[13px] text-[#45474c]">
+                          14 Belmore St, Hawthorn VIC
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-[#45474c] border-y border-[#c6c6cc]/30 py-2">
+                        {[
+                          { icon: "bed", n: "4" },
+                          { icon: "bathtub", n: "2" },
+                          { icon: "directions_car", n: "2" },
+                        ].map(({ icon, n }) => (
+                          <span
+                            key={icon}
+                            className="flex items-center gap-1 font-grotesk text-sm"
+                          >
+                            <span className="ms text-[18px]">{icon}</span>
+                            {n}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {[
+                          "Full renovation history",
+                          "Verified expenses & receipts",
+                          "Energy & maintenance records",
+                        ].map((use) => (
+                          <span
+                            key={use}
+                            className="flex items-center gap-2 font-grotesk text-[12px] text-[#45474c]"
+                          >
+                            <span
+                              className="ms text-[#1a7a4a] text-[14px]"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              check_circle
+                            </span>
+                            {use}
+                          </span>
+                        ))}
+                      </div>
+                      <button className="mt-auto label-caps text-[10px] text-white bg-[#030813] py-2 rounded hover:bg-[#1a202c] transition-colors">
+                        View Home Passport
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Timeline bento — spans both rows on the right */}
+              <div className="md:col-span-4 md:col-start-9 md:row-start-1 md:row-span-2 bg-white p-8 border border-[#c6c6cc]/30 flex flex-col justify-center">
+                <h4 className="label-caps text-[#775a19] mb-4">
+                  Rich Property Timeline
+                </h4>
+                <div className="space-y-6">
+                  <div className="border-l-2 border-[#775a19] pl-6">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      MAR 2021
+                    </p>
+                    <p className="font-grotesk font-semibold text-base">
+                      Property Purchased
+                    </p>
+                    <p className="font-grotesk text-[13px] text-[#76777c] mt-0.5">
+                      Settled at $845,000
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-[#76777c] pl-6">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      AUG 2022
+                    </p>
+                    <p className="font-grotesk text-base">Kitchen Renovation</p>
+                    <p className="font-grotesk text-[13px] text-[#76777c] mt-0.5">
+                      New cabinetry, stone benchtops &amp; appliances
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-[#76777c] pl-6">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      OCT 2023
+                    </p>
+                    <p className="font-grotesk text-base">
+                      Energy Efficiency Upgrade
+                    </p>
+                    <p className="font-grotesk text-[13px] text-[#76777c] mt-0.5">
+                      6.6kW solar &amp; ducted heat pump
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-[#76777c] pl-6">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      JAN 2024
+                    </p>
+                    <p className="font-grotesk text-base">
+                      Scheduled Pest inspection
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-[#76777c] pl-6">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      MAR 2024
+                    </p>
+                    <p className="font-grotesk text-base">Bathroom Remodel</p>
+                    <p className="font-grotesk text-[13px] text-[#76777c] mt-0.5">
+                      Full ensuite refit with underfloor heating
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-[#76777c] pl-6 opacity-50">
+                    <p className="label-caps text-[10px] text-[#45474c]">
+                      EST. JUN 2024
+                    </p>
+                    <p className="font-grotesk text-base text-[#45474c]">
+                      Exterior Repainting
+                    </p>
+                    <p className="font-grotesk text-[13px] text-[#76777c] mt-0.5">
+                      Dulux Weathershield — Monument
+                    </p>
+                  </div>
+                </div>
+                {/* Shareable QR (illustrative) */}
+                <div className="mt-8 pt-6 border-t border-[#c6c6cc]/30 flex items-center gap-4">
+                  <svg
+                    viewBox="0 0 25 25"
+                    className="w-16 h-16 shrink-0"
+                    shapeRendering="crispEdges"
+                    role="img"
+                    aria-label="QR code to view this property's timeline"
+                  >
+                    <rect width="25" height="25" fill="#fbf9f9" />
+                    {(() => {
+                      const rects: React.ReactNode[] = [];
+                      // Three finder patterns (corners)
+                      const finder = (ox: number, oy: number) => (
+                        <g key={`f-${ox}-${oy}`} fill="#030813">
+                          <rect x={ox} y={oy} width={7} height={1} />
+                          <rect x={ox} y={oy + 6} width={7} height={1} />
+                          <rect x={ox} y={oy} width={1} height={7} />
+                          <rect x={ox + 6} y={oy} width={1} height={7} />
+                          <rect x={ox + 2} y={oy + 2} width={3} height={3} />
+                        </g>
+                      );
+                      rects.push(finder(0, 0));
+                      rects.push(finder(18, 0));
+                      rects.push(finder(0, 18));
+                      // Deterministic pseudo-random data modules
+                      const inFinder = (x: number, y: number) =>
+                        (x < 8 && y < 8) ||
+                        (x > 16 && y < 8) ||
+                        (x < 8 && y > 16);
+                      let seed = 7;
+                      for (let y = 0; y < 25; y++) {
+                        for (let x = 0; x < 25; x++) {
+                          if (inFinder(x, y)) continue;
+                          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                          if ((seed >> 8) % 100 < 42) {
+                            rects.push(
+                              <rect
+                                key={`d-${x}-${y}`}
+                                x={x}
+                                y={y}
+                                width={1}
+                                height={1}
+                                fill="#030813"
+                              />,
+                            );
+                          }
+                        }
+                      }
+                      return rects;
+                    })()}
+                  </svg>
+                  <div>
+                    <p className="label-caps text-[10px] text-[#775a19] mb-1">
+                      Scan to View
+                    </p>
+                    <p className="font-grotesk text-[13px] text-[#45474c] leading-snug">
+                      Share a live, read-only Home Passport with buyers and
+                      agents.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Building your Network bento — moved down */}
+              <div className="md:col-span-8 md:col-start-1 md:row-start-2 group relative h-[300px] overflow-hidden">
                 <img
                   src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80"
                   alt="Architectural details — oak, marble, brass"
@@ -298,61 +544,8 @@ export default function LandingPage() {
                     PROFESSIONAL NETWORK
                   </span>
                   <h3 className="font-caslon text-[32px] leading-10">
-                    Buiding your Network
+                    Building your Network
                   </h3>
-                </div>
-              </div>
-              {/* Timeline bento */}
-              <div className="md:col-span-4 bg-white p-8 border border-[#c6c6cc]/30 flex flex-col justify-center">
-                <h4 className="label-caps text-[#775a19] mb-4">
-                  Property Lifecycle
-                </h4>
-                <div className="space-y-6">
-                  <div className="border-l-2 border-[#775a19] pl-6">
-                    <p className="label-caps text-[10px] text-[#45474c]">
-                      OCT 2023
-                    </p>
-                    <p className="font-grotesk font-semibold text-base">
-                      Energy Efficiency Upgrade
-                    </p>
-                  </div>
-                  <div className="border-l-2 border-[#76777c] pl-6">
-                    <p className="label-caps text-[10px] text-[#45474c]">
-                      JAN 2024
-                    </p>
-                    <p className="font-grotesk text-base">
-                      Scheduled Pest inspection
-                    </p>
-                  </div>
-                  <div className="border-l-2 border-[#76777c] pl-6 opacity-50">
-                    <p className="label-caps text-[10px] text-[#45474c]">
-                      EST. JUN 2024
-                    </p>
-                    <p className="font-grotesk text-base text-[#45474c]">
-                      Exterior Repainting
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Sharing bento */}
-              <div className="md:col-span-8 bg-[#e3e2e2] h-[300px] overflow-hidden flex">
-                <div className="w-1/2 p-8 flex flex-col justify-center">
-                  <h4 className="font-caslon text-2xl text-[#030813] mb-4">
-                    Investment Insights
-                  </h4>
-                  <p className="font-grotesk text-base text-[#45474c]">
-                    Export a comprehensive &lsquo;Property Bio&rsquo; to share
-                    with banks, insurers or potential buyers. Beatifully
-                    designed it enhances your sale listing making your property
-                    stand out from the rest.
-                  </p>
-                </div>
-                <div className="w-1/2 relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"
-                    alt="Elegant workspace with laptop and notebook"
-                    className="w-full h-full object-cover"
-                  />
                 </div>
               </div>
             </div>
@@ -480,15 +673,13 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="font-grotesk text-sm text-[#45474c] text-center md:text-left">
-              © 2024 Home Base. Modern Heritage &amp; Property Stewardship.
+              © 2026 Home Base. Modern Digital Property Stewardship.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
             {[
               { label: "Privacy Policy", href: "/privacy" },
               { label: "Terms of Service", href: "/terms" },
-              { label: "Accounting Integration", href: "#" },
-              { label: "Contact Support", href: "#" },
             ].map(({ label, href }) => (
               <Link
                 key={label}
