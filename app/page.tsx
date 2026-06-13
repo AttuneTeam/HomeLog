@@ -485,18 +485,18 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
             {[
-              "Privacy Policy",
-              "Terms of Service",
-              "Accounting Integration",
-              "Contact Support",
-            ].map((item) => (
-              <a
-                key={item}
-                href="#"
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms of Service", href: "/terms" },
+              { label: "Accounting Integration", href: "#" },
+              { label: "Contact Support", href: "#" },
+            ].map(({ label, href }) => (
+              <Link
+                key={label}
+                href={href}
                 className="font-grotesk text-sm text-[#45474c] hover:text-[#775a19] transition-colors"
               >
-                {item}
-              </a>
+                {label}
+              </Link>
             ))}
           </div>
         </div>
