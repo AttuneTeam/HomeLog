@@ -4,6 +4,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { FinancialYearSelect } from "@/components/financial-year-select";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
+import { resolveTaxClassification } from "@/lib/tax/classification";
 import {
   AU_FY_START_DAY,
   AU_FY_START_MONTH,
@@ -179,8 +180,14 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
       if (expense.expense_date < fyStartStr || expense.expense_date > fyEndStr)
         continue;
 
-      const effectiveClassification =
-        expense.manual_classification ?? renovation.classification;
+      // The manual and renovation columns use different enum vocabularies;
+      // resolving them here previously compared the inherited renovation value
+      // against the tax vocabulary, so it never matched and every unoverridden
+      // capital improvement was reported as a deductible repair.
+      const effectiveClassification = resolveTaxClassification(
+        expense.manual_classification,
+        renovation.classification,
+      );
 
       let invoice_url: string | null = null;
       if (expense.invoice_path) {
