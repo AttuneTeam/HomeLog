@@ -82,3 +82,82 @@ no dependencies on other objects — the lowest-risk migration shape available.
 The FY2026 water recovery itself ($44.84 across Dec and Apr) is NOT yet recorded
 against the real rows. Dec and Apr are both in the flagged set awaiting
 statements #2–#6, so it will be entered with them.
+
+════════════════════════════════════════════════════════════════════
+PHASE 1.5 VERIFICATION REPORT — Gross-versus-net correction
+════════════════════════════════════════════════════════════════════
+
+SCOPE
+git diff --name-only a3584a4 HEAD (Phase 1 checkpoint).
+Code files:
+  app/api/inbound-email/handler.ts
+  lib/email-parser/parse-statement.ts
+  lib/supabase/database.types.ts
+  scripts/fix-rental-payment-gross-net.ts
+  scripts/verify-rental-statement-ingest.ts
+  supabase/migrations/065_rental_payment_other_income.sql
+  tests/lib/email-parser/parse-statement.test.ts
+
+Tasks: 6 of 6 complete — 8fd6834, 6e63c55, 618b576, d3b700f.
+
+AUTOMATED CHECKS
+  npm run build             → ✓ Compiled successfully
+  CI=true npm test          → ✓ 13 files, 206 tests (186 at track start)
+  npm run db:migrate        → ✓ 065 applied, existing rows unaffected
+  npm run verify:rent-ingest → ✓ 23 checks passed
+  fix-rental-payment-gross-net.ts → 2 corrected, 5 flagged, idempotent
+
+WHAT THIS PHASE FIXED
+Two defects in the same table, both silently wrong:
+
+1. rental_payments.amount held the NET disbursed figure while
+   lib/tax/rental-income.ts#actualRentForFy reported it as GROSS rent.
+   Confirmed documentarily: statement #7 reads Money In $2,200.00 / You Received
+   $2,074.60, and the database held exactly $2,074.60.
+
+2. Tenant reimbursements had nowhere to be recorded, which would have made the
+   FR5 reconciliation report CORRECT statements as broken — off by exactly the
+   recovery ($6.80 in December). The feature being built was incorrect before it
+   was written.
+
+Both were found by verifying the previous phase, not by looking for them.
+
+TEST COVERAGE ADDED
+20 tests across two Red/Green cycles:
+  15 — parse-statement (gross/net contract, fee buckets, malformed input,
+       no-coercion, null-not-zero defaults)
+   5 — other income (kept out of gross rent, note captured, reconciles only
+       with it included, prompt contract)
+
+VERIFICATION DEBT — RECORDED, NOT SKIPPED
+1. npm run db:reset not run for migration 065. It would discard the 618b576 data
+   correction, whose restore path needs the user's interactive db:sync.
+   db:migrate applied it cleanly; it is a two-column additive ALTER TABLE with
+   CHECK constraints and no dependencies.
+2. parseEmailStatement and the inbound webhook path (Svix signature, attachment
+   extraction, property matching) remain untested, as before this track. Both
+   ends of parseEmailStatement — the prompt builder and the response parser —
+   are covered.
+
+OPEN, NEEDS THE USER (non-blocking for Phase 2)
+1. Statements #2–#6 not located. FY2026 assessable income remains understated by
+   $2,377.32 (agent's annual summary $28,600.00 gross rent vs $26,222.68 stored).
+   The Dec $6.80 and Apr $38.04 water recoveries are entered with them.
+2. The correction is LOCAL ONLY. Production holds the same defective rows;
+   db:sync would discard the local fix. The production run, after 063/064/065
+   are applied there, is what makes it durable.
+
+RAISED, NOT ACTIONED
+1. The $2,146 blinds expense is classified "Repair" (immediate deduction), while
+   acceptance criterion 5 of this track's own spec assumes capital / Division 40.
+   Supplying and installing 10 new roller blinds acquires depreciating assets
+   rather than restoring anything, and the ATO lists internal blinds as Division
+   40 with an effective life. As Repair the full $2,146 is claimed in FY2026
+   instead of depreciated. Flagged for the owner and their accountant; no change
+   made, and no tax advice given. Criterion 5 will need revisiting in Phase 5.
+2. All $3,724.02 of FY2026 agent-paid third-party costs from the annual summary
+   WERE found in expenses / rental_operating_expenses — no unclaimed deductions
+   from that list. Checked read-only at the user's request.
+
+USER CONFIRMATION
+Confirmed 2026-07-30: "yes".
