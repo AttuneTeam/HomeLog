@@ -1,0 +1,53 @@
+Task: Apportionment helper (Phase 3, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+lib/tax/apportionment.ts: computeApportionment, apportionIncome,
+apportionDeduction. Applied to the report's summary figures.
+
+FILES
+- lib/tax/apportionment.ts (new)
+- tests/lib/tax/apportionment.test.ts (new) - 16 tests (98 total)
+- app/(dashboard)/.../tax-report/page.tsx - applies it
+- components/tax-report-pdf.tsx - TaxReportData.apportionment
+- components/tax-report.tsx - discloses the basis
+
+THE RULE THAT MATTERS
+Ownership scales BOTH income and deductions.
+Days available scales DEDUCTIONS ONLY.
+
+Rent received is rent received. Scaling income down because the property
+was off the market for part of the year would understate assessable rent -
+an error in the taxpayer's favour. Four tests pin this explicitly:
+income is unaffected by availability and by private use, while the same
+facts reduce deductions.
+
+Private-use days are subtracted from available days rather than applied as
+a second multiplier, because a day the owner occupied the property is not
+a day it was available. Applying both as factors would double-discount.
+
+ASSUMPTIONS ARE REPORTED
+Absent facts fall back to sole ownership and a full year, and
+assumedSoleOwnership / assumedFullYear are returned so the report can say
+"(assumed)" rather than presenting a fallback as recorded - the same
+distinction enforced elsewhere in this track.
+
+DISPLAY DECISION
+Only the summary is apportioned; expense tables keep full amounts, with a
+note saying so. Apportioning individual invoice lines would produce
+amounts that match no document the agent can check against.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 5 files, 98 tests passed. Covers sole-ownership and
+  full-year defaults, 50% ownership, private use subtracted from
+  availability, private use with availability unrecorded, negative and
+  >1 fractions clamped, leap-year day counts, and the income-vs-deduction
+  asymmetry from both directions.
+- npm run build -> Compiled successfully, no type errors.
+
+VERIFICATION DEBT
+Not seen rendered. The apportionment note and its "(assumed)" markers are
+unconfirmed in a browser; deferred to the phase checkpoint. The PDF
+carries the apportionment data but does not yet print the basis line -
+worth deciding at the checkpoint whether the agent-facing PDF should state
+it too, since that is the copy an accountant actually reads.
