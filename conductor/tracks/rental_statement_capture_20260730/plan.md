@@ -82,7 +82,7 @@ is where the parser's figure belongs.
   - [x] Handler persists both columns
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `d3b700f`
 
-## Phase 2: Domain logic  (Tier 1 — tests first)
+## Phase 2: Domain logic  (Tier 1 — tests first)  [checkpoint: a14a2e3]
 
 - [x] Task: Write failing tests for `lib/tax/agent-fees.ts` `44a8873`
   - [x] Confirmed statement fees resolve as `source: "actual"`
@@ -109,7 +109,7 @@ is where the parser's figure belongs.
   - [x] Test: other income surfaces as "Other rental-related income" and is NOT folded into gross
         rent — folding it would break the accrual cross-check against `weekly_rent × weeks` (FR14)
   - [x] Test: existing `rental-schedule` and `portfolio` tests still pass unchanged
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `a14a2e3`
 
 ## Phase 3: Extraction & upload  (Tier 2)
 
