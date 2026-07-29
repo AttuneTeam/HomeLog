@@ -148,18 +148,18 @@ financial year.*
   - [x] Implement the cumulative register: per item — amount, start date, years elapsed, this year's claim, written-down balance
   - [x] Confirm tests pass
 
-- [ ] Task: Div 40 via quantity surveyor report
-  - [ ] Add QS report upload and per-FY entry of the stated Div 43 and Div 40 annual figures
-  - [ ] Retain the report as evidence
-  - [ ] Where absent, state that plant and equipment is not tracked and direct the agent to the QS report
+- [x] Task: Div 40 via quantity surveyor report `0bf4a45`
+  - [x] Add QS report upload and per-FY entry of the stated Div 43 and Div 40 annual figures
+  - [x] Retain the report as evidence
+  - [x] Where absent, state that plant and equipment is not tracked and direct the agent to the QS report
 
-- [~] Task: Rental schedule builder
-  - [ ] Write failing tests covering: ATO line ordering, exclusion of `property_type = 'primary_residence'`, exclusion of renovations with `claimable = false`, correct routing of `Repair` / `Immediate Repair` / `Capital Works` classifications, and net income including a loss case
-  - [ ] Implement `lib/tax/rental-schedule.ts` producing one schedule per property per FY
-  - [ ] Apply apportionment from Phase 3
-  - [ ] Confirm tests pass
+- [x] Task: Rental schedule builder `f451d30`
+  - [x] Write failing tests covering: ATO line ordering, exclusion of `property_type = 'primary_residence'`, exclusion of renovations with `claimable = false`, correct routing of `Repair` / `Immediate Repair` / `Capital Works` classifications, and net income including a loss case
+  - [x] Implement `lib/tax/rental-schedule.ts` producing one schedule per property per FY
+  - [x] Apply apportionment from Phase 3
+  - [x] Confirm tests pass
 
-- [ ] Task: Portfolio summary
+- [~] Task: Portfolio summary
   - [ ] Aggregate schedules across all investment properties for the FY
   - [ ] Carry through the CGT cost base per property
   - [ ] Verify totals reconcile against the per-property schedules
