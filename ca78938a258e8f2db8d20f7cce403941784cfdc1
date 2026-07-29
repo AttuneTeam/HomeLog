@@ -67,3 +67,103 @@ VERIFICATION DEBT
 Suggestion row not exercised in a browser: the one-click accept, the row
 hiding once accepted, and the bridged-vacancy wording are unconfirmed.
 Folded into the phase checkpoint's manual plan.
+
+================================================================
+PHASE VERIFICATION REPORT
+Phase 2 - Schema and per-FY property facts
+Track: fy_tax_pack_20260729
+================================================================
+
+SCOPE
+Commits 656818d..ca78938. Nine tasks: six planned, three inserted from
+findings and user feedback.
+
+Migrations added: 054 property_fy_facts, 055 loan_statements,
+056 depreciation_reports, 057 capital works fields on expenses,
+058 deletion storage functions, 059 availability dates.
+
+New modules: lib/tax/classification.ts,
+components/property-fy-facts-panel.tsx,
+components/financial-year-select.tsx (Phase 1),
+app/actions/property-fy-facts.ts.
+
+AUTOMATED CHECKS
+  npm run build          -> PASS, all 37 routes, no type errors
+  CI=true npm test       -> PASS, 61 tests across 3 files
+  npm run db:reset       -> PASS, 59 migrations replay cleanly from scratch
+  npm run verify:deletion-> PASS, 14 assertions
+
+MANUAL VERIFICATION
+Plan presented covering: the ownership/availability panel and its stated
+assumptions when nothing is recorded; saving and persistence; per-year
+isolation; the tenancy-derived suggestion with one-click accept, bridged
+vacancy disclosure, and the row reappearing when dates are widened; the
+inverted-range error disabling save; the classification fix as rendered;
+and responsive/dark-theme legibility.
+
+User response: confirmed "yes".
+
+DEFECTS FOUND AND FIXED IN THIS PHASE
+1. CLASSIFICATION VOCABULARY MISMATCH (material, tax-affecting).
+   renovations.classification and expenses.manual_classification are
+   different enums with different labels. The report merged them and
+   compared against the tax vocabulary only, so any expense without a
+   manual override fell through to "repairs". Measured: capital
+   improvements AND initial repairs were both reported as deductible in
+   the current year. Overstated deductions, understated CGT cost base, in
+   the taxpayer's favour. Fixed in lib/tax/classification.ts with tests.
+2. numeric(4,2) on capital_works_rate_pct made the <= 100 bound
+   unreachable and produced an opaque overflow error. Corrected to
+   numeric(5,2) before commit.
+
+DESIGN DECISIONS RECORDED
+- Per-year facts rather than per-property columns, so a changed ownership
+  share never retroactively rewrites a prior year's figures.
+- Div 40 recorded from the QS schedule rather than derived; Div 43 rate
+  stored per item. Eligibility is the surveyor's determination, not the
+  product's - consistent with "decision support, never automated filing".
+- loan_statements keyed per statement, not per property: a property can
+  carry several loan accounts, and the year's deduction is their sum.
+- Availability captured as DATES with the day count derived, so the
+  evidence behind the number survives.
+- Availability SUGGESTED from tenancies but not derived from them.
+  Tenancy is a lower bound: availability can precede the first tenant and
+  continue between leases. Deriving would understate days available.
+  Bridged vacancy is disclosed, never assumed silently.
+
+RLS VERIFICATION
+Every new table was checked for DENIAL, not merely owner-allowance, using
+forged request.jwt.claims across four principals:
+  owner      -> read + write
+  stranger   -> SELECT 0 rows; INSERT denied; UPDATE/DELETE affect 0 rows
+  viewer     -> SELECT allowed; INSERT denied; UPDATE affects 0 rows
+                (the shared-accountant case: reads the pack, cannot alter it)
+  co-owner   -> read + write allowed
+Plus constraint and cascade checks per table.
+
+DELETION INVARIANTS
+Two new file-bearing tables were added, so both storage functions were
+redefined (058) and docs/account-deletion.md updated. Verified that a
+loan statement uploaded by a co-owner guest - path under the GUEST's id,
+row belonging to the OWNER's property - is attributed to the owner's set
+(1) and not the guest's (0). This is the invariant the doc exists to
+protect; a prefix scan would have got it backwards.
+
+VERIFICATION DEBT CARRIED FORWARD
+- No automated coverage for pages, components, Server Actions or the PDF.
+  Only pure modules are tested. Browser behaviour rests on the user's
+  manual confirmation above.
+- verify:deletion does not itself stage loan_statements or
+  depreciation_reports files; those were checked directly instead.
+  Extending the harness is worth doing when the upload paths are built in
+  Phase 3, to make the regression permanent.
+- lib/tax/classification.ts is not yet consumed by any schedule builder;
+  Phase 4 must route through it rather than re-deriving.
+- A third classification vocabulary (AiTaxClassification) exists on the AI
+  path and is unmapped. Phase 4 should confirm whether the schedule needs
+  it.
+
+STATUS: Phase 2 complete. The data model can now express per-year
+ownership and availability, evidenced loan interest, QS depreciation
+figures, and per-item Div 43 clocks - everything Phase 3 needs to compute
+against.
