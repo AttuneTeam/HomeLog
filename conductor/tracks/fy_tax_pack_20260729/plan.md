@@ -209,4 +209,9 @@ financial year.*
   - [x] Confirm `npm run build` passes and `npm run db:reset` replays cleanly *(build passes; db:reset last replayed all 61 migrations cleanly at migration 061 and none have been added since — not re-run, per the standing instruction to ask first)*
   - [x] Confirm `CI=true npm test` passes *(170 tests)*
 
+- [x] Task: Scope the questionnaire to property only *(inserted — user feedback at checkpoint)* `2d898c8`
+  - [x] Replace the five non-property sections with a single scope statement naming what the pack does not cover
+  - [x] Update the tests and the spec's FR10 to match the narrowed scope
+  - [x] Confirm the rental section is unchanged
+
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
