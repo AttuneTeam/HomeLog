@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractLoanStatementFields } from "@/lib/ai/extract-loan-statement";
 import { mimeTypeFromPath } from "@/lib/ai/extract-text";
-import { extractPdfTextLayer } from "@/lib/ai/pdf-text";
 
 /**
  * Upload an annual loan statement and extract the interest it evidences.
@@ -56,24 +55,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: storageError.message }, { status: 500 });
   }
 
-  // Prefer a PDF's own text layer: lender statements are dense tables, which
-  // read far more reliably as text than as an image.
-  let rawText: string | null = null;
-  if (mimeType === "application/pdf") {
-    try {
-      rawText = await extractPdfTextLayer(buffer);
-    } catch {
-      rawText = null; // Fall through to the vision path.
-    }
-  }
-
+  // The document goes straight to the model, which reads a PDF natively. This
+  // is the same path app/api/extract/invoice/route.ts uses and the one already
+  // working in production.
+  //
+  // An earlier version parsed the PDF's text layer here first, to save tokens
+  // on the dense tables lenders use. That made this the only upload path doing
+  // a server-side PDF parse — and pdf-parse lists a `browser` condition first
+  // in its exports map, so Vercel's bundler resolved a build referencing
+  // DOMMatrix, which does not exist in Node. The module failed to load and the
+  // route returned 500 before any handler ran. The token saving was not worth
+  // owning a bundler-resolution problem no other path in the app has.
   let extracted: Awaited<ReturnType<typeof extractLoanStatementFields>> | null =
     null;
   let extractionError: string | null = null;
   try {
-    extracted = await extractLoanStatementFields(buffer, mimeType, {
-      rawText: rawText ?? undefined,
-    });
+    extracted = await extractLoanStatementFields(buffer, mimeType);
   } catch (error) {
     // A failed extraction must not lose the upload. The row is still created
     // so the user can enter the figure by hand against the stored document.
@@ -102,12 +99,24 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+    // No row means nothing references the uploaded file, and storage has no
+    // cascade — leaving it would orphan the object exactly as
+    // docs/account-deletion.md warns. Remove it before returning.
+    await supabase.storage.from("property-files").remove([storagePath]);
+
+    // A row-level security rejection means the caller does not have write
+    // access to this property. Surfacing the raw Postgres text would leak
+    // schema detail and tells the user nothing actionable.
+    const denied = insertError.message.includes("row-level security");
+    return NextResponse.json(
+      {
+        error: denied
+          ? "You don't have permission to add a loan statement to this property."
+          : "Couldn't save the statement. Please try again.",
+      },
+      { status: denied ? 403 : 500 },
+    );
   }
 
-  return NextResponse.json({
-    statement: row,
-    extractionError,
-    usedTextLayer: rawText != null,
-  });
+  return NextResponse.json({ statement: row, extractionError });
 }
