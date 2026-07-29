@@ -1,0 +1,74 @@
+Task: Fix the classification vocabulary mismatch (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+INSERTED TASK - not in the original plan. Found while determining how to
+identify capital works expenses for the migration 057 backfill, which
+cannot be written without deciding this mapping.
+
+THE DEFECT
+Two Postgres enums describe the same concepts with different labels:
+  renovations.classification      repair | capital_improvement | initial_repair
+  expenses.manual_classification  Repair | Capital Works       | Immediate Repair
+
+tax-report/page.tsx did:
+  const effective = expense.manual_classification ?? renovation.classification;
+  if (effective === "Capital Works")        -> capitalImprovements
+  else if (effective === "Immediate Repair") -> initialRepairs
+  else                                       -> repairs
+
+manual_classification is an OPTIONAL override, null for most expenses. The
+inherited renovation value was therefore compared against labels it could
+never equal, and fell through to the else branch every time.
+
+MEASURED IMPACT (executed before/after, no manual override):
+  case                             OLD                        NEW
+  capital improvement              repairs / DEDUCTED NOW  -> capitalImprovements / cost base
+  initial repair                   repairs / DEDUCTED NOW  -> initialRepairs / cost base
+  repair                           repairs / DEDUCTED NOW  -> repairs / DEDUCTED NOW
+
+All three collapsed into the current-year deduction bucket. Only a plain
+repair was correct, and only by coincidence. Consequence: current-year
+deductions overstated, CGT cost base understated - erring in the
+taxpayer's favour, the direction that attracts ATO scrutiny.
+
+Severity note: this affects the FY2025-26 report the user intends to send
+to their tax agent, so it was fixed immediately rather than deferred to
+Phase 4 where classification routing was already scheduled.
+
+NAMING TRAP DOCUMENTED
+"Immediate Repair" does NOT mean immediately deductible. It denotes an
+initial repair at purchase - work to bring a property to rentable
+condition - which is capital and belongs in the CGT cost base. Confirmed
+against the report itself: the initialRepairs group renders as "Initial
+Repairs at Purchase ... Not immediately deductible - added to the CGT cost
+base", and initialRepairTotal feeds costBase in tax-report-pdf.tsx:426.
+isDeductibleNow() encodes this so callers never reason from the label.
+
+A THIRD vocabulary exists on the AI path (AiTaxClassification: "Immediate
+Deduction" | "Capital Works (Div 43)" | "Plant & Equipment (Div 40)"). It
+is deliberately out of scope here - the report reads only the manual and
+renovation columns - but Phase 4 should confirm whether the schedule needs
+to consume it.
+
+FILES
+- lib/tax/classification.ts (new) - resolveTaxClassification, isDeductibleNow
+- tests/lib/tax/classification.test.ts (new) - 9 tests
+- app/(dashboard)/properties/[propertyId]/tax-report/page.tsx - uses the
+  resolver
+
+VERIFICATION PERFORMED
+- Red: CI=true npm test failed with "Cannot find package
+  '@/lib/tax/classification'" before implementation.
+- Green: CI=true npm test -> 3 files, 38 tests passed.
+  Covers each inherited mapping, manual override precedence, undefined
+  treated as null, a guard that no renovation-vocabulary value can ever be
+  returned, and isDeductibleNow including the counter-intuitive
+  "Immediate Repair" -> false.
+- Executed a before/after comparison through the real resolver (table
+  above) to confirm the routing change concretely rather than by
+  assertion.
+- npm run build -> Compiled successfully, no type errors.
+
+VERIFICATION DEBT
+Not exercised in a browser against seeded data. The routing change is
+covered by unit tests; the grouping as rendered is confirmed at the phase
+checkpoint.
