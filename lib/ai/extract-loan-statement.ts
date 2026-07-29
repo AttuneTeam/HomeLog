@@ -69,37 +69,33 @@ const INSTRUCTION = [
 /**
  * Extract loan statement fields from a document.
  *
- * Mirrors extractInvoiceFields: when a usable PDF text layer is supplied a
- * text-only call is made, which is both cheaper and more accurate on the dense
- * tabular layouts lenders use. Otherwise the document goes to the vision path.
+ * The document is sent to the model as-is — a PDF as a native file part, any
+ * other format as an image. This mirrors extractInvoiceFields' default path,
+ * which is what already works in production.
+ *
+ * There is deliberately no local text-extraction step. Parsing the PDF's text
+ * layer first would save tokens on the dense tables lenders use, but it made
+ * this the only upload path with a server-side PDF parse, and `pdf-parse`
+ * resolves to a DOM-dependent build under Vercel's bundler — taking the whole
+ * route down with a module-load error. Not a trade worth making for token cost.
  */
 export async function extractLoanStatementFields(
   buffer: Buffer,
   mimeType: string,
-  opts?: { rawText?: string },
 ): Promise<LoanStatementFields> {
-  const textLayer = opts?.rawText?.trim();
-
-  const content = textLayer
-    ? [
-        {
-          type: "text" as const,
-          text: `${INSTRUCTION}\n\nStatement text:\n${textLayer}`,
+  const content = [
+    mimeType === "application/pdf"
+      ? {
+          type: "file" as const,
+          data: buffer.toString("base64"),
+          mediaType: "application/pdf" as const,
+        }
+      : {
+          type: "image" as const,
+          image: `data:${mimeType};base64,${buffer.toString("base64")}`,
         },
-      ]
-    : [
-        mimeType === "application/pdf"
-          ? {
-              type: "file" as const,
-              data: buffer.toString("base64"),
-              mediaType: "application/pdf" as const,
-            }
-          : {
-              type: "image" as const,
-              image: `data:${mimeType};base64,${buffer.toString("base64")}`,
-            },
-        { type: "text" as const, text: INSTRUCTION },
-      ];
+    { type: "text" as const, text: INSTRUCTION },
+  ];
 
   const { object } = await generateObject({
     model: extractionModel,
