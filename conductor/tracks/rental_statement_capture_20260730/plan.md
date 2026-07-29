@@ -34,7 +34,7 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
         (harness extended: it previously had no coverage of `statement_path` at all)
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `a3584a4`
 
-## Phase 1.5: Correct the gross-versus-net defect  (Tier 1)
+## Phase 1.5: Correct the gross-versus-net defect  (Tier 1)  [checkpoint: d3b700f]
 
 Added mid-track. `lib/email-parser/parse-statement.ts:51` instructs the model to store the NET
 amount disbursed in `amount`, explicitly not the gross rent figure, while
@@ -80,7 +80,7 @@ is where the parser's figure belongs.
   - [x] Prompt asks for `otherIncome` and `otherIncomeNote`, and states that a tenant
         reimbursement is NOT rent and must not be added to `amount`
   - [x] Handler persists both columns
-- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `d3b700f`
 
 ## Phase 2: Domain logic  (Tier 1 — tests first)
 
