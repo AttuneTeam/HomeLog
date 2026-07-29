@@ -268,11 +268,18 @@ export type LoanStatement = {
  * The same underlying report normally covers several years, so `storage_path`
  * repeats across rows by design.
  */
+export type DepreciationMethod = "diminishing_value" | "prime_cost";
+
 export type DepreciationReport = {
   property_id: string;
   financial_year_end: number;
   div43_annual: number | null;
   div40_annual: number | null;
+  /**
+   * Which column of the QS schedule div40_annual came from. Division 43 is
+   * identical under both methods, so it is unaffected.
+   */
+  depreciation_method: DepreciationMethod | null;
   /** Path into the `property-files` bucket. See docs/account-deletion.md. */
   storage_path: string | null;
   qs_firm: string | null;
@@ -1580,6 +1587,7 @@ export interface Database {
           financial_year_end: number;
           div43_annual?: number | null;
           div40_annual?: number | null;
+          depreciation_method?: DepreciationMethod | null;
           storage_path?: string | null;
           qs_firm?: string | null;
           report_date?: string | null;
@@ -1590,6 +1598,7 @@ export interface Database {
         Update: {
           div43_annual?: number | null;
           div40_annual?: number | null;
+          depreciation_method?: DepreciationMethod | null;
           storage_path?: string | null;
           qs_firm?: string | null;
           report_date?: string | null;

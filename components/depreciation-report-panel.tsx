@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { upsertDepreciationReport } from "@/app/actions/depreciation-reports";
-import type { DepreciationReport } from "@/lib/supabase/database.types";
+import type {
+  DepreciationMethod,
+  DepreciationReport,
+} from "@/lib/supabase/database.types";
 
 interface Props {
   propertyId: string;
@@ -54,6 +57,9 @@ export function DepreciationReportPanel({
     report?.div40_annual != null ? String(report.div40_annual) : "",
   );
   const [qsFirm, setQsFirm] = useState(report?.qs_firm ?? "");
+  const [method, setMethod] = useState<DepreciationMethod>(
+    report?.depreciation_method ?? "diminishing_value",
+  );
   const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -76,6 +82,7 @@ export function DepreciationReportPanel({
         div40Annual: d40,
         qsFirm: qsFirm.trim() || null,
         reportDate: report?.report_date ?? null,
+        depreciationMethod: method,
         storagePath,
       });
       if (error) {
@@ -115,19 +122,32 @@ export function DepreciationReportPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!hasReport && (
-          <div className="flex gap-2 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-            <Info className="h-4 w-4 shrink-0 mt-0.5" />
+        <div className="flex gap-2 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+          <Info className="h-4 w-4 shrink-0 mt-0.5" />
+          <div className="space-y-1.5">
+            {!hasReport && (
+              <p>
+                No depreciation schedule recorded. Plant and equipment
+                (Division 40) is <strong>not tracked</strong> by Home Base — it
+                depends on per-asset effective lives and the second-hand plant
+                rules, which your quantity surveyor determines.
+              </p>
+            )}
             <p>
-              No depreciation schedule recorded. Plant and equipment
-              (Division 40) is <strong>not tracked</strong> by Home Base — it
-              depends on per-asset effective lives and the second-hand plant
-              rules, which your quantity surveyor determines. Enter the figures
-              from their schedule below, or the pack will tell your accountant
-              to request it.
+              <strong>Where to find these figures:</strong> your schedule has a
+              year-by-year table, usually titled &ldquo;Schedule by diminishing
+              value method&rdquo; and &ldquo;Schedule by prime cost
+              method&rdquo;. Find the row whose financial year is{" "}
+              <strong>{financialYearLabel}</strong> and read across.
+            </p>
+            <p>
+              <strong>Capital works is the same on both pages</strong> —
+              Division 43 can only be claimed on prime cost, so the method makes
+              no difference to it. Only the plant and equipment column differs,
+              which is what the method below records.
             </p>
           </div>
-        )}
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
@@ -169,6 +189,36 @@ export function DepreciationReportPanel({
               onChange={(e) => setQsFirm(e.target.value)}
             />
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="dep-method">Division 40 method</Label>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["diminishing_value", "Diminishing value"],
+                ["prime_cost", "Prime cost"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={method === value ? "default" : "outline"}
+                onClick={() => setMethod(value)}
+                aria-pressed={method === value}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Which column of the schedule the plant and equipment figure came
+            from. Diminishing value claims more in early years, prime cost
+            spreads it evenly; both reach the same total. This is an election
+            your accountant makes and it is locked in per asset — confirm it
+            with them rather than guessing.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

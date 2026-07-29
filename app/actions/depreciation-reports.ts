@@ -10,6 +10,8 @@ export interface DepreciationReportInput {
   div40Annual: number | null;
   qsFirm: string | null;
   reportDate: string | null;
+  /** Which column of the QS schedule div40Annual was read from. */
+  depreciationMethod: "diminishing_value" | "prime_cost" | null;
   storagePath?: string | null;
 }
 
@@ -59,6 +61,7 @@ export async function upsertDepreciationReport(
       div40_annual: input.div40Annual,
       qs_firm: input.qsFirm,
       report_date: input.reportDate,
+      depreciation_method: input.depreciationMethod,
       storage_path: input.storagePath ?? existing?.data?.storage_path ?? null,
     },
     { onConflict: "property_id,financial_year_end" },
