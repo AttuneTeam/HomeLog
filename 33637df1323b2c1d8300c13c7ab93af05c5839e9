@@ -1,0 +1,64 @@
+Task: Fix the roi_calculator_inputs query defect (Phase 1, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+Corrected two call sites and the hand-maintained types to match the schema
+created by migration 009_roi_per_property.sql.
+
+FILES
+- app/(dashboard)/properties/[propertyId]/tax-report/page.tsx
+    .eq("user_id", user.id) -> .eq("property_id", propertyId)
+- components/roi-calculator.tsx
+    upsert no longer sends user_id; error is now surfaced via toast
+    instead of discarded; dead userId prop removed
+- lib/supabase/database.types.ts
+    Row: user_id removed, property_id retained
+    Insert: property_id now required (it is the PK), user_id removed
+    Relationships: repointed to roi_calculator_inputs_property_id_fkey
+    -> properties(id)
+
+SEVERITY
+Live defect in the tax report: the query errored, roiInputs resolved to
+null, and stamp duty / div43 / div40 were silently missing from the CGT
+cost base. Silent because the failure produced an empty section rather
+than an error.
+Latent in RoiCalculator: exported but never rendered anywhere in the repo
+(verified by grep across all .ts/.tsx excluding node_modules/.next).
+
+ROOT CAUSE
+database.types.ts is hand-maintained per CLAUDE.md. It still declared
+user_id, so both call sites type-checked cleanly against a column that
+does not exist. A passing tsc is not evidence a column exists - this is
+now recorded in code_styleguides/typescript.md under Types.
+
+VERIFICATION PERFORMED (live, against local Supabase)
+Local stack could not start initially: port 54327 held by an unrelated
+"teamleader" project. With the user's explicit approval, teamleader was
+stopped, home-base started, and teamleader restored afterwards.
+
+1. \d public.roi_calculator_inputs confirmed:
+     - no user_id column
+     - PRIMARY KEY (property_id)
+     - FK roi_calculator_inputs_property_id_fkey -> properties(id)
+   This matches the corrected types exactly.
+
+2. Old query shape:
+     select ... where user_id = '...'
+     -> ERROR: column "user_id" does not exist
+   New query shape:
+     select ... where property_id = '...'
+     -> executed cleanly (0 rows)
+
+3. Seeded one roi row against a real property inside a transaction:
+     address "56 Forbes St" | stamp_duty 42500.00
+     | div43_depreciation 5500.00 | div40_depreciation 3200.00
+   returned by the corrected join, then ROLLBACK.
+   Confirmed roi_calculator_inputs back to 0 rows afterwards; no local
+   data was modified.
+
+4. CI=true npm test -> 2 files, 22 tests passed.
+   npm run build      -> Compiled successfully, no type errors.
+
+ENVIRONMENT RESTORED
+home-base stack stopped; teamleader restarted and all 12 containers
+confirmed running. Docker volumes preserved for both.
