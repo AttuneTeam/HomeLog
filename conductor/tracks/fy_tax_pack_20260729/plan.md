@@ -106,11 +106,11 @@ financial year.*
 
 *Goal: every figure that feeds the schedule can be sourced, labelled and apportioned correctly.*
 
-- [ ] Task: Rental income resolver
-  - [ ] Write failing tests covering: actuals present, actuals absent falling back to accrual, part-year tenancies clamped to FY bounds, and a material divergence between the two sources
-  - [ ] Implement a resolver returning the figure, its source (`actual` | `accrued`), and the cross-check value where both exist
-  - [ ] Surface divergence as a warning in the UI, never silently reconciled
-  - [ ] Confirm tests pass
+- [x] Task: Rental income resolver `60bd2c1`
+  - [x] Write failing tests covering: actuals present, actuals absent falling back to accrual, part-year tenancies clamped to FY bounds, and a material divergence between the two sources
+  - [x] Implement a resolver returning the figure, its source (`actual` | `accrued`), and the cross-check value where both exist
+  - [x] Surface divergence as a warning in the UI, never silently reconciled
+  - [x] Confirm tests pass
 
 - [ ] Task: Apportionment helper
   - [ ] Write failing tests covering: 100% ownership, 50% ownership, private-use days reducing deductions but **not** income, and full-year availability
