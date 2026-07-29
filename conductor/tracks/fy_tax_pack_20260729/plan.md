@@ -226,3 +226,17 @@ financial year.*
 ## Phase: Review Fixes
 
 - [x] Task: Apply review suggestions `15e37af`
+  - [x] `rental_payments` RLS aligned with the shared-access model (migration 062)
+  - [x] CGT cost base made cumulative rather than filtered to the reported year
+  - [x] Spec FR6 corrected, download filename uses the selected FY, false comment removed
+
+- [x] Task: Fix the DOMMatrix crash on loan statement upload `0033392` *(found on deploy — PR #33)*
+  - [x] Removed the server-side PDF text parse; the document now goes to the model as a native file part, matching `/api/extract/invoice`
+  - [x] Reverted the speculative `turbopack.resolveAlias` and dynamic-import attempts
+  - [~] Not verified by build or tests at commit time — tooling was unavailable; verified after merge on `main`
+
+- [x] Task: Fix apportionment denominator for mid-year purchases `2340501` *(found in the deployed pack — PR #35)*
+  - [x] Availability now measured against days owned, not days in the financial year
+  - [x] Recorded availability capped at the period owned
+  - [x] Panel copy aligned with the arithmetic
+  - [x] Eight regression tests for the mid-year case that every prior test had missed
