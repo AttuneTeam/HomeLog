@@ -128,17 +128,34 @@ npm run db:sync      # scripts/sync-from-prod.sh — copy prod DB rows + storage
 npm run seed:ato     # Seed/embed the ATO rulings corpus into ato_rulings_embeddings
 npm run seed:demo    # Seed a demo property with renovations/expenses
 npm run verify:deletion  # Verify account-deletion invariants
+
+npm test             # Vitest (watch); CI=true npm test runs once
+npm run test:run     # Vitest, single run
 ```
+
+## Testing
+
+- **Vitest** (`vitest.config.ts`) — `environment: "node"`, picking up `tests/**/*.test.ts`.
+- Tests live in **`tests/`**, mirroring the source tree (`lib/tax/fy.ts` →
+  `tests/lib/tax/fy.test.ts`). They are not colocated with source, so the `app/` tree stays free
+  of files Next.js would otherwise try to route.
+- The config re-declares the `@/*` → `./*` alias from `tsconfig.json`. `tests/smoke.test.ts`
+  asserts that alias resolution works, so a regression there fails loudly rather than as an
+  opaque module-not-found across the whole suite.
+- Coverage currently targets **pure modules only** — domain math and parsers. Anything requiring
+  a browser or a live Supabase connection is verified per the tiers in `conductor/workflow.md`.
 
 ## Quality gates
 
-**There is currently no test suite and no linter configured. `npm run build` (tsc) is the only
-automated correctness gate.**
+- **`npm run build`** (tsc) — the baseline gate. Must pass for every change.
+- **`CI=true npm test`** — Vitest, single run. `CI=true` suppresses watch mode.
 
-This is a known weakness and a material risk given the domain: financial calculations, RLS
-policies and tax classification logic are exactly the code that most warrants tests. Introducing a
-test framework is a candidate for an early track. Until then, changes to domain math, deletion
-logic, or RLS policies warrant manual verification against a local database.
+No linter is configured. Style is enforced by review against `conductor/code_styleguides/`
+rather than automatically; adding ESLint remains an open opportunity.
+
+Test coverage is young. It exists for pure domain logic and grows outward per the target state in
+`conductor/workflow.md`. Changes to RLS policies, deletion logic or migrations still require
+manual verification against a local database — no automated coverage exists for them yet.
 
 `docs/account-deletion.md` documents non-obvious deletion invariants (storage must be deleted by
 data ownership, not by upload path prefix; auth-user deletion uses an RPC, not the GoTrue admin

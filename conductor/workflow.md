@@ -1,10 +1,11 @@
 # Project Workflow — Home Base
 
-> **Customised for this repository.** The standard Conductor workflow assumes a configured test
-> runner and mandates strict TDD. Home Base currently has **no test framework and no linter** —
-> `npm run build` (tsc) is the only automated gate. This workflow reflects that reality rather
-> than prescribing a step that cannot be executed, and defines the path to full TDD as the target
-> state.
+> **Customised for this repository.** The standard Conductor workflow mandates strict TDD across
+> the board. Home Base runs **Vitest** (`CI=true npm test`) alongside `npm run build`, but
+> automated coverage currently reaches **pure modules only** — domain math and parsers. RLS
+> policies, migrations, Server Actions and UI have no automated coverage yet. This workflow scales
+> the required evidence to what is actually testable today, and defines the path to full coverage
+> as the target state.
 
 ## Guiding Principles
 
@@ -27,10 +28,13 @@
 Determine the tier before starting a task; it sets what "done" requires.
 
 **Tier 1 — Domain logic & security.** `lib/finance-utils.ts`, `lib/tax-utils.ts`,
-`lib/stamp-duty.ts`, `lib/ai/*`, RLS policies, migrations, deletion logic, auth and sharing.
-- Requires: unit tests where a runner exists (write them first — Red/Green); otherwise a
-  documented manual verification against a local Supabase instance with the exact commands and
-  observed output recorded in the task summary.
+`lib/stamp-duty.ts`, `lib/tax/*`, `lib/ai/*`, RLS policies, migrations, deletion logic, auth and
+sharing.
+- **Pure logic requires unit tests, written first (Red/Green).** There is a runner; there is no
+  excuse.
+- **Database and security work** (RLS, migrations, deletion) has no automated coverage yet, so it
+  requires documented manual verification against a local Supabase instance, with the exact
+  commands and observed output recorded in the task summary.
 - RLS changes additionally require verifying access **is denied** for a non-owner, not only that
   it is allowed for the owner.
 - Migration changes require `npm run db:reset` to confirm a clean replay from scratch.
@@ -113,15 +117,16 @@ confirmation in both light and dark themes.
 3.  **Assess Verification Debt:**
     - Exclude non-code files (`.json`, `.md`, `.yaml`).
     - For each remaining code file, identify its tier. **List any Tier 1 file changed in this
-      phase that lacks automated test coverage.** Where a test runner exists, write the missing
-      tests now, matching the repository's existing naming and style conventions.
-    - Where no runner exists, record the gap explicitly in the checkpoint note. Verification debt
-      is tracked, never silently skipped.
+      phase that lacks automated test coverage.** For pure modules, write the missing tests now
+      under `tests/`, mirroring the source path and matching existing conventions.
+    - For database and security work, which has no automated coverage yet, record the manual
+      verification performed in the checkpoint note. Verification debt is tracked, never silently
+      skipped.
 
 4.  **Execute Automated Checks:**
     - Announce the exact command before running it.
     - **Baseline:** `npm run build` — must pass.
-    - **If a test runner is configured:** announce and run it (e.g. `CI=true npm test`).
+    - **Tests:** `CI=true npm test` — must pass.
     - If checks fail, inform the user and debug. Propose a fix a **maximum of two times**; if it
       still fails, stop, report the persistent failure, and ask for guidance.
 
@@ -202,23 +207,24 @@ npm run db:sync         # copy prod DB rows + storage into local
 
 ```bash
 npm run build           # must pass
-# npm test              # once a test runner is configured
+CI=true npm test        # must pass
 ```
 
 ## Testing Requirements
 
 ### Current state
 
-No test framework is installed. Until one is, Tier 1 changes require documented manual
-verification against a local Supabase instance, captured in the task's git note.
+**Vitest is configured.** Tests live in `tests/`, mirroring the source tree, and run with
+`CI=true npm test`. Coverage reaches pure modules only; database and security work still requires
+documented manual verification against a local Supabase instance, captured in the task's git note.
 
 ### Target state
 
-Introduce a runner (Vitest is the natural fit for this Vite-free Next + TS stack) and build
-coverage outward from the highest-risk, easiest-to-test code:
+Build coverage outward from the highest-risk, easiest-to-test code:
 
-1. **`lib/` domain math first** — `finance-utils`, `tax-utils`, `stamp-duty`. Pure functions,
-   no I/O, highest consequence if wrong. This is where >80% coverage matters most.
+1. **`lib/` domain math first** — `tax/fy`, `tax/rental-schedule`, `finance-utils`, `tax-utils`,
+   `stamp-duty`. Pure functions, no I/O, highest consequence if wrong. This is where >80% coverage
+   matters most.
 2. **Classification schema and parsers** — `lib/ai/classification-schema.ts`,
    `lib/email-parser/`. Deterministic given fixed input; use recorded fixtures rather than live
    model calls.
@@ -282,7 +288,7 @@ A task is complete when:
 1.  Code implemented to specification.
 2.  `npm run build` passes.
 3.  Tier-appropriate verification performed, and any gap recorded as verification debt.
-4.  Tests written and passing where a runner exists.
+4.  Tests written and passing for any pure logic added or changed.
 5.  Documentation updated if applicable.
 6.  Responsive and theme-legible where user-facing.
 7.  Changes committed with a proper message.
@@ -345,7 +351,8 @@ A task is complete when:
 ## Continuous Improvement
 
 - Review this workflow when it causes friction rather than preventing mistakes.
-- Retire the "no test runner" accommodations as soon as a runner lands — this document should
-  become stricter over time, not looser.
+- Tighten the tiers as coverage grows. Once RLS and migrations have automated coverage, the
+  manual-verification accommodations for them should be retired — this document should become
+  stricter over time, not looser.
 - Document lessons learned.
 - Keep things simple and maintainable.
