@@ -1,0 +1,81 @@
+Task: Migration 063 — extend rental_payments (Phase 1, Tier 1)
+
+WHAT CHANGED
+Added ten nullable columns to public.rental_payments: statement_path,
+management_fees, letting_fees, lease_fees, sundry_fees, other_outgoings,
+net_received, extracted, confidence, fees_confirmed_at. Plus a partial index
+rental_payments_fees_confirmed_idx on (property_id, payment_date) WHERE
+fees_confirmed_at IS NOT NULL.
+
+Files: supabase/migrations/063_rental_payment_statements.sql (new)
+
+THE CORE WHY
+rental_payments was the only financial-evidence table with nowhere to store its
+document, so rent was the one figure reaching the tax pack without evidence.
+The larger defect is the agent-fee deduction: computed as
+weeks * weekly_rent * management_fee_pct, it can only reproduce a recurring
+percentage. On statement OWN10905 that recovers the $242 management fee and
+misses $1,210 letting fee, $33 lease fee and $8.80 bank charges — $1,251.80 of
+genuine deductions — while carrying no estimate disclosure.
+
+Extended rather than replaced with a rental_statements table: rows already
+exist in production and one statement maps to one payment row in practice.
+All columns nullable, so no data migration.
+
+Two invariants are documented in the migration header because they are not
+recoverable from any single file:
+  - `amount` is GROSS rent, the assessable figure. net_received is where the
+    disbursed figure belongs.
+  - other_outgoings is NEVER a deduction. Third-party costs the agent paid
+    deduct via their own invoice, the only path that classifies them correctly
+    (blinds are Division 40, not an immediate deduction). A deduction path from
+    this column would double-count.
+
+DEVIATION FROM SPEC
+Spec FR2 said the same migration would redefine the storage-object functions.
+Split into 063 (columns) and 064 (functions) instead: 063 is applied before
+task 2 begins, and editing an applied migration is forbidden by the project
+conventions. Also matches the existing 055/058 precedent. Spec and plan
+amended.
+
+VERIFICATION PERFORMED
+  npm run db:migrate
+    → "Applying migration 063_rental_payment_statements.sql... Local database
+       is up to date."
+
+  docker exec supabase_db_home-base psql -U postgres -c "\d public.rental_payments"
+    → all ten columns present with correct types; eight CHECK constraints
+      present; migration 062's "rental_payments: select" / "rental_payments:
+      write" policies intact and unaffected.
+
+  Constraint negative test — insert management_fees = -1
+    → ERROR: violates check constraint "rental_payments_management_fees_check"
+  Constraint negative test — insert confidence = 1.5
+    → ERROR: violates check constraint "rental_payments_confidence_check"
+
+  npm run db:reset
+    → clean replay of all 63 migrations from scratch, ending "Applying
+      migration 063_rental_payment_statements.sql... Finished supabase db
+      reset". Post-reset column count query returned 10/10.
+
+  Existing-row compatibility: 7 pre-existing rental_payments rows were present
+  before the migration and remained valid and readable after it.
+
+VERIFICATION DEBT
+None for this task. npm run verify:deletion is deferred to task 2, which is
+where statement_path is actually wired into the storage-object functions —
+running it here would prove nothing.
+
+FINDING RAISED (led to a plan amendment, see Phase 1.5)
+lib/email-parser/parse-statement.ts:51 instructs the extraction model to store
+the NET amount disbursed to the owner in `amount`, explicitly "NOT the gross
+rent income figure". lib/tax/rental-income.ts#actualRentForFy then reports that
+column as gross rent. Six of the seven local rows arrived through that parser
+and are not multiples of the $1,100 weekly rent. This understates assessable
+rental income and contradicts the invariant this migration documents. Cause
+confirmed in code; individual rows not yet audited. User approved folding the
+fix into this track as Phase 1.5.
+
+Also noted: statement fees are GST-inclusive ($220 + 10% = $242) while the
+management_fee_pct estimate computes ex-GST. Residential rent is input-taxed,
+so the GST-inclusive figure is the deductible one.
