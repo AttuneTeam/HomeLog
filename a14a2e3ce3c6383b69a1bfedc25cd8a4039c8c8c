@@ -1,0 +1,59 @@
+Task: Add agentSundries and otherIncome to RentalScheduleInput (Phase 2, Tier 1)
+
+WHAT CHANGED
+  lib/tax/rental-schedule.ts
+    RentalScheduleInput  + otherIncome?, agentSundries?  (both optional)
+    RentalSchedule       + otherIncome, totalIncome
+    netResult is now totalIncome − totalDeductions
+  tests/lib/tax/rental-schedule.test.ts — 7 tests added
+
+THE CORE WHY
+Two ATO lines the schedule could not express:
+
+- Agent bank and admin charges are not commission. Routing them to the existing
+  `sundry` line rather than `agent_fees` is what leaves the commission figure
+  directly comparable to the management_fee_pct estimate it replaces — mix them
+  and you can no longer tell whether a discrepancy is a missing letting fee or a
+  bank charge.
+- Tenant reimbursements are assessable income on a line SEPARATE from gross
+  rent. Folding them into gross rent would break the tenancy accrual
+  cross-check in rental-income.ts, which compares against weekly_rent x weeks.
+
+DESIGN DECISIONS
+- Both inputs OPTIONAL with a zero default, so every existing caller and test is
+  unaffected. Confirmed: all pre-existing rental-schedule and portfolio tests
+  pass unchanged.
+- Agent sundries are ADDED to the sundry line rather than given their own. The
+  ATO reports one sundry line whatever the charges were for; a second line would
+  not map onto the form.
+- otherIncome uses apportionIncome, not apportionDeduction. Ownership applies,
+  but availability and private use reduce deductions only and must never reduce
+  an assessable amount. There is a test at 50% ownership.
+- totalIncome is exposed rather than left for callers to add up, so the pack and
+  the report cannot disagree about what net result was measured against.
+- An excluded primary residence returns zero for both, tested — it has no rental
+  schedule at all.
+
+VERIFICATION PERFORMED
+  RED — CI=true npm test before implementing: 7 failed | 236 passed. The
+    failures were exactly the new assertions (sundry routing x2, other income
+    x5).
+
+  GREEN — CI=true npm test: 15 files, 243 tests passed (was 235; 8 added,
+    counting the pre-existing suite).
+
+  Real figures: agent sundries 8.80 land on `sundry` while agent_fees stays
+  2704.00; combined with a 150.00 sundry operating expense the line totals
+  158.80; other income 44.84 leaves grossRent at 33800.00 with totalIncome
+  33844.84.
+
+  npm run build → ✓ Compiled successfully
+
+VERIFICATION DEBT
+None. Pure module, tests written first.
+
+lib/tax/portfolio.ts sums schedule.grossRent for its total and schedule.netResult
+for the net, so its net figure already includes other income while its
+totalGrossRent correctly does not. Whether the portfolio needs to surface
+otherIncome separately is deferred to Phase 5, where the pack's consumer is
+known — adding a field with no consumer now would be speculative.
