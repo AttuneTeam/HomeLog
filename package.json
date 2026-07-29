@@ -13,6 +13,7 @@
     "seed:demo": "tsx scripts/seed-demo-property.ts",
     "verify:deletion": "tsx scripts/verify-account-deletion.ts",
     "verify:rent-ingest": "tsx scripts/verify-rental-statement-ingest.ts",
+    "verify:rent-extract": "tsx scripts/verify-rental-statement-extract.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
