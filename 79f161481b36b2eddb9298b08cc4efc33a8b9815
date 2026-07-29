@@ -97,3 +97,75 @@ resolveAgentFees' handling of that column has 19 unit tests.
 
 Only Rich & Oliva statements have been extracted. A different agency's layout
 remains unproven, which is what the confirm gate exists for.
+
+════════════════════════════════════════════════════════════════════
+PHASE 3 VERIFICATION REPORT — Extraction & upload
+════════════════════════════════════════════════════════════════════
+
+SCOPE
+git diff --name-only a14a2e3 HEAD (Phase 2 checkpoint).
+Code files:
+  lib/ai/extract-rental-statement.ts            (new)
+  app/api/rental-statements/extract/route.ts    (new)
+  app/actions/rental-statements.ts              (new)
+  tests/lib/ai/rental-statement-schema.test.ts  (new)
+  scripts/verify-rental-statement-extract.ts    (new)
+  scripts/verify-rental-statement-route.ts      (new)
+
+Tasks: 4 of 4 complete — ded6702, 79f1614.
+
+AUTOMATED CHECKS
+  npm run build            → ✓ Compiled successfully, route registered
+  CI=true npm test         → ✓ 16 files, 254 tests (243 at Phase 2 close)
+  npm run verify:rent-extract → ✓ 18 checks, live extraction of both PDFs
+  npm run verify:rent-route   → ✓ 22 checks, real HTTP + live extraction
+
+THE HEADLINE RESULT
+The extractor read both real statements correctly, gross-versus-net included:
+
+  Statement #1: gross_rent 4400.00 (not the 760.20 disbursed); fees
+    242 / 1210 / 33 / 8.80; other_outgoings 2146.00 with the blinds routed to
+    third-party rather than a fee bucket; net_received 760.20; confidence 0.9
+  Statement #7: gross_rent 2200.00 (not the 2074.60 disbursed); management
+    121.00; sundry 4.40; letting, lease and other_outgoings all null;
+    net_received 2074.60; confidence 0.9
+
+Every field matched the hand transcription. reconcileStatement run on the
+EXTRACTED figures tied to the cent on both.
+
+A FAILING CHECK THAT WAS THE TEST'S FAULT
+"unauthenticated → 401" failed with 500. The route is not in the proxy.ts
+allowlist, so the request is redirected 307 to /login before the handler runs,
+and fetch followed the redirect and re-POSTed to /login. Confirmed with curl.
+The ASSERTION was corrected; the route was not changed. Recording it because the
+honest history is that the verification was wrong, not the implementation.
+
+VERIFICATION DEBT
+1. The three Server Actions (confirmRentalStatement, removeRentalStatement,
+   rentalStatementUrl) are NOT exercised. They call cookies() from next/headers
+   and cannot run outside a request context, and there is no UI yet. Phase 4 is
+   where confirmRentalStatement — the gate that makes fees claimable — gets
+   proven end to end. resolveAgentFees' handling of that column has 19 unit
+   tests, but the write side is unproven.
+2. Only Rich & Oliva layouts have been extracted. Another agency's format is
+   unproven; the confirm gate exists for exactly this.
+3. extractRentalStatementFields has no unit test — a live provider call, which
+   workflow.md forbids in the suite. Its schema has 11 tests and the live path
+   is covered by the two scripts.
+
+MANUAL VERIFICATION PERFORMED
+Both verification scripts run against the real PDFs and the running dev server.
+The route script creates its own owner plus an unrelated second user, and cleans
+up its users, properties and storage objects. Confirmed the user's working data
+intact afterwards: 7 payments, 2 properties, 5 users, 2 rows still confirmed
+from the Phase 1.5 correction.
+
+CARRIED FORWARD (unchanged)
+  - db:reset clean replay still not run for migration 065.
+  - Statements #2–#6 outstanding; FY2026 income understated by $2,377.32.
+  - The data correction is local only; production run still required.
+  - The $2,146 blinds expense is classified "Repair" while acceptance criterion 5
+    assumes Division 40 — needs revisiting in Phase 5.
+
+USER CONFIRMATION
+Confirmed 2026-07-30: "yes".
