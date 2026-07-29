@@ -1,0 +1,84 @@
+Tasks: "Migration 065 — other rental-related income" AND
+       "Extend the parser for other income" (Phase 1.5, Tier 1)
+
+Committed together — the migration is unusable without the parser and handler
+writing to it, and the test that justifies both spans them.
+
+WHAT CHANGED
+  supabase/migrations/065_rental_payment_other_income.sql (new)
+    other_income numeric(10,2) check >= 0, other_income_note text. Both
+    nullable and additive.
+  lib/supabase/database.types.ts — Row / Insert / Update
+  lib/email-parser/parse-statement.ts — otherIncome + otherIncomeNote in the
+    schema and the prompt
+  app/api/inbound-email/handler.ts — persists both
+  tests/lib/email-parser/parse-statement.test.ts — 5 tests added
+  scripts/verify-rental-statement-ingest.ts — a December case
+
+THE CORE WHY
+Amounts a tenant reimburses the owner for are assessable rental income and the
+ATO rental schedule carries them on a line separate from gross rent. The FY2026
+folio summary for OWN10905 shows $44.84 of recovered water usage (Dec $6.80,
+Apr $38.04) that the model had nowhere to record, while the $291.02 of water
+rates paid was being claimed in full.
+
+But the decisive reason is not the $44.84 — it is that FR5's reconciliation is
+WRONG without it. December 2025:
+
+  Money In   rent 4,400.00 + water 6.80 = 4,406.80
+  Money Out                                 387.86
+  Net                                     4,018.94
+
+The identity amount − fees − other_outgoings computes 4012.14 against a stated
+net of 4018.94 and reports a CORRECT statement as broken, by exactly the
+reimbursement. Every period with a tenant recovery would have tripped the
+reconciliation this track is building. The identity is now
+(amount + other_income) − fees − other_outgoings = net_received.
+
+WHY A SEPARATE COLUMN RATHER THAN FOLDING INTO `amount`
+Gross rent is cross-checked against the tenancy accrual in
+lib/tax/rental-income.ts, which computes weekly_rent x weeks. Folding a water
+recovery into `amount` would make that comparison diverge for a legitimate
+reason and turn a useful warning into noise. It would also erase the ATO's own
+distinction between gross rent and other rental-related income.
+
+other_income_note is free text: the categories agents use are not a closed set,
+and the ATO reports them on one combined line regardless.
+
+VERIFICATION PERFORMED
+  RED — CI=true npm test before implementing:
+    5 failed | 201 passed. The failures were exactly the new assertions:
+      × keeps a water recovery OUT of gross rent
+      × records what the other income was for
+      × reconciles ONLY when other income is included
+      × asks for other income and what it was for
+      × states that a tenant reimbursement is not rent
+
+  GREEN — CI=true npm test:
+    13 files, 206 tests passed (was 201).
+
+  npm run db:migrate
+    → "Applying migration 065_rental_payment_other_income.sql". Existing 7 rows
+      read back with other_income / other_income_note NULL, unaffected.
+
+  npm run build → ✓ Compiled successfully
+
+  npm run verify:rent-ingest → ✓ All checks passed (23 checks, was 16)
+    December case, round-tripped through the database:
+      other_income 6.80 and its note persisted
+      gross rent stayed 4400 — the recovery was NOT folded in
+      WITHOUT other_income the identity is off by 6.80 (4012.14 vs 4018.94)
+      WITH other_income it ties: 4400 + 6.80 − 121.00 − 266.86 = 4018.94
+    Both verification rows deleted afterwards.
+
+VERIFICATION DEBT
+`npm run db:reset` (clean replay from scratch) has NOT been run for 065. It
+would discard the local gross/net data correction from 618b576, whose restore
+path needs the user's interactive db:sync. Deferred to the next reset and raised
+with the user rather than skipped. Mitigating facts: db:migrate applied it
+cleanly, and it is a two-column additive ALTER TABLE with CHECK constraints and
+no dependencies on other objects — the lowest-risk migration shape available.
+
+The FY2026 water recovery itself ($44.84 across Dec and Apr) is NOT yet recorded
+against the real rows. Dec and Apr are both in the flagged set awaiting
+statements #2–#6, so it will be entered with them.
