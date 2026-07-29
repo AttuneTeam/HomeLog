@@ -220,3 +220,9 @@ financial year.*
   - [x] Delete the standalone page and its nav entry
 
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `fa58378`
+
+---
+
+## Phase: Review Fixes
+
+- [x] Task: Apply review suggestions `15e37af`
