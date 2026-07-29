@@ -1,0 +1,60 @@
+Task: Add loan_statements (migration 055) (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+New table public.loan_statements: id PK, property_id, financial_year_end,
+interest_paid, lender, account_ref, period_start/end, storage_path,
+extracted jsonb, confidence, confirmed_at, timestamps.
+
+FILES
+- supabase/migrations/055_loan_statements.sql (new)
+- lib/supabase/database.types.ts - LoanStatement row type + Tables entry
+
+DESIGN DECISIONS
+- Per statement, not per property. property_loans is PK'd on property_id
+  (one loan per property), but a real property can carry several loan
+  accounts. account_ref distinguishes them; the FY deduction is the sum.
+- Partial unique index on (property_id, financial_year_end, account_ref)
+  WHERE account_ref IS NOT NULL. Stops duplicate statements for an
+  identified account without constraining unidentified single loans.
+- confirmed_at gates claimability, mirroring staged_receipts: AI proposes,
+  a human confirms. extracted + confidence are retained so a confirmed
+  figure can always be compared against what the model actually read.
+- jsonb typed as Record<string, unknown> to match the existing convention
+  in this file (property_enrichment, staged_receipts).
+
+FILE-BEARING TABLE
+storage_path targets the property-files bucket. Reusing that bucket avoids
+new storage RLS policies, and it is invisible in the Files UI because that
+list is driven by property_files rows, not by bucket contents. The column
+must still be added to user_storage_objects() and
+property_storage_objects() - handled in the deletion-invariants task.
+
+VERIFICATION PERFORMED (live, local Supabase)
+npm run db:reset -> 55 migrations replayed cleanly from scratch.
+
+RLS, three users (owner, unrelated stranger, accountant holding an ACTIVE
+property_shares viewer grant), savepoints isolating expected failures:
+  1. Owner SELECT     -> 1 row, Test Bank / 21450.00
+  2. Stranger SELECT  -> 0 rows
+  3. Stranger INSERT  -> DENIED (RLS policy violation)
+  4. Viewer SELECT    -> 1 row (accountant CAN read)
+  5. Viewer INSERT    -> DENIED (RLS policy violation)
+  6. Viewer UPDATE    -> UPDATE 0
+Confirms the read/write split: a shared accountant sees the statement but
+cannot alter it.
+
+Constraints:
+  negative interest_paid           -> loan_statements_interest_paid_check
+  confidence 1.5                   -> loan_statements_confidence_check
+  period_end < period_start        -> loan_statements_check
+  duplicate ACC-1 in 2026          -> loan_statements_account_year_unique
+  two NULL account_refs in 2026    -> ALLOWED (2 rows), partial index works
+Behaviour:
+  two accounts in FY2026 (21450 + 5000) -> sum 26450.00
+  DELETE property                        -> statements 0 (cascade)
+
+All inside a transaction, rolled back; no local data retained.
+
+npm run build     -> Compiled successfully, no type errors.
+CI=true npm test  -> 29 tests passed.
