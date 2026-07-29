@@ -144,3 +144,21 @@ export function selectableFyEndYears(
   const latest = mostRecentCompletedFyEndYear(today, startMonth, startDay);
   return Array.from({ length: count }, (_, i) => latest - i);
 }
+
+/**
+ * Resolve a requested financial year (typically from a query parameter) against
+ * the years actually on offer.
+ *
+ * Anything unrecognised — malformed, out of range, or a year the user cannot
+ * select — falls back to the newest available year rather than erroring. A
+ * stale or hand-edited link should still render a correct report, not a 404.
+ */
+export function resolveFyEndYear(
+  requested: string | number | undefined | null,
+  available: number[],
+): number | null {
+  if (available.length === 0) return null;
+  const parsed = typeof requested === "number" ? requested : Number(requested);
+  if (!Number.isInteger(parsed)) return available[0];
+  return available.includes(parsed) ? parsed : available[0];
+}

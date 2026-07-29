@@ -55,6 +55,15 @@ export interface TaxReportData {
     div43_depreciation: number | null;
     div40_depreciation: number | null;
   } | null;
+  /**
+   * Stamp duty resolved server-side so the on-screen report and the PDF cannot
+   * disagree. `source` is carried through to the label, because a figure taken
+   * from the ROI calculator is a planning input rather than a recorded fact.
+   */
+  stampDuty: {
+    amount: number;
+    source: "property" | "roi_inputs" | null;
+  };
   repairs: TaxExpense[];
   initialRepairs: TaxExpense[];
   capitalImprovements: TaxExpense[];
@@ -68,6 +77,19 @@ export interface TaxReportData {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Names the origin of the stamp duty figure. A value carried over from the ROI
+ * calculator is a planning assumption, not a recorded cost, and the report has
+ * to say so rather than presenting the two identically.
+ */
+export function stampDutyLabelFor(
+  source: TaxReportData["stampDuty"]["source"],
+): string {
+  if (source === "property") return "Stamp duty";
+  if (source === "roi_inputs") return "Stamp duty (estimated, from ROI inputs)";
+  return "Stamp duty (not recorded)";
+}
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -397,7 +419,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
   } = data;
 
   const purchasePrice = property.purchase_price ?? 0;
-  const stampDuty = roiInputs?.stamp_duty ?? 0;
+  const stampDuty = data.stampDuty.amount;
+  const stampDutyLabel = stampDutyLabelFor(data.stampDuty.source);
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
   const costBase =
@@ -541,7 +564,7 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
             <Text style={S.summaryValue}>{fmt(purchasePrice)}</Text>
           </View>
           <View style={S.summaryRow}>
-            <Text style={S.summaryLabel}>Stamp duty (from ROI inputs)</Text>
+            <Text style={S.summaryLabel}>{stampDutyLabel}</Text>
             <Text style={S.summaryValue}>{fmt(stampDuty)}</Text>
           </View>
           <View style={S.summaryRow}>

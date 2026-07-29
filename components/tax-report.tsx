@@ -341,7 +341,9 @@ export function TaxReport({
   const [xlsxDownloading, setXlsxDownloading] = useState(false);
 
   const purchasePrice = property.purchase_price ?? 0;
-  const stampDuty = property.stamp_duty ?? 0;
+  // Resolved server-side. Previously this read property.stamp_duty while the
+  // PDF read roiInputs.stamp_duty, so the two could disagree on the cost base.
+  const stampDuty = data.stampDuty.amount;
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
   const costBase =

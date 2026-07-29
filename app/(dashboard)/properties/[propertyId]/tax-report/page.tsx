@@ -1,15 +1,29 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { FinancialYearSelect } from "@/components/financial-year-select";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
+import {
+  AU_FY_START_DAY,
+  AU_FY_START_MONTH,
+  formatFyLabel,
+  fyBounds,
+  resolveFyEndYear,
+  selectableFyEndYears,
+} from "@/lib/tax/fy";
+
+/** How many completed financial years to offer in the selector. */
+const SELECTABLE_YEARS = 6;
 
 interface Props {
   params: Promise<{ propertyId: string }>;
+  searchParams: Promise<{ fy?: string }>;
 }
 
-export default async function TaxReportPage({ params }: Props) {
+export default async function TaxReportPage({ params, searchParams }: Props) {
   const { propertyId } = await params;
+  const { fy: fyParam } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -70,20 +84,37 @@ export default async function TaxReportPage({ params }: Props) {
         .maybeSingle(),
     ]);
 
-  // Financial year bounds derived from user profile (month is 1-based in DB)
-  const fyStartMonth = (profile?.financial_year_start_month ?? 7) - 1; // 0-based
-  const fyStartDay = profile?.financial_year_start_day ?? 1;
-  const today = new Date();
-  const fyStartYear =
-    today.getMonth() > fyStartMonth ||
-    (today.getMonth() === fyStartMonth && today.getDate() >= fyStartDay)
-      ? today.getFullYear()
-      : today.getFullYear() - 1;
-  const fyStart = new Date(fyStartYear, fyStartMonth, fyStartDay);
-  const fyEnd = new Date(fyStartYear + 1, fyStartMonth, fyStartDay - 1);
-  const fyStartStr = fyStart.toISOString().slice(0, 10);
-  const fyEndStr = fyEnd.toISOString().slice(0, 10);
-  const financialYear = `${fyStartYear}–${String(fyStartYear + 1).slice(2)}`;
+  // Financial year is chosen explicitly, not inferred from today's date. The
+  // profile carries the FY start (1-based month), defaulting to 1 July.
+  const fyStartMonth = profile?.financial_year_start_month ?? AU_FY_START_MONTH;
+  const fyStartDay = profile?.financial_year_start_day ?? AU_FY_START_DAY;
+
+  const yearOptions = selectableFyEndYears(
+    new Date(),
+    SELECTABLE_YEARS,
+    fyStartMonth,
+    fyStartDay,
+  ).map((fyEndYear) => ({
+    fyEndYear,
+    label: formatFyLabel(fyEndYear, fyStartMonth, fyStartDay),
+  }));
+
+  // Defaults to the most recently completed year — the one a return covers.
+  // An unparseable or out-of-range ?fy= falls back rather than 404ing, so a
+  // stale link still renders something correct.
+  const selectedFyEndYear = resolveFyEndYear(
+    fyParam,
+    yearOptions.map((o) => o.fyEndYear),
+  ) as number;
+
+  const fy = fyBounds(selectedFyEndYear, fyStartMonth, fyStartDay);
+  const fyStartStr = fy.startDate;
+  const fyEndStr = fy.endDate;
+  const financialYear = fy.label;
+  // Parsed as UTC to match the helper; a local-time parse would shift the
+  // boundary by the host's offset.
+  const fyStart = new Date(`${fyStartStr}T00:00:00Z`);
+  const fyEnd = new Date(`${fyEndStr}T00:00:00Z`);
 
   // Fetch rental operating expenses now that FY dates are known
   const { data: rentalExpenses } = await supabase
@@ -102,9 +133,12 @@ export default async function TaxReportPage({ params }: Props) {
     const start = new Date(
       Math.max(new Date(period.start_date).getTime(), fyStart.getTime()),
     );
+    // An open-ended tenancy ran to the end of the year. The selector only
+    // offers completed years, so clamping to fyEnd is always correct and
+    // removes any dependence on today's date.
     const end = new Date(
       Math.min(
-        (period.end_date ? new Date(period.end_date) : today).getTime(),
+        (period.end_date ? new Date(period.end_date) : fyEnd).getTime(),
         fyEnd.getTime(),
       ),
     );
@@ -203,9 +237,19 @@ export default async function TaxReportPage({ params }: Props) {
     }),
   );
 
+  // Prefer the recorded purchase cost over the ROI calculator's planning input,
+  // and carry the source through so the report can label an estimate as one.
+  const resolvedStampDuty: TaxReportData["stampDuty"] =
+    property.stamp_duty != null
+      ? { amount: Number(property.stamp_duty), source: "property" }
+      : roiInputs?.stamp_duty != null
+        ? { amount: Number(roiInputs.stamp_duty), source: "roi_inputs" }
+        : { amount: 0, source: null };
+
   const reportData: TaxReportData = {
     property,
     roiInputs: roiInputs ?? null,
+    stampDuty: resolvedStampDuty,
     financialYear,
     totalRentalIncome,
     totalAgentFees,
@@ -231,14 +275,19 @@ export default async function TaxReportPage({ params }: Props) {
   return (
     <div className="p-6">
       {/* Breadcrumb */}
-      <Breadcrumb
-        className="mb-6"
-        items={[
-          { label: "Properties", href: "/properties" },
-          { label: property.address, href: `/properties/${propertyId}` },
-          { label: "Tax Report" },
-        ]}
-      />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Breadcrumb
+          items={[
+            { label: "Properties", href: "/properties" },
+            { label: property.address, href: `/properties/${propertyId}` },
+            { label: "Tax Report" },
+          ]}
+        />
+        <FinancialYearSelect
+          options={yearOptions}
+          selected={selectedFyEndYear}
+        />
+      </div>
 
       <TaxReport
         data={reportData}

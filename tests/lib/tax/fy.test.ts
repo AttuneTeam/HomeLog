@@ -4,6 +4,7 @@ import {
   formatFyLabel,
   fyBounds,
   mostRecentCompletedFyEndYear,
+  resolveFyEndYear,
   selectableFyEndYears,
 } from "@/lib/tax/fy";
 
@@ -132,5 +133,55 @@ describe("selectableFyEndYears", () => {
 
   it("returns an empty list when asked for none", () => {
     expect(selectableFyEndYears(utc(2026, 7, 29), 0)).toEqual([]);
+  });
+});
+
+describe("resolveFyEndYear", () => {
+  const available = [2026, 2025, 2024, 2023];
+
+  it("accepts a year that is on offer", () => {
+    expect(resolveFyEndYear("2024", available)).toBe(2024);
+    expect(resolveFyEndYear(2025, available)).toBe(2025);
+  });
+
+  it("defaults to the newest year when none is requested", () => {
+    expect(resolveFyEndYear(undefined, available)).toBe(2026);
+    expect(resolveFyEndYear(null, available)).toBe(2026);
+  });
+
+  it("falls back rather than erroring on malformed input", () => {
+    expect(resolveFyEndYear("not-a-year", available)).toBe(2026);
+    expect(resolveFyEndYear("2024.5", available)).toBe(2026);
+    expect(resolveFyEndYear("", available)).toBe(2026);
+  });
+
+  it("rejects a year outside the offered range", () => {
+    // A future year would otherwise produce a partial or empty report.
+    expect(resolveFyEndYear("2099", available)).toBe(2026);
+    expect(resolveFyEndYear("1999", available)).toBe(2026);
+  });
+
+  it("returns null when nothing is available", () => {
+    expect(resolveFyEndYear("2026", [])).toBeNull();
+  });
+});
+
+describe("selecting FY 2025–26", () => {
+  // The acceptance criterion for this phase: in July 2026, the report must be
+  // able to produce the year a 2026 return covers.
+  it("is the default on 29 July 2026 and spans 1 Jul 2025 – 30 Jun 2026", () => {
+    const available = selectableFyEndYears(utc(2026, 7, 29), 6);
+    const selected = resolveFyEndYear(undefined, available);
+    expect(selected).toBe(2026);
+
+    const fy = fyBounds(selected as number);
+    expect(fy.startDate).toBe("2025-07-01");
+    expect(fy.endDate).toBe("2026-06-30");
+    expect(fy.label).toBe("2025–26");
+  });
+
+  it("can still be reached explicitly from a later year", () => {
+    const available = selectableFyEndYears(utc(2028, 9, 1), 6);
+    expect(resolveFyEndYear("2026", available)).toBe(2026);
   });
 });
