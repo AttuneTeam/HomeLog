@@ -86,6 +86,12 @@ financial year.*
   - [x] Extend deletion to cover `loan_statements` and `depreciation_reports` storage objects *(migration 058)*
   - [x] Run `npm run verify:deletion`
 
+- [x] Task: Derive days available from dates *(inserted — user feedback at checkpoint)* `8a0b2bb`
+  - [x] Add `available_from` / `available_to` to `property_fy_facts` (migration 059), storing the source fact rather than only the derived count
+  - [x] Write failing tests for a pure `daysAvailableInFy` that clamps a date range to the financial year, inclusive
+  - [x] Update the panel to take dates and show the computed days
+  - [x] Verify the clamping and the round-trip against a local database
+
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ---
