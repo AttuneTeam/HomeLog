@@ -1,0 +1,68 @@
+Task: Verify the inbound-email handler persists the new fields (Phase 1.5, Tier 2)
+
+WHAT CHANGED
+app/api/inbound-email/handler.ts — the rental_payments insert now writes
+management_fees, letting_fees, lease_fees, sundry_fees, other_outgoings,
+net_received, extracted and confidence, and sets fees_confirmed_at explicitly
+to null.
+
+Added scripts/verify-rental-statement-ingest.ts plus an npm alias
+`verify:rent-ingest`.
+
+Files:
+  app/api/inbound-email/handler.ts (modified)
+  scripts/verify-rental-statement-ingest.ts (new)
+  package.json (modified)
+
+THE CORE WHY
+The parser now returns gross rent and a fee breakdown; without this the extra
+fields were parsed and discarded, and the agent-fee deduction would still have
+come from the management_fee_pct estimate even for statements the system had
+already read.
+
+fees_confirmed_at is set to null EXPLICITLY rather than left to the column
+default, with a comment, because it is a deliberate decision and not an
+oversight: an extraction is a model's proposal, so ingested fees are not
+claimable until a human accepts them. This is the same gate
+loan_statements.confirmed_at applies to interest.
+
+`amount` carries an inline comment recording that it is gross rent and what
+went wrong when it was not, because that is the line a future change is most
+likely to get wrong again.
+
+DELIBERATELY NOT DONE
+The statement PDF attached to the email is not stored to statement_path. The
+expense branch does store its primary attachment, so the asymmetry is
+intentional: spec "Out of scope" lists inbound-email auto-attachment of
+statement PDFs. Doing it here would have been easy and unsanctioned.
+
+VERIFICATION PERFORMED
+  npm run build    → ✓ Compiled successfully
+  CI=true npm test → 201 tests passed
+
+  npm run verify:rent-ingest → ✓ All checks passed (16 checks)
+    Proves the mapping end to end: model response text →
+    parseStatementResponse → typed-client insert → read back → reconcile.
+
+      amount = 4400.00 (GROSS, not the 760.20 disbursed)
+      management_fees 242.00 / letting_fees 1210.00 / lease_fees 33.00 /
+      sundry_fees 8.80 / other_outgoings 2146.00 / net_received 760.20
+      confidence 0.95 and extracted jsonb both persisted
+      fees_confirmed_at NULL
+      reconciles: 4400 − 1493.80 − 2146 = 760.20
+      verification row deleted afterwards
+
+    Confirmed the user's working data is unpolluted: 7 rows, 0 with fees.
+
+  FAILURE PATH (Tier 2 requirement): covered by the parser's unit tests rather
+  than here — a malformed or fee-less model response yields nulls, and the
+  handler's `parsed.amount && parsed.paymentDate` guard skips the insert
+  entirely when the amount is unreadable, so no row is created from an
+  unparseable statement.
+
+VERIFICATION DEBT
+The full webhook path — Svix signature verification, attachment text
+extraction, property matching — was NOT re-exercised. It is untouched by this
+change, and the verification above targets exactly what changed: the column
+mapping. Exercising the webhook end to end needs a signed request fixture and
+remains uncovered, as it was before this track.
