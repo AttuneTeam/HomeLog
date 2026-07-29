@@ -55,7 +55,7 @@ export async function confirmLoanStatement(
 
   if (error) return { error: error.message };
 
-  revalidatePath(`/properties/${input.propertyId}/tax-report`);
+  revalidatePath(`/properties/${input.propertyId}/tax-pack`);
   return { error: null };
 }
 
@@ -93,6 +93,6 @@ export async function deleteLoanStatement(
     await supabase.storage.from("property-files").remove([existing.storage_path]);
   }
 
-  revalidatePath(`/properties/${propertyId}/tax-report`);
+  revalidatePath(`/properties/${propertyId}/tax-pack`);
   return { error: null };
 }

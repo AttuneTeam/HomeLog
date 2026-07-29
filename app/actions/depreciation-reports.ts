@@ -69,6 +69,6 @@ export async function upsertDepreciationReport(
 
   if (error) return { error: error.message };
 
-  revalidatePath(`/properties/${input.propertyId}/tax-report`);
+  revalidatePath(`/properties/${input.propertyId}/tax-pack`);
   return { error: null };
 }

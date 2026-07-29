@@ -100,6 +100,6 @@ export async function upsertPropertyFyFacts(
 
   if (error) return { error: error.message, daysAvailable: null };
 
-  revalidatePath(`/properties/${input.propertyId}/tax-report`);
+  revalidatePath(`/properties/${input.propertyId}/tax-pack`);
   return { error: null, daysAvailable: resolvedDays };
 }

@@ -481,15 +481,15 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
 
   return (
     <Document
-      title={`Tax Report — ${property.address}`}
+      title={`Tax Pack — ${property.address}`}
       author="Home Base"
-      subject="Investment Property Tax Report"
+      subject="Investment Property Tax Pack"
     >
       <Page size="A4" orientation="landscape" style={S.page}>
         {/* Header */}
         <View style={S.headerRow}>
           <View>
-            <Text style={S.reportTitle}>Investment Property Tax Report</Text>
+            <Text style={S.reportTitle}>Investment Property Tax Pack</Text>
             <Text style={S.reportSubtitle}>
               FY{financialYear} — {fullAddress}
             </Text>

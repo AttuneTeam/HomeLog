@@ -34,6 +34,6 @@ export async function saveLoanDetails(
   if (error) throw error;
 
   revalidatePath(`/properties/${propertyId}`);
-  revalidatePath(`/properties/${propertyId}/tax-report`);
+  revalidatePath(`/properties/${propertyId}/tax-pack`);
   revalidatePath("/financial");
 }

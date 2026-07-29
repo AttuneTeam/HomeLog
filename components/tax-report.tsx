@@ -549,7 +549,7 @@ export function TaxReport({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tax-report-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.pdf`;
+      a.download = `tax-pack-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -563,7 +563,7 @@ export function TaxReport({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            Tax Report{" "}
+            Tax pack{" "}
             <span className="text-muted-foreground font-normal text-lg">
               FY{financialYear}
             </span>

@@ -5,6 +5,10 @@ import { FinancialYearSelect } from "@/components/financial-year-select";
 import { PropertyFyFactsPanel } from "@/components/property-fy-facts-panel";
 import { LoanStatementsPanel } from "@/components/loan-statements-panel";
 import { DepreciationReportPanel } from "@/components/depreciation-report-panel";
+import { TaxPackGenerator, type EvidenceItem } from "@/components/tax-pack-generator";
+import type { PackData } from "@/components/tax-pack-document";
+import { buildRentalSchedule } from "@/lib/tax/rental-schedule";
+import { buildQuestionnaire } from "@/lib/tax/questionnaire";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
@@ -29,6 +33,12 @@ import {
 
 /** How many completed financial years to offer in the selector. */
 const SELECTABLE_YEARS = 6;
+/** Long enough to fetch every document while the pack is being assembled. */
+const SIGNED_URL_TTL_SECONDS = 60 * 30;
+
+function safeFileName(input: string): string {
+  return input.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+}
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -49,7 +59,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   const { data: property } = await supabase
     .from("properties")
     .select(
-      "id, address, suburb, state, postcode, purchase_date, purchase_price, stamp_duty",
+      "id, address, suburb, state, postcode, property_type, purchase_date, purchase_price, stamp_duty",
     )
     .eq("id", propertyId)
     .single();
@@ -86,7 +96,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
         .eq("property_id", propertyId),
       supabase
         .from("profiles")
-        .select("financial_year_start_month, financial_year_start_day")
+        .select("display_name, financial_year_start_month, financial_year_start_day")
         .eq("id", user.id)
         .maybeSingle(),
       supabase
@@ -440,6 +450,235 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     }),
   };
 
+  // ── Downloadable pack, scoped to this property ────────────────────────────
+  // The page already holds every figure; the pack turns them into a file the
+  // owner forwards to their accountant, with the evidence embedded.
+
+  const schedule = buildRentalSchedule({
+    propertyType: property.property_type,
+    grossRent: income.amount,
+    agentFees: totalAgentFees,
+    operatingExpenses: (rentalExpenses ?? []).map((e) => ({
+      category: e.category,
+      amount: Number(e.amount),
+    })),
+    renovationExpenses: (renovations ?? []).flatMap((r) =>
+      (r.expenses ?? [])
+        .filter(
+          (e) =>
+            e.expense_date >= fyStartStr && e.expense_date <= fyEndStr,
+        )
+        .map((e) => ({
+          amount: Number(e.amount),
+          manual_classification: e.manual_classification,
+          renovation_classification: r.classification,
+          claimable: r.claimable ?? true,
+        })),
+    ),
+    interest: confirmedInterest,
+    capitalWorks:
+      depreciationReport?.div43_annual != null
+        ? Number(depreciationReport.div43_annual)
+        : div43Register.totalClaim,
+    declineInValue:
+      depreciationReport?.div40_annual != null
+        ? Number(depreciationReport.div40_annual)
+        : null,
+    apportionment,
+  });
+
+  const packOmissions: string[] = [];
+  const unconfirmedStatements = (loanStatements ?? []).filter(
+    (s) => s.confirmed_at == null,
+  ).length;
+  if (unconfirmedStatements > 0) {
+    packOmissions.push(
+      `${unconfirmedStatements} loan statement(s) awaiting confirmation are excluded from the interest claimed.`,
+    );
+  }
+  if (div43Register.itemsMissingStartDate > 0) {
+    packOmissions.push(
+      `${div43Register.itemsMissingStartDate} capital works item(s) have no completion date, so no Division 43 deduction is claimed for them.`,
+    );
+  }
+
+  // Evidence: signed once here, fetched and embedded during generation.
+  const evidence: EvidenceItem[] = [];
+  const signedFor = async (bucket: string, path: string) => {
+    const { data } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+    return data?.signedUrl ?? null;
+  };
+
+  for (const renovation of renovations ?? []) {
+    if (renovation.claimable === false) continue;
+    for (const expense of renovation.expenses ?? []) {
+      if (!expense.invoice_path) continue;
+      if (expense.expense_date < fyStartStr || expense.expense_date > fyEndStr)
+        continue;
+      const resolved = resolveTaxClassification(
+        expense.manual_classification,
+        renovation.classification,
+      );
+      evidence.push({
+        fileName: `${safeFileName(
+          `${expense.expense_date}-${expense.supplier ?? "expense"}-${expense.id.slice(0, 8)}`,
+        )}.${expense.invoice_path.split(".").pop() ?? "pdf"}`,
+        signedUrl: await signedFor("invoices", expense.invoice_path),
+        propertyAddress: property.address,
+        kind: "Invoice",
+        description: expense.description ?? renovation.name,
+        date: expense.expense_date,
+        amount: Number(expense.amount),
+        feedsLine:
+          resolved === "Repair"
+            ? "Repairs and maintenance"
+            : resolved === "Capital Works"
+              ? "Capital works / cost base"
+              : "CGT cost base",
+      });
+    }
+  }
+
+  for (const expense of rentalExpenses ?? []) {
+    if (!expense.invoice_path) continue;
+    evidence.push({
+      fileName: `${safeFileName(
+        `${expense.expense_date}-${expense.category}-${expense.id.slice(0, 8)}`,
+      )}.${expense.invoice_path.split(".").pop() ?? "pdf"}`,
+      signedUrl: await signedFor("invoices", expense.invoice_path),
+      propertyAddress: property.address,
+      kind: "Operating expense",
+      description: expense.description ?? expense.category,
+      date: expense.expense_date,
+      amount: Number(expense.amount),
+      feedsLine: expense.category.replace(/_/g, " "),
+    });
+  }
+
+  for (const statement of loanStatements ?? []) {
+    if (!statement.storage_path) continue;
+    evidence.push({
+      fileName: `loan-statement-${safeFileName(statement.account_ref ?? statement.id.slice(0, 8))}.pdf`,
+      signedUrl: await signedFor("property-files", statement.storage_path),
+      propertyAddress: property.address,
+      kind: "Loan statement",
+      description: `${statement.lender ?? "Lender"} annual statement`,
+      date: statement.period_end,
+      amount:
+        statement.interest_paid != null ? Number(statement.interest_paid) : null,
+      feedsLine: "Interest on loans",
+    });
+  }
+
+  if (depreciationReport?.storage_path) {
+    evidence.push({
+      fileName: "depreciation-schedule.pdf",
+      signedUrl: await signedFor(
+        "property-files",
+        depreciationReport.storage_path,
+      ),
+      propertyAddress: property.address,
+      kind: "Depreciation schedule",
+      description: `${depreciationReport.qs_firm ?? "Quantity surveyor"} schedule`,
+      date: depreciationReport.report_date,
+      amount: null,
+      feedsLine: "Decline in value / capital works",
+    });
+  }
+
+  const initialRepairTotal = initialRepairs.reduce((s, e) => s + e.amount, 0);
+  const capitalImprovementTotal = capitalImprovements.reduce(
+    (s, e) => s + e.amount,
+    0,
+  );
+  const packCostBase = {
+    purchasePrice: Number(property.purchase_price ?? 0),
+    stampDuty: resolvedStampDuty.amount,
+    stampDutySource: resolvedStampDuty.source,
+    initialRepairs: initialRepairTotal,
+    capitalImprovements: capitalImprovementTotal,
+    total:
+      Number(property.purchase_price ?? 0) +
+      resolvedStampDuty.amount +
+      initialRepairTotal +
+      capitalImprovementTotal,
+  };
+
+  const packData: PackData = {
+    taxpayerName: profile?.display_name ?? user.email ?? "Property owner",
+    financialYearLabel: financialYear,
+    fyStartDate: fyStartStr,
+    fyEndDate: fyEndStr,
+    generatedAt: reportData.generatedAt,
+    properties: [
+      {
+        id: property.id,
+        address: property.address,
+        excludedReason: schedule.excludedReason,
+        grossRent: schedule.grossRent,
+        incomeSource: income.source,
+        incomeCrossCheck: { actual: income.actual, accrued: income.accrued },
+        materialDivergence: income.materialDivergence,
+        deductions: schedule.deductions,
+        totalDeductions: schedule.totalDeductions,
+        netResult: schedule.netResult,
+        isLoss: schedule.isLoss,
+        apportionment: reportData.apportionment,
+        div43Items: div43Register.items,
+        div43Total:
+          depreciationReport?.div43_annual != null
+            ? Number(depreciationReport.div43_annual)
+            : div43Register.totalClaim,
+        div40Annual:
+          depreciationReport?.div40_annual != null
+            ? Number(depreciationReport.div40_annual)
+            : null,
+        depreciationMethod: depreciationReport?.depreciation_method ?? null,
+        qsFirm: depreciationReport?.qs_firm ?? null,
+        costBase: packCostBase,
+      },
+    ],
+    portfolio: {
+      totalGrossRent: schedule.grossRent,
+      deductionTotals: schedule.deductions,
+      totalDeductions: schedule.totalDeductions,
+      netResult: schedule.netResult,
+      isLoss: schedule.isLoss,
+      propertiesAtLoss: schedule.isLoss ? 1 : 0,
+      totalCostBase: packCostBase.total,
+    },
+    excluded: schedule.excludedReason
+      ? [{ address: property.address, reason: schedule.excludedReason }]
+      : [],
+    questionnaire: buildQuestionnaire({
+      financialYearLabel: financialYear,
+      properties: [
+        {
+          address: property.address,
+          grossRent: schedule.grossRent,
+          netResult: schedule.netResult,
+          isLoss: schedule.isLoss,
+          incomeSource: income.source,
+          ownershipPct: reportData.apportionment.ownershipPct,
+          assumedSoleOwnership: reportData.apportionment.assumedSoleOwnership,
+          hasConfirmedInterest: confirmedInterest > 0,
+          hasDepreciationSchedule: depreciationReport != null,
+          purchaseDate: property.purchase_date,
+          excluded: schedule.excludedReason != null,
+        },
+      ],
+      purchasedDuringYear:
+        property.purchase_date &&
+        property.purchase_date >= fyStartStr &&
+        property.purchase_date <= fyEndStr
+          ? [property.address]
+          : [],
+    }),
+    omissions: packOmissions,
+  };
+
   const propertyAddress = [property.address, property.suburb, property.state]
     .filter(Boolean)
     .join(", ");
@@ -452,7 +691,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           items={[
             { label: "Properties", href: "/properties" },
             { label: property.address, href: `/properties/${propertyId}` },
-            { label: "Tax Report" },
+            { label: "Tax pack" },
           ]}
         />
         <FinancialYearSelect
@@ -495,6 +734,10 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           report={depreciationReport ?? null}
           registerCapitalWorks={div43Register.totalClaim}
         />
+      </div>
+
+      <div className="mb-6">
+        <TaxPackGenerator data={packData} evidence={evidence} />
       </div>
 
       <TaxReport

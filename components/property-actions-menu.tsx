@@ -64,10 +64,10 @@ export function PropertyActionsMenu({ propertyId, canDelete }: Props) {
             History
           </DropdownMenuItem>
           <DropdownMenuItem
-            render={<Link href={`/properties/${propertyId}/tax-report`} />}
+            render={<Link href={`/properties/${propertyId}/tax-pack`} />}
           >
             <FileBarChart className="h-3.5 w-3.5 mr-2" />
-            Tax Report
+            Tax pack
           </DropdownMenuItem>
           {canDelete && (
             <>
