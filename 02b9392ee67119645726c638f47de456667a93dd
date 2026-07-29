@@ -1,0 +1,34 @@
+Task: Introduce a test runner (Phase 1, Tier 1 enabler)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+Installed Vitest 4.1.10 as a dev dependency and configured it for this repo.
+No test framework previously existed; npm run build (tsc) was the sole gate.
+
+FILES
+- vitest.config.ts (new) - node environment, include tests/**/*.test.ts,
+  "@" alias mirroring tsconfig.json paths
+- tests/smoke.test.ts (new) - asserts alias resolution + pure-module import
+- package.json - added "test": "vitest" and "test:run": "vitest run"
+- package-lock.json - dependency tree
+- conductor/tech-stack.md - new Testing section; Quality gates rewritten
+- conductor/workflow.md - tier language updated; "no runner" accommodations
+  removed where satisfied, retained for RLS/migrations which remain uncovered
+
+WHY
+Phase 1 introduces pure domain helpers (FY bounds, later Div 43) where an
+error is expensive and a test is cheap. Deferring the runner would mean
+shipping that math with no regression protection. The smoke test imports
+through "@/*" deliberately: alias misconfiguration is the most likely
+setup failure and produces confusing errors everywhere else.
+
+VERIFICATION PERFORMED
+- CI=true npm test  -> 1 file passed, 2 tests passed (153ms).
+  Confirms runner works, alias resolves, and CI=true suppresses watch mode.
+- npm run build     -> passed. Full route tree compiled, no type errors.
+  Confirms tests/ and vitest.config.ts do not disturb the Next build.
+
+NOTES
+No linter added; style remains review-enforced per code_styleguides/.
+Coverage reaches pure modules only. RLS, migrations, Server Actions and UI
+remain manually verified per the tiers in workflow.md.
