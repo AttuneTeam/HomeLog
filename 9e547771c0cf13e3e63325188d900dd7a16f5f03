@@ -1,0 +1,57 @@
+Task: Per-FY facts editing UI (Phase 2, Tier 2/3)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+Records ownership_pct, days_available_for_rent and private_use_days for
+the financial year already selected on the tax report.
+
+FILES
+- app/actions/property-fy-facts.ts (new) - upsertPropertyFyFacts
+- components/property-fy-facts-panel.tsx (new) - client form
+- app/(dashboard)/properties/[propertyId]/tax-report/page.tsx - fetches
+  the year's facts and renders the panel
+- lib/tax/fy.ts - added daysInFy
+- tests/lib/tax/fy.test.ts - 3 tests for daysInFy (41 total)
+
+DESIGN DECISIONS
+- Placed on the tax report because the FY is already selected there;
+  a second year picker would be a second source of truth.
+- Absent facts are shown as STATED ASSUMPTIONS ("assumes sole ownership
+  and available all 365 days"), not pre-filled inputs. Pre-filling would
+  present an assumption as a recorded fact - the exact distinction
+  product-guidelines.md requires the pack to preserve.
+- Authorisation left to RLS. The action checks the session and validates
+  ranges for a friendly message, but the database write policy is the
+  actual boundary.
+- daysInFy extracted into the tested helper rather than computed inline,
+  so a leap year reports 366 instead of a hardcoded 365.
+
+VERIFICATION PERFORMED
+Upsert semantics (live, local Supabase, as the owner via forged JWT
+claims):
+  first save                  -> row created (50%, 300 days)
+  second save, same year      -> UPDATED in place (75%, 365), not duplicated
+  save for a different year   -> separate row; 2026 undisturbed
+  viewer attempts same upsert -> DENIED, RLS policy violation
+Confirms ON CONFLICT (property_id, financial_year_end) targets the
+composite key correctly and that per-year isolation holds.
+
+updated_at trigger: an in-transaction timestamp comparison returned false,
+which is a TEST ARTIFACT - now() is constant within a transaction, so
+created_at and updated_at are necessarily equal there. Confirmed
+separately that trg_property_fy_facts_updated_at exists and calls
+set_updated_at, and that clock_timestamp() <> now() inside a transaction.
+Not a defect.
+
+npm run build     -> Compiled successfully, no type errors.
+CI=true npm test  -> 41 tests passed.
+
+VERIFICATION DEBT
+Not exercised in a browser: the light/dark rendering and narrow-viewport
+layout required by the plan's sub-task are unconfirmed, as is the toast
+path on a rejected save. Deferred to the phase checkpoint's manual
+verification plan.
+
+NOTES
+Nothing consumes these facts yet. Apportionment by ownership and private
+use is Phase 3; this task only establishes capture.
