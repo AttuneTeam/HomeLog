@@ -1,0 +1,48 @@
+Task: Hand-update lib/supabase/database.types.ts (Phase 1, Tier 1)
+
+WHAT CHANGED
+Extended the RentalPayment row type with the ten columns from migration 063,
+and added them to the rental_payments Insert and Update shapes under
+Database["public"]["Tables"]. Documented `amount` as GROSS rent on both the Row
+type and the Insert shape.
+
+Files: lib/supabase/database.types.ts (modified)
+
+THE CORE WHY
+This file is hand-maintained — `supabase gen types` is explicitly forbidden in
+CLAUDE.md — so a new column is invisible to TypeScript until it is added here,
+and the style guide warns that a type assertion around a Supabase query usually
+means this file is stale rather than that the cast is right.
+
+The invariants live on the type, not only in the migration, because this is
+what a developer sees at the call site: `amount` is gross rent, fee columns are
+GST-inclusive (residential rent is input-taxed, so no GST credit is claimable
+and the GST-inclusive figure is the deductible one), and other_outgoings is
+reconciliation-only and never a deduction.
+
+`extracted` is typed Record<string, unknown> | null, matching the existing
+convention used by loan_statements and staged_receipts. There is no exported
+Json type in this file — an initial draft used one and would not have compiled.
+
+VERIFICATION PERFORMED
+  npm run build
+    → passed, no type errors; all routes compiled.
+
+  CI=true npm test
+    → 12 files passed, 186 tests passed.
+
+  Schema/type drift check — information_schema.columns for
+  public.rental_payments compared column-by-column against the RentalPayment
+  type:
+    → 21 columns in the database, 21 fields on the type, names and order
+      identical. All ten new columns report is_nullable = YES and are typed
+      `| null`. The three NOT NULL columns (property_id, payment_date, amount)
+      are non-optional on the type. numeric → number, jsonb → Record, timestamptz
+      → string, as elsewhere in the file.
+
+VERIFICATION DEBT
+The type-check proves the shape compiles; it does not prove the typed client
+can write these columns at runtime (a type that compiles is not proof the
+column exists — the style guide says so explicitly). That runtime proof comes
+in task 4, which inserts a statement_path row through the typed client in the
+deletion harness.
