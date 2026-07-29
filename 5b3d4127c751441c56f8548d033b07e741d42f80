@@ -1,0 +1,66 @@
+Task: Add Div 43 capital works item fields (migration 057) (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+Adds capital_works_start_date (date) and capital_works_rate_pct
+(numeric(5,2) NOT NULL DEFAULT 2.5) to public.expenses, plus a partial
+index on the start date, plus a backfill.
+
+FILES
+- supabase/migrations/057_capital_works_items.sql (new)
+- lib/supabase/database.types.ts - both columns added to the expenses
+  Row/Insert/Update blocks
+
+DESIGN DECISIONS
+- Columns on expenses, not a parallel table. A capital works item IS an
+  expense already classified as capital; a separate table would duplicate
+  amount, date, supplier and invoice and then need to stay in step through
+  reclassification.
+- Rate stored per item, defaulted to 2.5%. Eligibility and the applicable
+  rate depend on construction date - a QS determination, not the
+  product's. Same reasoning as migration 056.
+- Backfill prefers renovations.end_date over expenses.expense_date,
+  because Div 43 runs from COMPLETION, not from when an invoice was paid.
+- The backfill's WHERE clause mirrors resolveTaxClassification in
+  lib/tax/classification.ts, including the enum vocabulary difference
+  ('capital_improvement' on renovations = 'Capital Works' on expenses).
+  Noted in the migration so the two stay in step.
+
+DEFECT CAUGHT DURING VERIFICATION
+Initially declared numeric(4,2), which caps at 99.99. That made the
+"<= 100" bound unreachable and turned an out-of-range rate into an opaque
+"numeric field overflow" rather than a named check violation. Corrected to
+numeric(5,2) before commit and re-verified.
+
+VERIFICATION PERFORMED (live, local Supabase)
+npm run db:reset -> 57 migrations replayed cleanly from scratch (twice,
+once after the precision correction).
+
+Backfill, five seeded expenses across three renovations:
+  case  reno_class           override       reno_end     result
+  A     capital_improvement  -              2019-11-30   2019-11-30 (end date preferred)
+  B     capital_improvement  -              NULL         2024-05-20 (expense date fallback)
+  C     repair               Capital Works  2024-02-02   2024-02-02 (override promotes it)
+  D     capital_improvement  Repair         2019-11-30   NOT BACKFILLED (override demotes it)
+  E     repair               -              2024-02-02   NOT BACKFILLED
+UPDATE 3 - exactly the three effective-capital-works rows. Case D is the
+one that matters: a manual Repair override on a capital renovation
+correctly blocks the backfill.
+
+Idempotency: re-running the backfill -> UPDATE 0.
+
+Rate bounds after the precision fix:
+  100.01 -> expenses_capital_works_rate_pct_check (named violation)
+  100.00 -> allowed
+  4.00   -> allowed (the other rate a QS may determine)
+  default on every row -> 2.50
+
+All inside a transaction, rolled back; no local data retained.
+
+npm run build     -> Compiled successfully, no type errors.
+CI=true npm test  -> 38 tests passed.
+
+NOTES
+No consumer yet - the Div 43 register that reads these columns is built in
+Phase 4. This task establishes the data model and backfills history so the
+register has something to compute from.
