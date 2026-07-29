@@ -12,6 +12,7 @@
     "seed:ato": "tsx scripts/seed-ato-rulings.ts",
     "seed:demo": "tsx scripts/seed-demo-property.ts",
     "verify:deletion": "tsx scripts/verify-account-deletion.ts",
+    "verify:rent-ingest": "tsx scripts/verify-rental-statement-ingest.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
