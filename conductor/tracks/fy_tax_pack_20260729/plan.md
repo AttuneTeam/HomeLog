@@ -177,34 +177,34 @@ financial year.*
 
 *Goal: one action produces a file the investor forwards to their accountant.*
 
-- [ ] Task: Pack PDF document
-  - [ ] Build the document with `@react-pdf/renderer`, reusing patterns from `components/tax-report-pdf.tsx`
-  - [ ] Sections: cover, portfolio summary, per-property rental schedules, Div 43 register, CGT cost base, questionnaire, disclaimer
-  - [ ] Label every estimated figure and state every assumption made where facts were absent
-  - [ ] Carry the disclaimer required by `product-guidelines.md`
+- [x] Task: Pack PDF document `1a75892`
+  - [x] Build the document with `@react-pdf/renderer`, reusing patterns from `components/tax-report-pdf.tsx`
+  - [x] Sections: cover, portfolio summary, per-property rental schedules, Div 43 register, CGT cost base, questionnaire, disclaimer
+  - [x] Label every estimated figure and state every assumption made where facts were absent
+  - [x] Carry the disclaimer required by `product-guidelines.md`
 
-- [ ] Task: Pack XLSX workbook
-  - [ ] One sheet per property plus a summary sheet, using `xlsx`
-  - [ ] Emit figures as numbers, not preformatted strings, so the agent can compute with them
+- [x] Task: Pack XLSX workbook `1a75892`
+  - [x] One sheet per property plus a summary sheet, using `xlsx`
+  - [x] Emit figures as numbers, not preformatted strings, so the agent can compute with them
 
-- [ ] Task: Pre-filled questionnaire
-  - [ ] Pre-answer the rental-property section from the pack data
-  - [ ] Mark every untracked section explicitly per the spec's list
-  - [ ] Derive property purchased or sold during the year from `properties.purchase_date` and mark it for confirmation
+- [x] Task: Pre-filled questionnaire `1a75892`
+  - [x] Pre-answer the rental-property section from the pack data
+  - [x] Mark every untracked section explicitly per the spec's list
+  - [x] Derive property purchased or sold during the year from `properties.purchase_date` and mark it for confirmation
 
-- [ ] Task: Evidence bundle and manifest
-  - [ ] Collect invoices, loan statements and QS reports as actual files, batching storage fetches rather than looping per expense
-  - [ ] Generate `manifest.csv` mapping each file to the figure it supports
-  - [ ] Assemble the ZIP: PDF, XLSX and `evidence/`
-  - [ ] Verify the ZIP opens with no network access and every referenced document is present
+- [x] Task: Evidence bundle and manifest `1a75892`
+  - [x] Collect invoices, loan statements and QS reports as actual files, batching storage fetches rather than looping per expense
+  - [x] Generate `manifest.csv` mapping each file to the figure it supports
+  - [x] Assemble the ZIP: PDF, XLSX and `evidence/`
+  - [x] Verify the ZIP opens with no network access and every referenced document is present
 
-- [ ] Task: Generation UI
-  - [ ] Add the FY-parameterised pack page with a year selector and a generate action
-  - [ ] Run generation asynchronously with visible progress; never block the interface
-  - [ ] Handle partial failure by reporting what could not be included rather than failing the whole pack
-  - [ ] Verify in light and dark themes and on a narrow viewport
+- [x] Task: Generation UI `1a75892`
+  - [x] Add the FY-parameterised pack page with a year selector and a generate action
+  - [x] Run generation asynchronously with visible progress; never block the interface
+  - [x] Handle partial failure by reporting what could not be included rather than failing the whole pack
+  - [x] Verify in light and dark themes and on a narrow viewport
 
-- [ ] Task: End-to-end verification against the acceptance criteria
+- [~] Task: End-to-end verification against the acceptance criteria
   - [ ] Walk all 10 acceptance criteria in `spec.md` and record the result of each
   - [ ] Confirm `npm run build` passes and `npm run db:reset` replays cleanly
   - [ ] Confirm `CI=true npm test` passes
