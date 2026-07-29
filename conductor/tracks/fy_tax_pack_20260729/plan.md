@@ -22,10 +22,10 @@ financial year.*
   - [x] Confirm a trivial passing test runs via `CI=true npm test`
   - [x] Update `conductor/workflow.md` to remove the "no runner" accommodations now satisfied
 
-- [ ] Task: Extract a pure financial-year helper
-  - [ ] Write failing tests for `lib/tax/fy.ts` covering: AU default 1 July start, a custom FY start on the profile, the most-recently-completed FY resolver, leap years, and boundary dates on 30 June / 1 July
-  - [ ] Implement `fyBounds(fyEndYear, startMonth, startDay)` and `mostRecentCompletedFy(today, ...)` returning inclusive ISO date bounds and a `2025–26` display label
-  - [ ] Confirm tests pass
+- [x] Task: Extract a pure financial-year helper `ab52194`
+  - [x] Write failing tests for `lib/tax/fy.ts` covering: AU default 1 July start, a custom FY start on the profile, the most-recently-completed FY resolver, leap years, and boundary dates on 30 June / 1 July
+  - [x] Implement `fyBounds(fyEndYear, startMonth, startDay)` and `mostRecentCompletedFy(today, ...)` returning inclusive ISO date bounds and a `2025–26` display label
+  - [x] Confirm tests pass
 
 - [ ] Task: Fix the `roi_calculator_inputs` query defect
   - [ ] Correct `app/(dashboard)/properties/[propertyId]/tax-report/page.tsx` to filter by `property_id`
