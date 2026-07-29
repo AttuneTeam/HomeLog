@@ -196,6 +196,27 @@ export type UserStorageUsage = {
   updated_at: string;
 };
 
+/**
+ * Per-financial-year facts about a property. Keyed on
+ * (property_id, financial_year_end) so a past year keeps the ownership share
+ * and availability that applied at the time, rather than today's values.
+ *
+ * financial_year_end is the calendar year the FY ends in — 2026 for 2025–26,
+ * matching lib/tax/fy.ts.
+ */
+export type PropertyFyFacts = {
+  property_id: string;
+  financial_year_end: number;
+  /** The owner's share, 0 < pct <= 100. Apportions income and deductions. */
+  ownership_pct: number;
+  /** Apportions DEDUCTIONS only; income is not reduced by availability. */
+  days_available_for_rent: number | null;
+  private_use_days: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -1447,6 +1468,35 @@ export interface Database {
             columns: ["expense_id"];
             isOneToOne: true;
             referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_fy_facts: {
+        Row: PropertyFyFacts;
+        Insert: {
+          property_id: string;
+          financial_year_end: number;
+          ownership_pct?: number;
+          days_available_for_rent?: number | null;
+          private_use_days?: number | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          ownership_pct?: number;
+          days_available_for_rent?: number | null;
+          private_use_days?: number | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_fy_facts_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];
