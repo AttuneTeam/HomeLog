@@ -159,10 +159,10 @@ financial year.*
   - [x] Apply apportionment from Phase 3
   - [x] Confirm tests pass
 
-- [~] Task: Portfolio summary
-  - [ ] Aggregate schedules across all investment properties for the FY
-  - [ ] Carry through the CGT cost base per property
-  - [ ] Verify totals reconcile against the per-property schedules
+- [x] Task: Portfolio summary `7d1c872`
+  - [x] Aggregate schedules across all investment properties for the FY
+  - [x] Carry through the CGT cost base per property
+  - [x] Verify totals reconcile against the per-property schedules
 
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
