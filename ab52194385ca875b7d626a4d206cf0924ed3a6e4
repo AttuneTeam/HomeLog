@@ -1,0 +1,47 @@
+Task: Extract a pure financial-year helper (Phase 1, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+New pure module lib/tax/fy.ts, covered by tests/lib/tax/fy.test.ts.
+Exports: fyBounds, currentFyEndYear, mostRecentCompletedFyEndYear,
+formatFyLabel, selectableFyEndYears, plus AU_FY_START_MONTH/DAY.
+
+FILES
+- lib/tax/fy.ts (new)
+- tests/lib/tax/fy.test.ts (new) - 20 tests
+
+WHY
+Two defects motivated extracting this rather than patching in place:
+
+1. Timezone drift. The tax-report page builds FY bounds with the
+   local-time Date constructor then calls toISOString(). At UTC+10,
+   new Date(2025, 6, 1).toISOString() is "2025-06-30" - the FY start is
+   a day early, so one day of the prior year's expenses leaks in. The
+   helper works entirely in UTC.
+
+2. Wrong default year. The page infers the FY from new Date(), which
+   yields the IN-PROGRESS year. On 29 July 2026 that is 2026-27, not the
+   2025-26 year a 2026 return covers. mostRecentCompletedFyEndYear
+   returns the year that has actually finished, and treats a year as
+   incomplete until the day after it ends.
+
+Month-end arithmetic derives the end date as "day before next year
+starts" rather than assuming a month length, so leap years are correct.
+A 1 January start is handled as a single calendar year.
+
+VERIFICATION PERFORMED
+- Red phase: CI=true npm test failed with "Cannot find package
+  '@/lib/tax/fy'" before implementation, confirming the tests exercise
+  the new module.
+- Green phase: CI=true npm test -> 2 files, 22 tests passed (191ms).
+- npm run build -> "Compiled successfully in 7.4s", no type errors.
+
+Cases covered: AU default bounds; an earlier year; 29 Feb in a leap year
+and 28 Feb outside one; calendar-year FY; inclusive-bound adjacency;
+30 June / 1 July rollover boundaries; custom 1 April FY start; label
+padding (2000-01); and selectable-year list excluding the in-progress year.
+
+NOTES
+No call sites use this yet - wiring into the tax report is the fourth
+task of this phase. Assertions use Date.UTC so they are timezone
+independent, and exact ISO strings would catch drift if reintroduced.
