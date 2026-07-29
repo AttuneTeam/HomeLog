@@ -1,0 +1,99 @@
+Tasks: "POST /api/rental-statements/extract" AND
+       "app/actions/rental-statements.ts — confirm / delete" AND
+       "Verify — happy path with the real PDF, plus two failure paths"
+       (Phase 3, Tier 2)
+
+WHAT CHANGED
+  app/api/rental-statements/extract/route.ts (new)
+  app/actions/rental-statements.ts (new) — confirmRentalStatement,
+    removeRentalStatement, rentalStatementUrl
+  scripts/verify-rental-statement-route.ts (new) + npm run verify:rent-route
+
+DESIGN DECISIONS, and why each is not the obvious choice
+
+- The route takes an EXISTING paymentId instead of creating a row. Rent payments
+  already arrive from the inbound-email webhook, so the common case is attaching
+  a statement to a payment that is already recorded. Creating a row here would
+  double-count the income.
+
+- The route does NOT write `amount`. Only the confirm action does. An unconfirmed
+  extraction replacing a recorded income figure would change reported income with
+  nobody agreeing to it — and that figure may already have been corrected by
+  hand, as two of the seven production rows were. The proposal is carried in
+  `extracted` for the confirm step. Asserted by the check
+  "amount NOT overwritten by the upload".
+
+- The property is resolved THROUGH the payment with an RLS-filtered select, so a
+  payment the caller cannot read is simply not found. Verified: attaching to
+  another user's payment returns 404 and leaves that row untouched.
+
+- Storage upload happens BEFORE extraction, so a failed extraction never loses
+  the document. On a failed update the object is removed, because storage has no
+  cascade and an orphan is the exact failure docs/account-deletion.md exists to
+  prevent.
+
+- Replacing a statement removes the previous object only AFTER the update
+  succeeds, so a failure cannot destroy evidence that is still referenced.
+
+- removeRentalStatement clears the statement fields but KEEPS the payment row.
+  The row records income genuinely received; deleting a document is not a
+  statement that the rent never arrived. Deleting the row would silently reduce
+  reported income.
+
+- confirmRentalStatement deliberately does NOT validate that the figures
+  reconcile. A balance brought forward legitimately breaks the identity, and
+  refusing the save would force the user to enter something false to get past it.
+  The reconciliation is advisory per FR5. Recorded as a comment in the action.
+
+VERIFICATION PERFORMED
+  npm run build → ✓ Compiled successfully; route registered as
+    ƒ /api/rental-statements/extract
+  CI=true npm test → 254 tests passed
+
+  npm run verify:rent-route → ✓ All checks passed (22 checks)
+  End to end over real HTTP against the dev server, with a genuine session
+  cookie, its own owner and an unrelated second user, and a LIVE extraction of
+  ~/Downloads/Statement #1 - OWN10905 .pdf.
+
+    Failure paths:
+      unauthenticated          → 307 to /login (proxy blocks it pre-handler)
+      missing file             → 400
+      missing paymentId        → 400
+      another user's payment   → 404, and that row verified untouched
+                                 (statement_path null, amount still 1234)
+    Happy path:
+      200; statement_path under {ownerId}/{propertyId}/rental-statements/
+      management 242.00 / letting 1210.00 / lease 33.00 / sundry 8.80
+      other_outgoings 2146.00 — blinds routed to third-party, not a fee
+      net_received 760.20; confidence and extracted jsonb recorded
+      fees_confirmed_at NULL — proposal, not claimable
+      amount still 4400.00 — not overwritten
+      uploaded object retrievable from the bucket
+    Replacement:
+      second upload 200, statement_path changed, previous object removed with
+      no orphan left in storage
+
+  Test users, properties and storage cleaned up. Confirmed the user's working
+  data is intact afterwards: 7 payments, 2 properties, 5 users, and the 2 rows
+  confirmed in Phase 1.5 still confirmed.
+
+A FAILING CHECK THAT WAS THE TEST'S FAULT, NOT THE CODE'S
+The first run reported "unauthenticated → 401" failing with 500. The route is
+not in the proxy.ts allowlist, so an unauthenticated request is redirected 307
+to /login before the handler runs; fetch followed that redirect, re-POSTed the
+body to /login, and reported that page's status. Confirmed with curl
+(status=307 redirect=/login). The assertion was corrected to expect the
+redirect, and the fetch now uses redirect: "manual". The route's own getUser()
+check remains as defence in depth for if the allowlist ever changes — RLS is
+still the actual boundary.
+
+VERIFICATION DEBT
+The three Server Actions are NOT exercised. They call cookies() from
+next/headers, so they cannot be invoked outside a request context, and there is
+no UI yet. Phase 4 builds that UI and is where confirm, remove and the signed
+URL get exercised. Until then confirmRentalStatement setting fees_confirmed_at —
+the gate that makes fees claimable — is unproven end to end, even though
+resolveAgentFees' handling of that column has 19 unit tests.
+
+Only Rich & Oliva statements have been extracted. A different agency's layout
+remains unproven, which is what the confirm gate exists for.
