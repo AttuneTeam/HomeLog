@@ -76,10 +76,10 @@ financial year.*
   - [x] Add the RLS policy if a new table is used; hand-add types *(columns on `expenses`, so the existing policies apply unchanged)*
   - [x] Verify a clean `db:reset`
 
-- [ ] Task: Per-FY facts editing UI
-  - [ ] Build a form to record ownership percentage, days available for rent and private-use days for a selected FY
-  - [ ] Default to 100% ownership and full-year availability, showing these as assumptions rather than recorded values
-  - [ ] Verify in light and dark themes, and on a narrow viewport
+- [x] Task: Per-FY facts editing UI `9e54777`
+  - [x] Build a form to record ownership percentage, days available for rent and private-use days for a selected FY
+  - [x] Default to 100% ownership and full-year availability, showing these as assumptions rather than recorded values
+  - [~] Verify in light and dark themes, and on a narrow viewport *(deferred to the phase checkpoint — needs a browser)*
 
 - [ ] Task: Verify account-deletion invariants still hold
   - [ ] Review `docs/account-deletion.md` — each new file-bearing table must be covered by deletion
