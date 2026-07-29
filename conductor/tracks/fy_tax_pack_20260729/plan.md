@@ -112,10 +112,10 @@ financial year.*
   - [x] Surface divergence as a warning in the UI, never silently reconciled
   - [x] Confirm tests pass
 
-- [ ] Task: Apportionment helper
-  - [ ] Write failing tests covering: 100% ownership, 50% ownership, private-use days reducing deductions but **not** income, and full-year availability
-  - [ ] Implement apportionment applied to income and deduction lines per the spec
-  - [ ] Confirm tests pass
+- [x] Task: Apportionment helper `ff817bf`
+  - [x] Write failing tests covering: 100% ownership, 50% ownership, private-use days reducing deductions but **not** income, and full-year availability
+  - [x] Implement apportionment applied to income and deduction lines per the spec
+  - [x] Confirm tests pass
 
 - [ ] Task: Loan statement upload and extraction
   - [ ] Add upload to Storage, following the existing invoice pattern
