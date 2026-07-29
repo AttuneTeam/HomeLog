@@ -1,0 +1,54 @@
+Task: Verify account-deletion invariants still hold (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+Migration 058 redefines user_storage_objects() and
+property_storage_objects() to include loan_statements.storage_path and
+depreciation_reports.storage_path. docs/account-deletion.md updated.
+
+WHY THIS TASK EXISTS
+Storage has no DB cascade. docs/account-deletion.md states the
+maintenance rule: every column holding a storage path must be enumerated
+in BOTH functions or deletion leaks the files. This phase added two
+file-bearing tables, so skipping this would mean loan statements and QS
+reports survive an account deletion - a privacy failure, not untidiness.
+
+KEY INVARIANT PRESERVED
+Both branches resolve ownership through properties.user_id, never by the
+uploader path prefix. A co-owner guest can upload a loan statement into
+the owner's property: the object then sits under the GUEST's id prefix
+while the row belongs to the OWNER. A prefix scan would either delete the
+owner's surviving files or miss them.
+
+depreciation_reports.storage_path is intentionally non-unique - one QS
+report covers several financial years - so that branch uses SELECT
+DISTINCT.
+
+VERIFICATION PERFORMED (live, local Supabase)
+npm run db:reset -> 58 migrations replayed cleanly.
+
+Targeted check, with a loan statement deliberately stored under the
+GUEST's id prefix and one QS report cited by three financial years:
+  user_storage_objects(owner)          -> returns both new files
+  property_storage_objects(property)   -> returns both new files
+  QS report entries (3 rows, one path) -> 1 entry (DISTINCT works)
+  loan file in OWNER's set             -> 1
+  loan file in GUEST's set             -> 0
+The last two are the invariant: attribution follows data ownership, not
+the path prefix.
+
+npm run verify:deletion -> ALL CHECKS PASSED (14 assertions), covering
+requirement 2 (guest deletes account: own files removed, uploads into the
+owner's property preserved, no ghost membership row) and requirement 1b
+(owner deletes property: all its files removed, including the
+guest-uploaded one).
+
+npm run build     -> Compiled successfully.
+CI=true npm test  -> 41 tests passed.
+
+NOTE
+verify:deletion does not yet stage loan_statements or depreciation_reports
+files of its own - it exercises the pre-existing buckets. The targeted
+check above covers the new tables directly. Extending the harness to stage
+them would make the regression permanent and is worth doing when those
+upload paths are built in Phase 3.
