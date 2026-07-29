@@ -1,0 +1,75 @@
+Tasks: "Write failing tests for lib/tax/agent-fees.ts" AND
+       "Implement resolveAgentFees to green" (Phase 2, Tier 1)
+
+WHAT CHANGED
+  lib/tax/agent-fees.ts (new) — confirmedAgentFeesForFy,
+    estimatedAgentFeesForFy, resolveAgentFees
+  tests/lib/tax/agent-fees.test.ts (new) — 19 tests
+
+THE CORE WHY
+The tax pack computed agent fees inline as weeks x weekly_rent x
+management_fee_pct, which can only reproduce a recurring percentage. Measured
+against the agent's own FY2026 annual summary for OWN10905, the actual total was
+$2,851.20 (management $1,573.00 + lease fees $1,210.00 + lease preparation
+$33.00 + bank & sundries $35.20) while the estimate produces roughly $1,728.57 —
+and it over-counts weeks while doing so, assuming 31.4 tenancy weeks when rent
+covered 26.
+
+Mirrors lib/tax/rental-income.ts on purpose: actual preferred, estimate as a
+labelled fallback, both carried so the caller can show the cross-check.
+
+DESIGN DECISIONS
+- Commission and sundries are returned SEPARATELY. Management, letting and lease
+  fees feed the ATO "Property agent fees and commission" line; bank and admin
+  charges feed "Sundry rental expenses". Keeping them apart is what leaves the
+  commission figure directly comparable to the estimate it replaces.
+- The estimate has NO sundry component and returns 0 for it. A percentage of
+  rent cannot produce a bank charge, and inventing one would be fabrication.
+- Null return, never 0, when nothing is known. Zero would assert the agent
+  charged nothing, which nothing in the data supports.
+- A null individual fee IS treated as zero: statement #7 genuinely charged no
+  letting or lease fee. Absent statement vs absent line item are different
+  things.
+- Exclusive week span, matching accruedRentForFy, so a full year is 52 weeks
+  rather than 52.14.
+
+THE `partial` FLAG — the non-obvious part
+When only SOME payments in the year have confirmed fees, the actual is genuine
+but incomplete. In the real FY2026 case it resolves to $1,619.20 from statements
+#1 and #7, which is SMALLER than the $1,728.57 estimate and well under the true
+$2,851.20 across all seven. Preferring the actual silently would understate the
+deduction with no indication why — the opposite of the problem this track set
+out to fix. `partial`, `paymentsInYear` and `paymentsWithConfirmedFees` exist so
+Phase 5 can disclose it as a pack omission instead of hiding it.
+
+This was not in the approved plan. It emerged from having real data: with all
+seven statements the flag would never fire, and the gap would have shipped
+invisible.
+
+VERIFICATION PERFORMED
+  RED — CI=true npm test before implementing:
+    FAIL tests/lib/tax/agent-fees.test.ts
+    Error: Cannot find package '@/lib/tax/agent-fees'
+    → 1 failed suite | 13 passed
+
+  GREEN — CI=true npm test:
+    → 14 files, 225 tests passed (was 206; 19 added)
+
+  Cases covered: commission/sundry split; summing across statements;
+  unconfirmed EXCLUDED; null when nothing confirmed; outside-FY excluded;
+  non-July FY start (1 April start correctly excludes the 29 May statement);
+  null fee treated as a real zero; estimate formula and clamping; estimate null
+  without a percentage; actual preferred and labelled; estimate fallback
+  labelled; actual and estimate NEVER summed; unconfirmed falls back to
+  estimate; both figures exposed for the cross-check; partial detected; not
+  partial when complete; source null when neither available; real FY2026
+  figures resolve to $1,619.20 and are asserted to be less than the true
+  $2,851.20.
+
+  npm run build → ✓ Compiled successfully
+
+VERIFICATION DEBT
+None. Pure module, no I/O, tests written first.
+
+The module is not yet wired into the tax pack or the financial position view —
+that is Phase 5. Until then nothing user-facing changes.
