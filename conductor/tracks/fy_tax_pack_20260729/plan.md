@@ -92,6 +92,12 @@ financial year.*
   - [x] Update the panel to take dates and show the computed days
   - [x] Verify the clamping and the round-trip against a local database
 
+- [x] Task: Suggest availability from existing rental periods *(inserted — user feedback at checkpoint)* `ca78938`
+  - [x] Write failing tests for a pure `suggestAvailabilityFromTenancies` that clamps tenancies to the FY, bridges vacancy gaps, and reports how many days were bridged
+  - [x] Implement it in `lib/tax/fy.ts`
+  - [x] Offer the suggestion in the panel with one-click accept, labelled as derived from tenancies and disclosing bridged vacancy
+  - [x] Verify against tenancies in a local database
+
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ---
