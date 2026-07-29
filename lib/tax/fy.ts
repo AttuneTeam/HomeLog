@@ -164,6 +164,47 @@ export function daysInFy(
 }
 
 /**
+ * Days a property was available for rent within a financial year, inclusive of
+ * both ends.
+ *
+ * Takes the dates the owner actually knows — "available from 22 November" —
+ * and derives the count, rather than asking them to work it out. The range is
+ * clamped to the financial year, so a property available since 2019 reports
+ * the whole year rather than the span since purchase, and one that only became
+ * available after year end reports zero.
+ *
+ * A null start means available from the first day of the year; a null end
+ * means still available at year end.
+ *
+ * Note this is *availability*, not tenancy: under the ATO test a property is
+ * available for rent once it is genuinely on the market, which can precede the
+ * first tenant moving in.
+ */
+export function daysAvailableInFy(
+  fyEndYear: number,
+  availableFrom: string | null | undefined,
+  availableTo: string | null | undefined,
+  startMonth: number = AU_FY_START_MONTH,
+  startDay: number = AU_FY_START_DAY,
+): number {
+  const { startDate, endDate } = fyBounds(fyEndYear, startMonth, startDay);
+  const fyStart = Date.parse(`${startDate}T00:00:00Z`);
+  const fyEnd = Date.parse(`${endDate}T00:00:00Z`);
+
+  const from = availableFrom
+    ? Date.parse(`${availableFrom}T00:00:00Z`)
+    : fyStart;
+  const to = availableTo ? Date.parse(`${availableTo}T00:00:00Z`) : fyEnd;
+  if (Number.isNaN(from) || Number.isNaN(to)) return 0;
+
+  const start = Math.max(from, fyStart);
+  const end = Math.min(to, fyEnd);
+  if (end < start) return 0;
+
+  return Math.round((end - start) / MS_PER_DAY) + 1;
+}
+
+/**
  * Resolve a requested financial year (typically from a query parameter) against
  * the years actually on offer.
  *

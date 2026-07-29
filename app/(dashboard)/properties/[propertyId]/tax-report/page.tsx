@@ -317,6 +317,10 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           financialYearLabel={financialYear}
           facts={fyFacts ?? null}
           daysInYear={daysInYear}
+          fyStartDate={fyStartStr}
+          fyEndDate={fyEndStr}
+          fyStartMonth={fyStartMonth}
+          fyStartDay={fyStartDay}
         />
       </div>
 

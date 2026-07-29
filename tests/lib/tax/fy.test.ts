@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   currentFyEndYear,
+  daysAvailableInFy,
   daysInFy,
   formatFyLabel,
   fyBounds,
@@ -150,6 +151,60 @@ describe("daysInFy", () => {
   it("counts a calendar financial year correctly", () => {
     expect(daysInFy(2025, 1, 1)).toBe(365);
     expect(daysInFy(2024, 1, 1)).toBe(366);
+  });
+});
+
+describe("daysAvailableInFy", () => {
+  it("counts an availability date through to year end, inclusive", () => {
+    // Available from 22 Nov 2025 in FY 2025–26: 9 days of November, then
+    // December through June.
+    expect(daysAvailableInFy(2026, "2025-11-22", null)).toBe(221);
+  });
+
+  it("treats a missing start as available from the first day of the year", () => {
+    expect(daysAvailableInFy(2026, null, null)).toBe(365);
+  });
+
+  it("clamps a start before the year to the year's first day", () => {
+    // Owned and available for years — the count is the whole year, not the
+    // span since purchase.
+    expect(daysAvailableInFy(2026, "2019-03-01", null)).toBe(365);
+  });
+
+  it("clamps an end after the year to the year's last day", () => {
+    expect(daysAvailableInFy(2026, "2025-07-01", "2030-01-01")).toBe(365);
+  });
+
+  it("counts a closed range inside the year", () => {
+    // 1 Sep 2025 to 30 Sep 2025 inclusive.
+    expect(daysAvailableInFy(2026, "2025-09-01", "2025-09-30")).toBe(30);
+  });
+
+  it("counts a single day when start and end are equal", () => {
+    expect(daysAvailableInFy(2026, "2025-09-01", "2025-09-01")).toBe(1);
+  });
+
+  it("returns 0 when availability starts after the year ends", () => {
+    expect(daysAvailableInFy(2026, "2026-08-01", null)).toBe(0);
+  });
+
+  it("returns 0 when availability ended before the year began", () => {
+    expect(daysAvailableInFy(2026, "2024-01-01", "2025-06-30")).toBe(0);
+  });
+
+  it("returns 0 when the range is inverted", () => {
+    expect(daysAvailableInFy(2026, "2026-01-01", "2025-09-01")).toBe(0);
+  });
+
+  it("includes 29 February in a leap financial year", () => {
+    // FY 2023–24 spans February 2024.
+    expect(daysAvailableInFy(2024, "2024-02-01", "2024-02-29")).toBe(29);
+  });
+
+  it("never exceeds the days in the year", () => {
+    expect(daysAvailableInFy(2026, "1990-01-01", "2090-01-01")).toBe(
+      daysInFy(2026),
+    );
   });
 });
 

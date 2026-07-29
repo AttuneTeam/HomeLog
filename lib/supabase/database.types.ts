@@ -209,8 +209,20 @@ export type PropertyFyFacts = {
   financial_year_end: number;
   /** The owner's share, 0 < pct <= 100. Apportions income and deductions. */
   ownership_pct: number;
-  /** Apportions DEDUCTIONS only; income is not reduced by availability. */
+  /**
+   * Resolved day count that apportionment reads. Derived from
+   * available_from/available_to when those are supplied.
+   * Apportions DEDUCTIONS only; income is not reduced by availability.
+   */
   days_available_for_rent: number | null;
+  /**
+   * Date the property became genuinely available to rent — on the market,
+   * which can precede the first tenant. Null means available from the start
+   * of the financial year.
+   */
+  available_from: string | null;
+  /** Null means still available at the end of the financial year. */
+  available_to: string | null;
   private_use_days: number | null;
   notes: string | null;
   created_at: string;
@@ -1617,6 +1629,8 @@ export interface Database {
           financial_year_end: number;
           ownership_pct?: number;
           days_available_for_rent?: number | null;
+          available_from?: string | null;
+          available_to?: string | null;
           private_use_days?: number | null;
           notes?: string | null;
           created_at?: string;
@@ -1625,6 +1639,8 @@ export interface Database {
         Update: {
           ownership_pct?: number;
           days_available_for_rent?: number | null;
+          available_from?: string | null;
+          available_to?: string | null;
           private_use_days?: number | null;
           notes?: string | null;
           updated_at?: string;
