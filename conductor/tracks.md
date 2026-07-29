@@ -11,6 +11,6 @@ index, which in turn links to its specification, plan and metadata.
 
 ---
 
-- [ ] **Track: Rental statement capture — attach the agent's statement to a rent payment and record actual agency fees**
+- [~] **Track: Rental statement capture — attach the agent's statement to a rent payment and record actual agency fees**
 
   *Link: [./tracks/rental_statement_capture_20260730/index.md](./tracks/rental_statement_capture_20260730/index.md)*
