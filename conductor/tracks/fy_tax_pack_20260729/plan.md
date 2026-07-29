@@ -16,11 +16,11 @@ Verification tiers are per `workflow.md`. Tier 1 tasks write tests first.
 *Goal: the existing per-property tax report becomes correct and can be generated for any past
 financial year.*
 
-- [ ] Task: Introduce a test runner (Tier 1 enabler)
-  - [ ] Install and configure Vitest with a `test` script and `CI=true` support
-  - [ ] Add a `tests/` convention consistent with the repo's structure and document it in `tech-stack.md`
-  - [ ] Confirm a trivial passing test runs via `CI=true npm test`
-  - [ ] Update `conductor/workflow.md` to remove the "no runner" accommodations now satisfied
+- [x] Task: Introduce a test runner (Tier 1 enabler) `02b9392`
+  - [x] Install and configure Vitest with a `test` script and `CI=true` support
+  - [x] Add a `tests/` convention consistent with the repo's structure and document it in `tech-stack.md`
+  - [x] Confirm a trivial passing test runs via `CI=true npm test`
+  - [x] Update `conductor/workflow.md` to remove the "no runner" accommodations now satisfied
 
 - [ ] Task: Extract a pure financial-year helper
   - [ ] Write failing tests for `lib/tax/fy.ts` covering: AU default 1 July start, a custom FY start on the profile, the most-recently-completed FY resolver, leap years, and boundary dates on 30 June / 1 July
