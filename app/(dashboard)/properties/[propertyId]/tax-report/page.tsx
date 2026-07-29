@@ -4,11 +4,13 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { FinancialYearSelect } from "@/components/financial-year-select";
 import { PropertyFyFactsPanel } from "@/components/property-fy-facts-panel";
 import { LoanStatementsPanel } from "@/components/loan-statements-panel";
+import { DepreciationReportPanel } from "@/components/depreciation-report-panel";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
 import { resolveRentalIncome } from "@/lib/tax/rental-income";
 import { estimateInterestForFy } from "@/lib/tax/loan-interest";
+import { div43RegisterForFy } from "@/lib/tax/div43";
 import {
   apportionDeduction,
   apportionIncome,
@@ -361,6 +363,39 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     }),
   );
 
+  // Capital works items for the Div 43 register, and the QS figures for Div 40.
+  const [{ data: capitalWorksRows }, { data: depreciationReport }] =
+    await Promise.all([
+      supabase
+        .from("expenses")
+        .select(
+          "id, amount, description, capital_works_start_date, capital_works_rate_pct, renovations!inner(property_id, claimable)",
+        )
+        .eq("renovations.property_id", propertyId)
+        .eq("renovations.claimable", true)
+        .not("capital_works_start_date", "is", null),
+      supabase
+        .from("depreciation_reports")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("financial_year_end", selectedFyEndYear)
+        .maybeSingle(),
+    ]);
+
+  // Each item runs its own 40-year clock from its completion date.
+  const div43Register = div43RegisterForFy(
+    (capitalWorksRows ?? []).map((row) => ({
+      id: row.id,
+      amount: Number(row.amount),
+      startDate: row.capital_works_start_date,
+      ratePct: Number(row.capital_works_rate_pct),
+      description: row.description,
+    })),
+    selectedFyEndYear,
+    fyStartMonth,
+    fyStartDay,
+  );
+
   // Prefer the recorded purchase cost over the ROI calculator's planning input,
   // and carry the source through so the report can label an estimate as one.
   const resolvedStampDuty: TaxReportData["stampDuty"] =
@@ -448,6 +483,17 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           financialYearLabel={financialYear}
           statements={loanStatements ?? []}
           estimate={interestEstimate}
+        />
+      </div>
+
+      <div className="mb-6">
+        <DepreciationReportPanel
+          propertyId={propertyId}
+          userId={user.id}
+          financialYearEnd={selectedFyEndYear}
+          financialYearLabel={financialYear}
+          report={depreciationReport ?? null}
+          registerCapitalWorks={div43Register.totalClaim}
         />
       </div>
 
