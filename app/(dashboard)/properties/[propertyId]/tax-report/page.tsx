@@ -2,12 +2,14 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { FinancialYearSelect } from "@/components/financial-year-select";
+import { PropertyFyFactsPanel } from "@/components/property-fy-facts-panel";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
 import {
   AU_FY_START_DAY,
   AU_FY_START_MONTH,
+  daysInFy,
   formatFyLabel,
   fyBounds,
   resolveFyEndYear,
@@ -116,6 +118,18 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   // boundary by the host's offset.
   const fyStart = new Date(`${fyStartStr}T00:00:00Z`);
   const fyEnd = new Date(`${fyEndStr}T00:00:00Z`);
+
+  // Per-year ownership and availability for the selected year.
+  const { data: fyFacts } = await supabase
+    .from("property_fy_facts")
+    .select("*")
+    .eq("property_id", propertyId)
+    .eq("financial_year_end", selectedFyEndYear)
+    .maybeSingle();
+
+  // Inclusive day count for the selected year — 366 in a leap year, so the
+  // "available all year" default is never quietly wrong.
+  const daysInYear = daysInFy(selectedFyEndYear, fyStartMonth, fyStartDay);
 
   // Fetch rental operating expenses now that FY dates are known
   const { data: rentalExpenses } = await supabase
@@ -293,6 +307,16 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
         <FinancialYearSelect
           options={yearOptions}
           selected={selectedFyEndYear}
+        />
+      </div>
+
+      <div className="mb-6">
+        <PropertyFyFactsPanel
+          propertyId={propertyId}
+          financialYearEnd={selectedFyEndYear}
+          financialYearLabel={financialYear}
+          facts={fyFacts ?? null}
+          daysInYear={daysInYear}
         />
       </div>
 

@@ -146,6 +146,24 @@ export function selectableFyEndYears(
 }
 
 /**
+ * Number of days in a financial year, inclusive of both bounds.
+ *
+ * Derived from the actual bounds rather than assumed to be 365, so a year
+ * containing 29 February reports 366 — which matters when apportioning
+ * deductions by days available for rent.
+ */
+export function daysInFy(
+  fyEndYear: number,
+  startMonth: number = AU_FY_START_MONTH,
+  startDay: number = AU_FY_START_DAY,
+): number {
+  const { startDate, endDate } = fyBounds(fyEndYear, startMonth, startDay);
+  const start = Date.parse(`${startDate}T00:00:00Z`);
+  const end = Date.parse(`${endDate}T00:00:00Z`);
+  return Math.round((end - start) / MS_PER_DAY) + 1;
+}
+
+/**
  * Resolve a requested financial year (typically from a query parameter) against
  * the years actually on offer.
  *

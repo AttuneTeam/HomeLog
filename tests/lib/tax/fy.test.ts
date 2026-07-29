@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   currentFyEndYear,
+  daysInFy,
   formatFyLabel,
   fyBounds,
   mostRecentCompletedFyEndYear,
@@ -133,6 +134,22 @@ describe("selectableFyEndYears", () => {
 
   it("returns an empty list when asked for none", () => {
     expect(selectableFyEndYears(utc(2026, 7, 29), 0)).toEqual([]);
+  });
+});
+
+describe("daysInFy", () => {
+  it("counts an ordinary Australian financial year as 365 days", () => {
+    expect(daysInFy(2026)).toBe(365);
+  });
+
+  it("counts 366 when the year contains 29 February", () => {
+    // 1 Jul 2023 – 30 Jun 2024 spans February 2024, a leap month.
+    expect(daysInFy(2024)).toBe(366);
+  });
+
+  it("counts a calendar financial year correctly", () => {
+    expect(daysInFy(2025, 1, 1)).toBe(365);
+    expect(daysInFy(2024, 1, 1)).toBe(366);
   });
 });
 
