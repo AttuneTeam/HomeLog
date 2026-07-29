@@ -70,11 +70,11 @@ financial year.*
   - [x] Wire the tax report to it, replacing the comparison that silently routed unoverridden capital improvements into repairs
   - [x] Confirm tests pass and the report groups expenses correctly
 
-- [ ] Task: Add Div 43 capital works item fields (migration 057)
-  - [ ] Add `start_date` and `rate_pct` (default 2.5) to capital works expenses, per the spec's data model section
-  - [ ] Backfill `start_date` from the existing expense or renovation end date
-  - [ ] Add the RLS policy if a new table is used; hand-add types
-  - [ ] Verify a clean `db:reset`
+- [x] Task: Add Div 43 capital works item fields (migration 057) `5b3d412`
+  - [x] Add `start_date` and `rate_pct` (default 2.5) to capital works expenses, per the spec's data model section
+  - [x] Backfill `start_date` from the existing expense or renovation end date
+  - [x] Add the RLS policy if a new table is used; hand-add types *(columns on `expenses`, so the existing policies apply unchanged)*
+  - [x] Verify a clean `db:reset`
 
 - [ ] Task: Per-FY facts editing UI
   - [ ] Build a form to record ownership percentage, days available for rent and private-use days for a selected FY
