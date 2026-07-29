@@ -8,7 +8,7 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
 
 ---
 
-## Phase 1: Schema & storage foundation  (Tier 1)
+## Phase 1: Schema & storage foundation  (Tier 1)  [checkpoint: a3584a4]
 
 - [x] Task: Migration 063 — extend `rental_payments` `9b1953a`
   - [x] Add the ten nullable columns with `>= 0` checks, and `confidence` checked 0–1
@@ -22,16 +22,17 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
   - [x] Ownership resolved through `properties.user_id`, never by upload-path prefix
   - [x] `docs/account-deletion.md` registry and deploy note updated (moved forward from Phase 6,
         per that file's own maintenance rule)
-- [~] Task: Hand-update `lib/supabase/database.types.ts`
-  - [ ] Extend the `RentalPayment` row type and the `rental_payments` entry under
+- [x] Task: Hand-update `lib/supabase/database.types.ts` `ff94402`
+  - [x] Extend the `RentalPayment` row type and the `rental_payments` entry under
         `Database["public"]["Tables"]` (Row / Insert / Update)
-  - [ ] Do NOT run `supabase gen types`
-- [ ] Task: Verify schema and access
+  - [x] Do NOT run `supabase gen types`
+- [x] Task: Verify schema and access `a3584a4`
   - [x] `npm run db:reset` — confirm a clean replay from scratch (done in task 1)
   - [x] Confirm migration 062's read/write policies cover the new columns (verify, don't assume)
-  - [ ] Confirm a NON-OWNER is DENIED select and update; record the exact SQL and observed output
-  - [ ] `npm run verify:deletion` — statement objects are removed with the property
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+  - [x] Confirm a NON-OWNER is DENIED select and update; record the exact SQL and observed output
+  - [x] `npm run verify:deletion` — statement objects are removed with the property
+        (harness extended: it previously had no coverage of `statement_path` at all)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `a3584a4`
 
 ## Phase 1.5: Correct the gross-versus-net defect  (Tier 1)
 
