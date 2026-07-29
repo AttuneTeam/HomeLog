@@ -16,11 +16,13 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
         exist in production), that `amount` means GROSS rent, and that `other_outgoings` is
         reconciliation-only and must never become a deduction path
   - [x] Mark it a FILE-BEARING TABLE per `docs/account-deletion.md`
-- [ ] Task: Migration 064 — redefine the storage-object functions
-  - [ ] `user_storage_objects()` and `property_storage_objects()` both enumerate
+- [x] Task: Migration 064 — redefine the storage-object functions `9bb0eaa`
+  - [x] `user_storage_objects()` and `property_storage_objects()` both enumerate
         `rental_payments.statement_path` in the `property-files` bucket
-  - [ ] Ownership resolved through `properties.user_id`, never by upload-path prefix
-- [ ] Task: Hand-update `lib/supabase/database.types.ts`
+  - [x] Ownership resolved through `properties.user_id`, never by upload-path prefix
+  - [x] `docs/account-deletion.md` registry and deploy note updated (moved forward from Phase 6,
+        per that file's own maintenance rule)
+- [~] Task: Hand-update `lib/supabase/database.types.ts`
   - [ ] Extend the `RentalPayment` row type and the `rental_payments` entry under
         `Database["public"]["Tables"]` (Row / Insert / Update)
   - [ ] Do NOT run `supabase gen types`
