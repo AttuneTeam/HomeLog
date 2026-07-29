@@ -23,6 +23,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -296,7 +297,6 @@ interface InvestmentProperty {
 }
 
 interface Props {
-  userId: string;
   properties: InvestmentProperty[];
   roiInputsByPropertyId: Record<string, RoiInputs>;
   financialYearStartMonth: number;
@@ -314,7 +314,6 @@ function getFyStart(month: number, day: number): Date {
 }
 
 export function RoiCalculator({
-  userId,
   properties,
   roiInputsByPropertyId,
   financialYearStartMonth,
@@ -389,9 +388,21 @@ export function RoiCalculator({
   const handleSave = useCallback(async () => {
     if (!selectedPropertyId) return;
     setSaveState("saving");
-    await supabase
+    // Keyed on property_id only. There is no user_id column — migration 009
+    // dropped it — and ownership is enforced by RLS through the property.
+    const { error } = await supabase
       .from("roi_calculator_inputs")
-      .upsert({ user_id: userId, property_id: selectedPropertyId, ...inputs }, { onConflict: "property_id" });
+      .upsert(
+        { property_id: selectedPropertyId, ...inputs },
+        { onConflict: "property_id" },
+      );
+    if (error) {
+      // Previously the result was discarded, so a failing write looked like a
+      // successful one. Surface it instead.
+      toast.error("Couldn't save these inputs. Please try again.");
+      setSaveState("dirty");
+      return;
+    }
     setSaveState("saved");
     setTimeout(() => setSaveState("clean"), 2500);
   }, [supabase, selectedPropertyId, inputs]);

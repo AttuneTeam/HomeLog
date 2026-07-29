@@ -42,12 +42,15 @@ export default async function TaxReportPage({ params }: Props) {
   // Fetch ROI calculator inputs, rental periods, profile, and Xero connection in parallel
   const [{ data: roiInputs }, { data: rentalPeriods }, { data: profile }, { data: xeroConnection }] =
     await Promise.all([
+      // Scoped by property_id: migration 009 dropped user_id from this table.
+      // Filtering on it made the query error, so stamp duty and depreciation
+      // were silently absent from the CGT cost base.
       supabase
         .from("roi_calculator_inputs")
         .select(
           "stamp_duty, weekly_rent, div43_depreciation, div40_depreciation",
         )
-        .eq("user_id", user.id)
+        .eq("property_id", propertyId)
         .maybeSingle(),
       supabase
         .from("rental_periods")

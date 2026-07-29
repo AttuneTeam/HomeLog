@@ -456,8 +456,11 @@ export interface Database {
         ];
       };
       roi_calculator_inputs: {
+        // Keyed on property_id since migration 009_roi_per_property.sql, which
+        // dropped and recreated this table. There is no user_id column; access
+        // is scoped through property ownership by RLS.
         Row: {
-          user_id: string;
+          property_id: string;
           purchase_price: number | null;
           stamp_duty: number | null;
           legal_fees: number | null;
@@ -475,11 +478,9 @@ export interface Database {
           marginal_tax_rate: number | null;
           annual_household_income: number | null;
           updated_at: string;
-          property_id: string;
         };
         Insert: {
-          user_id: string;
-          property_id?: string;
+          property_id: string;
           purchase_price?: number | null;
           stamp_duty?: number | null;
           legal_fees?: number | null;
@@ -520,10 +521,10 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "roi_calculator_inputs_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: "roi_calculator_inputs_property_id_fkey";
+            columns: ["property_id"];
             isOneToOne: true;
-            referencedRelation: "profiles";
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];
