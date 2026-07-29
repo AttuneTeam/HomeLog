@@ -143,17 +143,17 @@ financial year.*
 
 *Goal: the numbers that appear in the pack are computed and correct.*
 
-- [ ] Task: Div 43 capital works register
-  - [ ] Write failing tests covering: a full-year claim at 2.5%, a part-year first claim apportioned by days, an item beyond its 40-year life claiming nothing, multiple items with different start dates on one property, and the written-down balance
-  - [ ] Implement the cumulative register: per item — amount, start date, years elapsed, this year's claim, written-down balance
-  - [ ] Confirm tests pass
+- [x] Task: Div 43 capital works register `ebe3a7b`
+  - [x] Write failing tests covering: a full-year claim at 2.5%, a part-year first claim apportioned by days, an item beyond its 40-year life claiming nothing, multiple items with different start dates on one property, and the written-down balance
+  - [x] Implement the cumulative register: per item — amount, start date, years elapsed, this year's claim, written-down balance
+  - [x] Confirm tests pass
 
 - [ ] Task: Div 40 via quantity surveyor report
   - [ ] Add QS report upload and per-FY entry of the stated Div 43 and Div 40 annual figures
   - [ ] Retain the report as evidence
   - [ ] Where absent, state that plant and equipment is not tracked and direct the agent to the QS report
 
-- [ ] Task: Rental schedule builder
+- [~] Task: Rental schedule builder
   - [ ] Write failing tests covering: ATO line ordering, exclusion of `property_type = 'primary_residence'`, exclusion of renovations with `claimable = false`, correct routing of `Repair` / `Immediate Repair` / `Capital Works` classifications, and net income including a loss case
   - [ ] Implement `lib/tax/rental-schedule.ts` producing one schedule per property per FY
   - [ ] Apply apportionment from Phase 3
