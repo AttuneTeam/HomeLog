@@ -5,6 +5,6 @@ index, which in turn links to its specification, plan and metadata.
 
 ---
 
-- [~] **Track: FY Tax Pack — financial-year-parameterised portfolio tax export for tax agents**
+- [x] **Track: FY Tax Pack — financial-year-parameterised portfolio tax export for tax agents**
 
   *Link: [./tracks/fy_tax_pack_20260729/index.md](./tracks/fy_tax_pack_20260729/index.md)*
