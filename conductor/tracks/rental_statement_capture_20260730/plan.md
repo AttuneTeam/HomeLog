@@ -111,7 +111,7 @@ is where the parser's figure belongs.
   - [x] Test: existing `rental-schedule` and `portfolio` tests still pass unchanged
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `a14a2e3`
 
-## Phase 3: Extraction & upload  (Tier 2)
+## Phase 3: Extraction & upload  (Tier 2)  [checkpoint: 79f1614]
 
 - [x] Task: `lib/ai/extract-rental-statement.ts` `ded6702`
   - [ ] Zod schema: gross rent, four fee buckets, other outgoings, net received, agent name,
@@ -132,7 +132,7 @@ is where the parser's figure belongs.
         (`npm run verify:rent-route`, 22 checks over real HTTP; `verify:rent-extract`, 18 checks
         against both statement PDFs)
         (unreadable file, and a property the caller cannot write to)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `79f1614`
 
 ## Phase 4: Rent tab UI  (Tier 3)
 
