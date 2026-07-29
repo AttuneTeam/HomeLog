@@ -117,13 +117,13 @@ financial year.*
   - [x] Implement apportionment applied to income and deduction lines per the spec
   - [x] Confirm tests pass
 
-- [ ] Task: Loan statement upload and extraction
-  - [ ] Add upload to Storage, following the existing invoice pattern
-  - [ ] Add an extraction route reusing `pdf-parse` / Claude Vision and `generateObject` with a new zod schema for interest paid, lender, account reference and statement period
-  - [ ] Wire model access through `lib/ai/anthropic-client.ts` and `lib/ai/openai-client.ts`, not at the call site
-  - [ ] Confirm the schema rejects malformed extractions rather than coercing them
+- [x] Task: Loan statement upload and extraction `cb26273`
+  - [x] Add upload to Storage, following the existing invoice pattern
+  - [x] Add an extraction route reusing `pdf-parse` / Claude Vision and `generateObject` with a new zod schema for interest paid, lender, account reference and statement period
+  - [x] Wire model access through `lib/ai/anthropic-client.ts` and `lib/ai/openai-client.ts`, not at the call site
+  - [x] Confirm the schema rejects malformed extractions rather than coercing them
 
-- [ ] Task: Loan statement review UI
+- [~] Task: Loan statement review UI
   - [ ] Present the extracted figures for confirmation with the confidence score visible and every field editable, per the staged-review pattern
   - [ ] Persist on confirm; retain the file as evidence
   - [ ] Show the computed rate-schedule estimate where no statement exists, labelled an estimate and excluded from claimed totals
