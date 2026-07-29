@@ -57,8 +57,12 @@ two functions above. Current set (bucket → table.column):
 | Bucket | Table.column |
 |---|---|
 | `invoices` | `expenses.invoice_path`, `rental_operating_expenses.invoice_path`, `staged_receipts.storage_path` |
-| `property-files` | `property_files.storage_path` |
+| `property-files` | `property_files.storage_path`, `loan_statements.storage_path`, `depreciation_reports.storage_path` |
 | `renovation-quotes` | `renovation_quotes.file_path` |
+
+⚠️ `depreciation_reports.storage_path` is **not unique**: one quantity surveyor report normally
+covers several financial years, so the same path appears on several rows. Both functions use
+`SELECT DISTINCT` for that branch so the path is not returned repeatedly.
 
 **When you add a new table/column that stores a file, update both `user_storage_objects` and
 `property_storage_objects`** (and this table). Forgetting leaks storage on deletion.
@@ -72,4 +76,5 @@ logic or adding a file-bearing table.
 
 ## Deploy note
 
-Migrations `051`–`053` define the functions above; apply them to production on deploy.
+Migrations `051`–`053` define the functions above, and `058` redefines both to cover
+`loan_statements` and `depreciation_reports`; apply them to production on deploy.
