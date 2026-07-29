@@ -47,12 +47,12 @@ financial year.*
 
 *Goal: the data model can express ownership, availability, interest and depreciation per year.*
 
-- [ ] Task: Add `property_fy_facts` (migration 054)
-  - [ ] Write the migration: `(property_id, financial_year_end)` PK, `ownership_pct` default 100, `days_available_for_rent`, `private_use_days`, `notes`
-  - [ ] Add an RLS policy scoped through property ownership
-  - [ ] Hand-add the row type to `lib/supabase/database.types.ts`
-  - [ ] Verify a non-owner is **denied** access, not merely that the owner is allowed
-  - [ ] Confirm `npm run db:reset` replays cleanly
+- [x] Task: Add `property_fy_facts` (migration 054) `656818d`
+  - [x] Write the migration: `(property_id, financial_year_end)` PK, `ownership_pct` default 100, `days_available_for_rent`, `private_use_days`, `notes`
+  - [x] Add an RLS policy scoped through property ownership
+  - [x] Hand-add the row type to `lib/supabase/database.types.ts`
+  - [x] Verify a non-owner is **denied** access, not merely that the owner is allowed
+  - [x] Confirm `npm run db:reset` replays cleanly
 
 - [ ] Task: Add `loan_statements` (migration 055)
   - [ ] Write the migration: per loan per FY — `financial_year_end`, `interest_paid`, `lender`, `account_ref`, `period_start`, `period_end`, `storage_path`, `extracted` JSONB, `confidence`, `confirmed_at`
