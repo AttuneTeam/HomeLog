@@ -173,7 +173,7 @@ financial year.*
 
 ---
 
-## Phase 5 — Pack generation and output
+## Phase 5 — Pack generation and output [checkpoint: fa58378]
 
 *Goal: one action produces a file the investor forwards to their accountant.*
 
@@ -214,4 +214,9 @@ financial year.*
   - [x] Update the tests and the spec's FR10 to match the narrowed scope
   - [x] Confirm the rental section is unchanged
 
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Consolidate onto the property page and rename *(inserted — user feedback at checkpoint)* `fa58378`
+  - [x] Move the pack download onto the property page, scoped to that property
+  - [x] Rename the route, labels, PDF title and filename to "tax pack"
+  - [x] Delete the standalone page and its nav entry
+
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `fa58378`
