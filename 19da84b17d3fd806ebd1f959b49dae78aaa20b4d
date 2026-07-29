@@ -64,3 +64,98 @@ VERIFICATION PERFORMED
 VERIFICATION DEBT
 Start-date input and the revised estimate copy not seen in a browser;
 folded into the phase checkpoint.
+
+================================================================
+PHASE VERIFICATION REPORT
+Phase 3 - Income, interest and apportionment
+Track: fy_tax_pack_20260729
+================================================================
+
+SCOPE
+Commits 60bd2c1..19da84b. Five tasks: four planned, one inserted from
+user feedback.
+
+New pure modules: lib/tax/rental-income.ts, lib/tax/apportionment.ts,
+lib/tax/loan-interest.ts, lib/ai/extract-loan-statement.ts.
+New surfaces: app/api/loan-statements/extract, app/actions/loan-statements.ts,
+components/loan-statements-panel.tsx.
+Migration 060 (property_loans.start_date).
+
+AUTOMATED CHECKS
+  npm run build     -> PASS, 38 routes, no type errors
+  CI=true npm test  -> PASS, 118 tests across 7 files
+  npm run db:reset  -> PASS, 60 migrations replay cleanly
+
+MANUAL VERIFICATION
+Plan presented covering: income source labelling (recorded payments vs
+accrued), the divergence warning, apportionment halving figures at 50%
+ownership while gross rent stays unreduced by availability, the loan
+statement upload/extract/confirm cycle with confidence and edit
+disclosure, the unreadable-file path, the prorated estimate after
+recording a 27 Oct loan start, and the PDF interest line.
+
+User response: confirmed "yes".
+
+WHAT THIS PHASE CORRECTED
+1. Income ignored recorded payments. The report accrued from tenancy terms
+   and presented the estimate as fact, while rental_payments - money
+   actually received via the agent-email webhook - sat unused.
+2. No apportionment at all. A part-owner saw 100% of the property's
+   figures.
+3. Loan interest, typically the largest rental deduction, was absent from
+   the report entirely.
+4. The interest estimate assumed a full year at the latest rate and
+   ignored the offset account. On the user's own loan that overstated by
+   32%.
+
+RULES ENCODED (with tests)
+- Ownership scales income AND deductions; availability and private use
+  scale DEDUCTIONS ONLY. Reducing income by availability would understate
+  assessable rent. Asserted from both directions.
+- Only CONFIRMED loan statements are claimable. Verified live: two
+  statements, one confirmed and one pending -> claimable 21,450 not
+  26,450; confirming the second at an EDITED amount used the edit.
+- Divergence thresholds 5% AND $500 together, so a missing month (~8%)
+  flags while rent straddling 30 June (~2%) does not.
+- null vs 0 for income: no records means unknown, not "no rent received".
+
+VERIFICATION APPROACH
+Where arithmetic mattered it was computed a second way in SQL rather than
+trusting the tests to agree with my own logic: the 247-day interest
+window and all three dollar figures, the confirmed-only interest totals,
+and the income actual-vs-accrued reconciliation.
+
+PROCESS FINDINGS
+- A scripted edit swapped two JSX guards in the PDF, rendering loan
+  interest under the operating-expenses condition and vice versa. It
+  compiled and type-checked cleanly. Caught by reading the output, not by
+  the gate. npm run build cannot detect a condition guarding the wrong
+  element - a standing limitation while there is no component-level test
+  coverage.
+- An early SQL cross-check was scoped by date but not property and swept
+  up 7 pre-existing local rows. Fault in the check, not the code; re-run
+  isolated. All DB work ran in rolled-back transactions and the user's
+  local data was confirmed intact.
+
+DISCLOSED LIMITATIONS (deliberately not hidden)
+- The interest estimate does not amortise; the balance is held constant,
+  so a P&I loan's real interest is lower. Stated in the panel.
+- property_offset_accounts.balance has no effective date, so applying
+  today's offset to a past year is an approximation. Acceptable only
+  because the estimate is excluded from claims.
+
+VERIFICATION DEBT CARRIED FORWARD
+- No automated coverage of the extraction route, Server Actions, or any
+  component. Only pure modules are tested.
+- The AI extraction has not been run against a real lender statement in
+  this session; the schema's strictness is covered, the model's accuracy
+  is not.
+- The PDF carries income provenance and apportionment data but prints
+  only the income label - it does not yet state the apportionment basis or
+  the divergence warning. That copy is what an accountant actually reads,
+  so Phase 5 should decide whether the pack surfaces both.
+- lib/tax/classification.ts is still not consumed by a schedule builder;
+  Phase 4 must route through it.
+
+STATUS: Phase 3 complete. Every figure the schedule needs can now be
+sourced, labelled and apportioned. Phase 4 assembles them.
