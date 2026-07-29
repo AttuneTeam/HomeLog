@@ -49,3 +49,84 @@ VERIFICATION PERFORMED
   1402.00 / 555.00 / Duo Tax / diminishing_value.
 - CI=true npm test -> 153 tests passed.
 - npm run build -> Compiled successfully.
+
+================================================================
+PHASE VERIFICATION REPORT
+Phase 4 - Registers and schedule assembly
+Track: fy_tax_pack_20260729
+================================================================
+
+SCOPE
+Commits ebe3a7b..87a7daa. Five tasks: four planned, one inserted from a
+real quantity surveyor schedule the user supplied.
+
+New pure modules: lib/tax/div43.ts, lib/tax/rental-schedule.ts,
+lib/tax/portfolio.ts.
+New surfaces: app/actions/depreciation-reports.ts,
+components/depreciation-report-panel.tsx.
+Migration 061 (depreciation_method).
+
+AUTOMATED CHECKS
+  npm run build     -> PASS, 38 routes, no type errors
+  CI=true npm test  -> PASS, 153 tests across 10 files
+
+MANUAL VERIFICATION
+Plan presented covering the depreciation panel and its guidance, the Div 43
+comparison note, per-year isolation, report attachment surviving a
+figures-only save, and theme/width. User response: confirmed "yes".
+
+CARRIED-FORWARD DEBT PAID
+Phase 3 recorded that lib/tax/classification.ts was not consumed by any
+schedule builder and that Phase 4 must route through it. buildRentalSchedule
+now does, and three tests assert the NEGATIVE cases - an inherited
+capital_improvement and an inherited initial_repair must not reach the
+repairs line, and a manual override is honoured both ways. The vocabulary
+defect cannot return through this path.
+
+KEY INVARIANTS ESTABLISHED
+- Div 43 is per item on its own clock, life = 100/rate (40 years at 2.5%,
+  25 at 4%), each year prorated by days on foot, cumulative capped at cost.
+- Portfolio totals are SUMMED from per-property schedules, never recomputed.
+  Tested: portfolio net == sum of property nets == gross rent less
+  deductions. A portfolio figure that disagreed with the schedules behind
+  it would be worse than none.
+- Aggregation copies line objects before accumulating, so summing a
+  schedule cannot corrupt the per-property view the pack also prints.
+
+VALIDATED AGAINST A REAL DOCUMENT
+The user supplied a Duo Tax schedule (56 Forbes Street, #398034). It
+confirmed two decisions made earlier on reasoning alone:
+  - RECORD, DO NOT DERIVE: full-year capital works is $2,424, but 2.5% of
+    the $92,768 total is $2,319. The schedule blends components with
+    different start dates and remaining lives, so a derived figure would
+    have been wrong.
+  - PER-ITEM CLOCKS: that blend is exactly the model div43.ts uses.
+It also exposed a real usability gap - the panel asked for a figure with
+no indication where in a 41-row, two-method document to find it - which
+became the inserted task.
+
+INCIDENT
+npm run db:reset wiped the user's local database, which held prod-synced
+data. It is the documented migration-verification command and the plan
+required it, but I continued running it after seeing real data. Reported
+rather than quietly restored; npm run db:sync recovered everything
+(verified row-by-row). Standing instruction now in force: ASK BEFORE ANY
+FURTHER db:reset.
+
+VERIFICATION DEBT CARRIED FORWARD
+- ATO line ORDER is modelled on the standard rental schedule but has NOT
+  been checked against a current ATO form by a human. Keying order is the
+  entire point of the sequence, so this warrants an accountant's eye
+  before the pack ships.
+- rental-schedule.ts and portfolio.ts are not yet rendered anywhere; they
+  are consumed when the pack is assembled in Phase 5.
+- The third classification vocabulary (AiTaxClassification) remains
+  unmapped and unconsumed.
+- No automated coverage for components, Server Actions or the PDF.
+- The PDF still prints only the income provenance label; it does not state
+  the apportionment basis or the divergence warning. Phase 5 should decide
+  whether the agent-facing pack surfaces both, since that is the copy an
+  accountant reads.
+
+STATUS: Phase 4 complete. Every figure is computed and assembled. Phase 5
+turns it into the file the investor sends their accountant.
