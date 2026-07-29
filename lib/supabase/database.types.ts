@@ -1070,15 +1070,19 @@ export interface Database {
           property_id: string;
           loan_amount: number;
           loan_term_years: number;
+          /** Drawdown date; interest is only estimated from here onward. */
+          start_date: string | null;
           updated_at: string;
         };
         Insert: {
           property_id: string;
           loan_amount: number;
           loan_term_years: number;
+          start_date?: string | null;
           updated_at?: string;
         };
         Update: {
+          start_date?: string | null;
           loan_amount?: number;
           loan_term_years?: number;
           updated_at?: string;

@@ -8,6 +8,7 @@ import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
 import { resolveRentalIncome } from "@/lib/tax/rental-income";
+import { estimateInterestForFy } from "@/lib/tax/loan-interest";
 import {
   apportionDeduction,
   apportionIncome,
@@ -161,7 +162,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
         .order("created_at", { ascending: true }),
       supabase
         .from("property_loans")
-        .select("loan_amount")
+        .select("loan_amount, start_date")
         .eq("property_id", propertyId)
         .maybeSingle(),
       supabase
@@ -171,17 +172,29 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
         .order("effective_date", { ascending: true }),
     ]);
 
-  // Crude estimate: balance x the rate in force at the start of the year. It
-  // ignores amortisation and offset balances, which is precisely why it is
-  // shown as an estimate and excluded from claimed totals.
-  const rateAtFyStart =
-    interestRates?.filter((r) => r.effective_date <= fyStartStr).pop() ??
-    interestRates?.[0] ??
-    null;
-  const estimatedInterest =
-    propertyLoan?.loan_amount != null && rateAtFyStart != null
-      ? Number(propertyLoan.loan_amount) * (Number(rateAtFyStart.rate) / 100)
-      : null;
+  // Offset balances reduce the interest-bearing balance directly.
+  const { data: offsetAccounts } = await supabase
+    .from("property_offset_accounts")
+    .select("balance")
+    .eq("property_id", propertyId);
+  const totalOffset = (offsetAccounts ?? []).reduce(
+    (sum, a) => sum + Number(a.balance),
+    0,
+  );
+
+  // Prorates from the loan's drawdown date, segments by rate changes, and nets
+  // off the offset. Still does not amortise, which the panel discloses.
+  const interestEstimate = estimateInterestForFy(
+    {
+      loanAmount: propertyLoan?.loan_amount ?? null,
+      offsetBalance: totalOffset,
+      startDate: propertyLoan?.start_date ?? null,
+      rates: interestRates ?? [],
+    },
+    selectedFyEndYear,
+    fyStartMonth,
+    fyStartDay,
+  );
 
   // Only confirmed statements are claimable. An unconfirmed extraction is a
   // model's proposal, not evidence.
@@ -434,7 +447,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           financialYearEnd={selectedFyEndYear}
           financialYearLabel={financialYear}
           statements={loanStatements ?? []}
-          estimatedInterest={estimatedInterest}
+          estimate={interestEstimate}
         />
       </div>
 

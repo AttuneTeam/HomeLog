@@ -21,6 +21,7 @@ import {
   deleteLoanStatement,
 } from "@/app/actions/loan-statements";
 import type { LoanStatement } from "@/lib/supabase/database.types";
+import type { LoanInterestEstimate } from "@/lib/tax/loan-interest";
 
 interface Props {
   propertyId: string;
@@ -28,10 +29,10 @@ interface Props {
   financialYearLabel: string;
   statements: LoanStatement[];
   /**
-   * Interest computed from the loan balance and rate schedule. Shown only when
-   * no confirmed statement exists, and never counted as claimable.
+   * Interest computed from the loan terms. Shown only when no statement has
+   * been uploaded, and never counted as claimable.
    */
-  estimatedInterest: number | null;
+  estimate: LoanInterestEstimate | null;
 }
 
 function StatementRow({
@@ -217,7 +218,7 @@ export function LoanStatementsPanel({
   financialYearEnd,
   financialYearLabel,
   statements,
-  estimatedInterest,
+  estimate,
 }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -270,17 +271,34 @@ export function LoanStatementsPanel({
       <CardContent className="space-y-4">
         {statements.length === 0 && (
           <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-            {estimatedInterest != null ? (
-              <p>
-                No loan statement uploaded. Based on your loan balance and rate
-                history, interest for this year is roughly{" "}
-                <strong className="text-foreground">
-                  {formatCurrency(estimatedInterest)}
-                </strong>
-                . <strong>This is an estimate only</strong> — it will not tie to
-                your lender&apos;s figures and is <strong>not included</strong>{" "}
-                in the report. Upload the annual statement to claim it.
-              </p>
+            {estimate != null ? (
+              <div className="space-y-1.5">
+                <p>
+                  No loan statement uploaded. From your loan terms, interest for
+                  this year is roughly{" "}
+                  <strong className="text-foreground">
+                    {formatCurrency(estimate.interest)}
+                  </strong>
+                  . <strong>This is an estimate only</strong> — it will not tie
+                  to your lender&apos;s figures and is{" "}
+                  <strong>not included</strong> in the report. Upload the annual
+                  statement to claim it.
+                </p>
+                <p>
+                  Based on {estimate.daysCharged} of {estimate.daysInYear} days
+                  {estimate.assumedFullYear
+                    ? " (no loan start date recorded, so a full year is assumed)"
+                    : ""}
+                  , a balance of{" "}
+                  {formatCurrency(estimate.interestBearingBalance)} after
+                  offset, across{" "}
+                  {estimate.rateSegments === 1
+                    ? "one rate"
+                    : `${estimate.rateSegments} rate periods`}
+                  . It assumes the balance stayed constant, so for a
+                  principal-and-interest loan the real figure will be lower.
+                </p>
+              </div>
             ) : (
               <p>
                 No loan statement uploaded. Interest is usually the largest

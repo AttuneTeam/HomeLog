@@ -35,6 +35,7 @@ export interface LoanInterestRate {
 export interface PropertyLoan {
   loan_amount: number;
   loan_term_years: number;
+  start_date?: string | null;
 }
 
 export interface OffsetAccount {
@@ -131,6 +132,9 @@ export function LoanInterestRatesSection({
   const [loanTerm, setLoanTerm] = useState(
     initialLoan ? String(initialLoan.loan_term_years) : "",
   );
+  const [loanStartDate, setLoanStartDate] = useState(
+    initialLoan?.start_date ?? "",
+  );
   const [loanPending, startLoanTransition] = useTransition();
 
   // Rate history state
@@ -151,7 +155,7 @@ export function LoanInterestRatesSection({
     const term = parseInt(loanTerm, 10);
     if (!amount || !term) return;
     startLoanTransition(async () => {
-      await saveLoanDetails(propertyId, amount, term);
+      await saveLoanDetails(propertyId, amount, term, loanStartDate || null);
       setEditingLoan(false);
     });
   }
@@ -224,6 +228,19 @@ export function LoanInterestRatesSection({
                   max={40}
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Loan start date</Label>
+                <Input
+                  type="date"
+                  value={loanStartDate}
+                  onChange={(e) => setLoanStartDate(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Drawdown date. Without it, interest estimates assume the loan
+                  ran for the whole financial year.
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -243,6 +260,7 @@ export function LoanInterestRatesSection({
                   onClick={() => {
                     setLoanAmount(String(initialLoan.loan_amount));
                     setLoanTerm(String(initialLoan.loan_term_years));
+                    setLoanStartDate(initialLoan.start_date ?? "");
                     setEditingLoan(false);
                   }}
                 >
@@ -266,6 +284,14 @@ export function LoanInterestRatesSection({
                 <span className="text-muted-foreground mr-2">Loan term</span>
                 <span className="font-semibold">
                   {initialLoan!.loan_term_years} years
+                </span>
+              </span>
+              <span>
+                <span className="text-muted-foreground mr-2">Started</span>
+                <span className="font-semibold">
+                  {initialLoan?.start_date
+                    ? formatDate(initialLoan.start_date)
+                    : "—"}
                 </span>
               </span>
             </div>
