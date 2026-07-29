@@ -139,7 +139,7 @@ financial year.*
 
 ---
 
-## Phase 4 — Registers and schedule assembly
+## Phase 4 — Registers and schedule assembly [checkpoint: 87a7daa]
 
 *Goal: the numbers that appear in the pack are computed and correct.*
 
@@ -164,7 +164,12 @@ financial year.*
   - [x] Carry through the CGT cost base per property
   - [x] Verify totals reconcile against the per-property schedules
 
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Record the Division 40 method and explain the QS figures *(inserted — user supplied a real depreciation schedule)* `87a7daa`
+  - [x] Add `depreciation_method` (migration 061) so the Div 40 election is recorded, not a bare number
+  - [x] Add guidance naming the schedule table and the row to find
+  - [x] State that Div 43 is identical under both methods
+
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `87a7daa`
 
 ---
 
