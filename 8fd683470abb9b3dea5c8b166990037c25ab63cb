@@ -1,0 +1,89 @@
+Tasks: "Write a failing regression test for the statement parser" AND
+       "Repoint lib/email-parser/parse-statement.ts" (Phase 1.5, Tier 1)
+
+Committed together: a commit holding only the failing test would not build, and
+Red/Green belongs in one unit of history. Both plan tasks are marked complete
+against this SHA.
+
+WHAT CHANGED
+Rewrote lib/email-parser/parse-statement.ts to export three things instead of
+one:
+  buildStatementPrompt(sender, subject, body, today)  — pure
+  parseStatementResponse(text)                        — pure, Zod-validated
+  parseEmailStatement(...)                            — orchestrates the call
+
+ParsedStatement gains managementFees, lettingFees, leaseFees, sundryFees,
+otherOutgoings and netReceived, and is now derived with z.infer from a schema
+rather than hand-declared.
+
+Added tests/lib/email-parser/parse-statement.test.ts — 15 tests.
+
+Files:
+  lib/email-parser/parse-statement.ts (rewritten)
+  tests/lib/email-parser/parse-statement.test.ts (new)
+
+THE CORE WHY
+The prompt at the old line 51 instructed the model: amount is the net amount
+disbursed to the owner, "NOT the gross rent income figure". But
+lib/tax/rental-income.ts#actualRentForFy sums rental_payments.amount and
+reports it as GROSS rent, feeding schedule.grossRent. Every email-ingested
+payment therefore understated assessable rental income by the whole of the
+agent's fees and third-party outgoings — and no test anywhere asserted which
+figure that column holds.
+
+The prompt now states the opposite explicitly, names netReceived as a separate
+field, and says the two "must never be reported as" each other.
+
+WHY THE FILE WAS SPLIT
+The defect lived in a prompt string inside a function that calls a model. There
+was no way to assert anything about it without contacting OpenAI, which
+workflow.md forbids in tests. Exporting the prompt builder and the response
+parser makes the invariant reachable; the model call is the only part left
+untested, and it is now a three-line function.
+
+DESIGN NOTES
+- Per-field `.catch(null)` rather than a strict schema: one unreadable fee line
+  should not discard an otherwise good statement. It does NOT coerce — a model
+  returning "$4,400.00" yields null, not a number quietly stripped of its
+  comma, because a mangled figure ends up in a tax return. Test covers this.
+- Absent fee fields default to null, never 0. Zero would assert "the agent
+  charged nothing", a claim the model never made. Test covers this.
+- The prompt asks for GST-INCLUSIVE fees as they appear on the statement:
+  residential rent is input-taxed, so no GST credit is claimable and the
+  GST-inclusive figure is the deductible one.
+- The prompt tells the model to report figures exactly as read even when they
+  do not reconcile, rather than adjusting one to force a balance. A forced
+  balance would hide the very discrepancy the reconciliation is meant to
+  surface.
+- `today` is a parameter with a default, so buildStatementPrompt is a pure
+  function of its inputs and testable without freezing the clock.
+
+VERIFICATION PERFORMED
+  RED — CI=true npm test, before implementing:
+    FAIL tests/lib/email-parser/parse-statement.test.ts
+    TypeError: buildStatementPrompt is not a function
+    → 1 failed suite | 12 passed
+
+  GREEN — CI=true npm test, after implementing:
+    → 13 files passed, 201 tests passed (was 186; 15 added)
+
+  Regression guard proven: the test asserting the prompt does NOT contain
+  "NOT the gross rent income figure" fails against the previous prompt by
+  construction — that was its exact wording.
+
+  Fixture reconciliation, real OWN10905 figures:
+    4400 − (242 + 1210 + 33 + 8.80) − 2146 = 760.20 ✓
+
+  npm run build → ✓ Compiled successfully. Confirms the widened
+  ParsedStatement type does not break app/api/inbound-email/handler.ts, which
+  consumes it.
+
+VERIFICATION DEBT
+parseEmailStatement itself is untested — it is the model call, mocked nowhere.
+Its body is now buildStatementPrompt + generateText + parseStatementResponse,
+both ends of which are covered.
+
+The prompt-contract tests assert wording, not model behaviour. They prevent a
+regression to the inverted instruction; they cannot prove the model reads a
+given statement correctly. That needs a real extraction run against the
+OWN10905 PDF, which happens in Phase 3.
