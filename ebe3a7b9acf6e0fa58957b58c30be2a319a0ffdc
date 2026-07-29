@@ -1,0 +1,38 @@
+Task: Div 43 capital works register (Phase 4, Tier 1)
+Track: fy_tax_pack_20260729
+
+FILES
+- lib/tax/div43.ts (new) - div43RegisterForFy
+- tests/lib/tax/div43.test.ts (new) - 12 tests (130 total)
+
+MODEL
+Per item, not per property. Life = 100 / ratePct (40 years at 2.5%, 25 at
+4%). Each financial year from completion is walked and charged the annual
+rate prorated by days on foot, so first-year and final-year partials need
+no special casing. Cumulative is capped at the original amount.
+
+An item without a completion date claims nothing and sets
+missingStartDate, and the register reports how many such items exist -
+inferring a date would silently create a deduction.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 8 files, 130 tests passed. Covers full-year claim,
+  six-year accumulation and written-down value, part-year first claim,
+  pre-completion (nothing claimed), post-life (fully written off), the
+  cap near end of life, 4% rate with its 25-year life, several items on
+  independent clocks, leap year, empty input, and the missing-date case.
+- INDEPENDENT SQL cross-check:
+    annual claim              2,500.00
+    six years cumulative     15,000.00
+    written down            85,000.00
+    221-day part year        1,513.70
+    1980 item life expires  2019-12-31 (so fully written off by FY2026)
+    1987 item life expires  2027-06-30 (so still live at FY2026)
+  All agree with the helper, including the two life-expiry boundaries
+  that decide whether an item still claims.
+
+NOTES
+Not yet consumed by any surface - the register is rendered in the schedule
+and the pack (Phase 4 schedule builder, Phase 5 output). Data comes from
+expenses.capital_works_start_date / capital_works_rate_pct added in
+migration 057, which backfilled from renovation end dates.
