@@ -69,8 +69,12 @@ human.
 payments ingested from agent emails via an inbound webhook, and operating expenses categorised to
 map onto ATO rental schedule lines.
 
-**Reporting & handoff.** Per-property tax reports as PDF and XLSX, CGT cost base calculation, and
-one-click Xero journal posting.
+**Reporting & handoff.** A per-property FY tax pack: one ZIP containing the rental schedule as a
+PDF, the same figures as a workbook, and every supporting document as a real file with a
+manifest mapping it to the line it supports. Any completed financial year can be generated, with
+estimates visibly distinguished from recorded facts and anything that could not be included
+named rather than silently dropped. Plus CGT cost base calculation and one-click Xero journal
+posting.
 
 **Sharing & the property passport.** Account-level and property-level sharing with RLS-enforced
 isolation, plus tokenised public passport links — a read-only, transferable record of a property's
@@ -86,7 +90,8 @@ depends on.
 
 **Phase 0 — Activate the accountant channel.** A roster view across clients and a bulk FY tax-pack
 export, so the tool saves accountants real hours and they push it to their book. This is the
-current focus.
+current focus. **Partially delivered:** the per-property tax pack exists; the accountant roster
+view and bulk multi-client export do not, and are the remaining work in this phase.
 
 **Phase 1 — Monetise renovations, plus a light community layer.** Renovations are the densest,
 most frequent intent signal. Investors request quotes; contractors pay for context-rich leads.
