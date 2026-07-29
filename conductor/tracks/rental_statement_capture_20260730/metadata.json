@@ -6,8 +6,8 @@
   "status": "new",
   "created_at": "2026-07-30T00:00:00Z",
   "updated_at": "2026-07-30T00:00:00Z",
-  "phases": 6,
-  "tasks": 28,
+  "phases": 7,
+  "tasks": 33,
   "artifacts": {
     "spec": "./spec.md",
     "plan": "./plan.md",
@@ -18,8 +18,10 @@
     "defect_corrected": "Agent fees computed as weeks x weekly_rent x management_fee_pct at tax-pack/page.tsx:281-286 can only reproduce recurring percentage charges. On the reference statement it captures the $242 management fee and misses $1,251.80 of letting fee, lease fee and bank charges, and is presented with no estimate disclosure.",
     "approach": "Extend rental_payments in place rather than introduce a statement table, because rows already exist in production. Additive nullable columns only.",
     "new_migrations": [
-      "063_rental_payment_statements"
+      "063_rental_payment_statements",
+      "064_deletion_fns_rental_statements"
     ],
+    "amended_during_implementation": "Phase 1.5 and FR12/FR13 were added after verifying FR1. lib/email-parser/parse-statement.ts:51 instructs the model to store the NET disbursed amount in rental_payments.amount, which lib/tax/rental-income.ts reports as gross rent — understating assessable income on every email-ingested payment. Found in code, not in data entry, so the original out-of-scope 'known risk' framing was wrong. Also recorded: statement fees are GST-inclusive while the management_fee_pct estimate is not.",
     "new_modules": [
       "lib/tax/agent-fees.ts",
       "lib/ai/extract-rental-statement.ts",
@@ -54,7 +56,9 @@
     }
   ],
   "open_risks": [
-    "Existing rental_payments rows may hold net received rather than gross rent in `amount`, which would understate assessable income. The reference row is correct at $4,400; a historical audit is deliberately out of scope.",
+    "CONFIRMED AND NOW IN SCOPE (Phase 1.5): rental_payments.amount holds net received for every email-ingested row because parse-statement.ts:51 instructs it, while actualRentForFy reports it as gross rent. 6 of 7 local rows affected. Understates assessable income.",
+    "Correcting rows 2-7 requires the original statements; a row without its source document stays flagged rather than back-solved from an assumed fee percentage.",
+    "Once the parser is repointed, live ingestion writes different values into `amount`. Rows ingested between the parser fix and the historical correction must not be double-corrected.",
     "Double-counting third-party costs is the primary failure mode; guarded by FR8 and acceptance criterion 5 but must be checked in review.",
     "Financial position view and the tax pack must agree on the agent-fee figure; they are wired to a shared resolver but there is no automated coverage for either surface.",
     "AI extraction of rental statements has not been run against any agent's format other than Rich & Oliva."

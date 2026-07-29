@@ -63,9 +63,14 @@ nullable so rows already in the table remain valid and continue to render and ed
 
 ### FR2 — File-bearing table invariant
 
-The same migration redefines `user_storage_objects()` and `property_storage_objects()` to
-enumerate `rental_payments.statement_path` against the `property-files` bucket, resolving
-ownership through `properties.user_id` and never by upload-path prefix.
+Migration 064 redefines `user_storage_objects()` and `property_storage_objects()` to enumerate
+`rental_payments.statement_path` against the `property-files` bucket, resolving ownership through
+`properties.user_id` and never by upload-path prefix.
+
+> **Amended during implementation.** This was originally specified as part of migration 063. It is
+> a separate file because 063 is applied before the function work begins, and editing an applied
+> migration is forbidden. This also matches the existing `055_loan_statements` /
+> `058_deletion_fns_new_file_tables` precedent.
 
 Storage has no database cascade. Per `docs/account-deletion.md`, a storage column absent from
 both functions leaks its objects silently on account or property deletion. Resolving ownership by
@@ -166,6 +171,42 @@ Each payment carrying a `statement_path` becomes an `EvidenceItem`:
   `loan-statements-panel.tsx` already does;
 - an "Auto" badge treatment consistent with the existing `source_email_id` marker.
 
+### FR12 — Correct the gross-versus-net defect
+
+> **Added during implementation**, after the defect was found in code while verifying FR1. It was
+> previously listed as an out-of-scope hypothetical risk. It is neither hypothetical nor a
+> data-entry mistake.
+
+`lib/email-parser/parse-statement.ts:51` instructs the extraction model:
+
+> `amount is the net amount disbursed to the owner — look for "You Received", "Withdrawal by
+> EFT", or "Net to owner", NOT the gross rent income figure`
+
+`lib/tax/rental-income.ts#actualRentForFy` then sums that column and reports it as **gross rent**,
+feeding `schedule.grossRent`. Every payment ingested from an agent email therefore understates
+assessable rental income by the whole of the agent's fees and outgoings. Six of the seven rows in
+the local database arrived this way and none is a multiple of the $1,100 weekly rent.
+
+This is fixed inside this track rather than deferred, because the track introduces `net_received`,
+which is exactly where the parser's figure belongs — and because shipping a migration whose stated
+invariant the app's own ingestion path contradicts would be worse than a larger track.
+
+- `amount` extracts **gross rent**; `net_received` takes the disbursed figure.
+- The fee buckets and `other_outgoings` are extracted at the same time, since the prompt is being
+  rewritten anyway.
+- Ingested rows are **not** auto-confirmed: `fees_confirmed_at` stays null so extracted fees go
+  through the same FR4 review gate as an uploaded statement.
+- Affected historical rows are restated. Any row that cannot be corrected without its source
+  document is reported, not guessed.
+
+### FR13 — Fees are GST-inclusive
+
+The statement's $242 management fee is $220 plus 10% GST. The `management_fee_pct` estimate
+computes the ex-GST figure. Residential rent is input-taxed, so the owner cannot claim a GST credit
+and the **GST-inclusive** amount is the deductible one. Recorded fee columns therefore hold the
+GST-inclusive figure as it appears on the statement, and the estimate fallback understates every
+fee by its GST — a further reason the actual is preferred wherever it exists.
+
 ### FR11 — Consistency across views
 
 `components/financial-position-view.tsx:257` routes through `resolveAgentFees`, so it cannot
@@ -212,13 +253,25 @@ surfaces disagreeing on the same number is the kind of inconsistency that costs 
   how statements are already entered — OWN10905's two $2,200 rent lines were recorded as a single
   $4,400 payment.
 - **Inbound-email auto-attachment** of statement PDFs to matched payments.
-- **Back-filling or auditing historical `rental_payments`** for gross-versus-net entry.
+~~**Back-filling or auditing historical `rental_payments`** for gross-versus-net entry.~~ **Moved
+into scope** as FR12 / Phase 1.5 — the cause was found in code, not in data entry.
+
+## Acceptance criteria added by the amendment
+
+11. The parser test fixture asserts `amount` is gross rent ($4,400 for OWN10905), not the disbursed
+    $760.20, and fails against the pre-amendment prompt.
+12. A newly ingested agent email writes gross to `amount`, the disbursed figure to `net_received`,
+    the fee buckets to their columns, and leaves `fees_confirmed_at` null.
+13. Every historical row whose `amount` came from the parser is either restated as gross or
+    explicitly reported as uncorrectable without its source document.
 
 ## Known risks
 
-- **Gross-versus-net in existing rows.** `amount` must mean gross rent. If any earlier row was
-  entered as the amount that reached the bank rather than the gross figure, it understates
-  assessable income. The reference row is correct at $4,400, but a one-off check of historical
-  rows is worth doing outside this track.
 - **Double-counting third-party costs.** Mitigated by FR8 and acceptance criterion 5, but this is
   the failure mode to guard in review.
+- **Historical correction depends on source documents.** Statements #2–#7 are needed to restate
+  those rows. Where a statement is unavailable the row stays flagged rather than being back-solved
+  from an assumed fee percentage, which would fabricate a figure.
+- **The parser change affects live ingestion.** Once repointed, an incoming agent email writes
+  different values into `amount`. Rows ingested between the parser fix and the historical
+  correction must not be double-corrected.

@@ -10,13 +10,13 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
 
 ## Phase 1: Schema & storage foundation  (Tier 1)
 
-- [ ] Task: Migration 063 — extend `rental_payments`
-  - [ ] Add the eleven nullable columns with `>= 0` checks, and `confidence` checked 0–1
-  - [ ] Header comment records: why the table was extended rather than replaced (rows already
+- [x] Task: Migration 063 — extend `rental_payments` `9b1953a`
+  - [x] Add the ten nullable columns with `>= 0` checks, and `confidence` checked 0–1
+  - [x] Header comment records: why the table was extended rather than replaced (rows already
         exist in production), that `amount` means GROSS rent, and that `other_outgoings` is
         reconciliation-only and must never become a deduction path
-  - [ ] Mark it a FILE-BEARING TABLE per `docs/account-deletion.md`
-- [ ] Task: Redefine the storage-object functions
+  - [x] Mark it a FILE-BEARING TABLE per `docs/account-deletion.md`
+- [ ] Task: Migration 064 — redefine the storage-object functions
   - [ ] `user_storage_objects()` and `property_storage_objects()` both enumerate
         `rental_payments.statement_path` in the `property-files` bucket
   - [ ] Ownership resolved through `properties.user_id`, never by upload-path prefix
@@ -25,10 +25,38 @@ phase closes with the Phase Completion Verification and Checkpointing Protocol.
         `Database["public"]["Tables"]` (Row / Insert / Update)
   - [ ] Do NOT run `supabase gen types`
 - [ ] Task: Verify schema and access
-  - [ ] `npm run db:reset` — confirm a clean replay from scratch
-  - [ ] Confirm migration 062's read/write policies cover the new columns (verify, don't assume)
+  - [x] `npm run db:reset` — confirm a clean replay from scratch (done in task 1)
+  - [x] Confirm migration 062's read/write policies cover the new columns (verify, don't assume)
   - [ ] Confirm a NON-OWNER is DENIED select and update; record the exact SQL and observed output
   - [ ] `npm run verify:deletion` — statement objects are removed with the property
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase 1.5: Correct the gross-versus-net defect  (Tier 1)
+
+Added mid-track. `lib/email-parser/parse-statement.ts:51` instructs the model to store the NET
+amount disbursed in `amount`, explicitly not the gross rent figure, while
+`lib/tax/rental-income.ts#actualRentForFy` reports that column as gross rent. This understates
+assessable income and contradicts the invariant migration 063 documents. Six of seven local rows
+are affected. Fixed here rather than deferred, because this track introduces `net_received`, which
+is where the parser's figure belongs.
+
+- [ ] Task: Write a failing regression test for the statement parser
+  - [ ] Fixture from the OWN10905 text asserts `amount` is GROSS rent ($4,400), not net ($760.20)
+  - [ ] Asserts `net_received` captures the disbursed figure
+  - [ ] Asserts the four fee buckets are populated from the statement
+  - [ ] Confirm the test FAILS against the current prompt before changing it
+- [ ] Task: Repoint `lib/email-parser/parse-statement.ts`
+  - [ ] `amount` extracts gross rent; the instruction at line 51 is inverted, with a comment
+        recording that reporting it as gross is what `actualRentForFy` requires
+  - [ ] `net_received` extracts "You Received" / "Withdrawal by EFT" / "Net to owner"
+  - [ ] Fee buckets and `other_outgoings` extracted while the prompt is being changed
+- [ ] Task: Verify the inbound-email handler persists the new fields
+  - [ ] `app/api/inbound-email/handler.ts` writes gross to `amount` and the rest to their columns
+  - [ ] Ingested rows are NOT auto-confirmed — `fees_confirmed_at` stays null for review
+- [ ] Task: Correct the affected historical rows
+  - [ ] Identify every `rental_payments` row whose `amount` came from the parser
+  - [ ] Restate `amount` as gross and populate `net_received` from the original statements
+  - [ ] Report any row that cannot be corrected without the source document rather than guessing
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Domain logic  (Tier 1 — tests first)
