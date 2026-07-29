@@ -55,6 +55,37 @@ export interface TaxReportData {
     div43_depreciation: number | null;
     div40_depreciation: number | null;
   } | null;
+  /**
+   * Stamp duty resolved server-side so the on-screen report and the PDF cannot
+   * disagree. `source` is carried through to the label, because a figure taken
+   * from the ROI calculator is a planning input rather than a recorded fact.
+   */
+  stampDuty: {
+    amount: number;
+    source: "property" | "roi_inputs" | null;
+  };
+  /**
+   * Where the gross rent figure came from, and the other source as a
+   * cross-check. An accrued figure is an estimate from tenancy terms, not a
+   * record of money received, and the report has to say which it is.
+   */
+  income: {
+    source: "actual" | "accrued" | null;
+    actual: number | null;
+    accrued: number | null;
+    materialDivergence: boolean;
+  };
+  /**
+   * The basis on which the summary figures were apportioned to the taxpayer's
+   * share. Stated in the report so an accountant can see whether a figure is
+   * 100% of the property or a part share, and whether either was assumed.
+   */
+  apportionment: {
+    ownershipPct: number;
+    deductibleDayPct: number;
+    assumedSoleOwnership: boolean;
+    assumedFullYear: boolean;
+  };
   repairs: TaxExpense[];
   initialRepairs: TaxExpense[];
   capitalImprovements: TaxExpense[];
@@ -63,11 +94,40 @@ export interface TaxReportData {
   totalRentalIncome: number | null;
   totalAgentFees: number;
   totalOperatingExpenses: number;
+  /** Confirmed loan interest only. Unconfirmed extractions are excluded. */
+  totalLoanInterest: number;
   netRentalIncome: number | null;
   generatedAt: string;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Names the origin of the stamp duty figure. A value carried over from the ROI
+ * calculator is a planning assumption, not a recorded cost, and the report has
+ * to say so rather than presenting the two identically.
+ */
+export function stampDutyLabelFor(
+  source: TaxReportData["stampDuty"]["source"],
+): string {
+  if (source === "property") return "Stamp duty";
+  if (source === "roi_inputs") return "Stamp duty (estimated, from ROI inputs)";
+  return "Stamp duty (not recorded)";
+}
+
+/**
+ * Names the origin of the gross rent figure. An accrued figure is computed
+ * from tenancy terms, not a record of money received; presenting the two
+ * identically would let an estimate pass for a fact.
+ */
+export function incomeLabelFor(
+  source: TaxReportData["income"]["source"],
+): string {
+  if (source === "actual") return "Gross rental income (recorded payments)";
+  if (source === "accrued")
+    return "Gross rental income (estimated from tenancy terms)";
+  return "Gross rental income";
+}
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -397,7 +457,8 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
   } = data;
 
   const purchasePrice = property.purchase_price ?? 0;
-  const stampDuty = roiInputs?.stamp_duty ?? 0;
+  const stampDuty = data.stampDuty.amount;
+  const stampDutyLabel = stampDutyLabelFor(data.stampDuty.source);
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
   const costBase =
@@ -420,15 +481,15 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
 
   return (
     <Document
-      title={`Tax Report — ${property.address}`}
+      title={`Tax Pack — ${property.address}`}
       author="Home Base"
-      subject="Investment Property Tax Report"
+      subject="Investment Property Tax Pack"
     >
       <Page size="A4" orientation="landscape" style={S.page}>
         {/* Header */}
         <View style={S.headerRow}>
           <View>
-            <Text style={S.reportTitle}>Investment Property Tax Report</Text>
+            <Text style={S.reportTitle}>Investment Property Tax Pack</Text>
             <Text style={S.reportSubtitle}>
               FY{financialYear} — {fullAddress}
             </Text>
@@ -466,7 +527,9 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
           {totalRentalIncome != null && (
             <>
               <View style={S.summaryRow}>
-                <Text style={S.summaryLabel}>Gross rental income</Text>
+                <Text style={S.summaryLabel}>
+                  {incomeLabelFor(data.income.source)}
+                </Text>
                 <Text style={S.summaryValue}>{fmt(totalRentalIncome)}</Text>
               </View>
               {totalAgentFees > 0 && (
@@ -475,6 +538,14 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
                     Less: Agent management fees
                   </Text>
                   <Text style={S.summaryValue}>({fmt(totalAgentFees)})</Text>
+                </View>
+              )}
+              {data.totalLoanInterest > 0 && (
+                <View style={S.summaryRow}>
+                  <Text style={S.summaryLabel}>Less: Loan interest</Text>
+                  <Text style={S.summaryValue}>
+                    ({fmt(data.totalLoanInterest)})
+                  </Text>
                 </View>
               )}
               {totalOperatingExpenses > 0 && (
@@ -541,7 +612,7 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
             <Text style={S.summaryValue}>{fmt(purchasePrice)}</Text>
           </View>
           <View style={S.summaryRow}>
-            <Text style={S.summaryLabel}>Stamp duty (from ROI inputs)</Text>
+            <Text style={S.summaryLabel}>{stampDutyLabel}</Text>
             <Text style={S.summaryValue}>{fmt(stampDuty)}</Text>
           </View>
           <View style={S.summaryRow}>

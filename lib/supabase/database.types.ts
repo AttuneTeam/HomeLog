@@ -196,6 +196,119 @@ export type UserStorageUsage = {
   updated_at: string;
 };
 
+/**
+ * Per-financial-year facts about a property. Keyed on
+ * (property_id, financial_year_end) so a past year keeps the ownership share
+ * and availability that applied at the time, rather than today's values.
+ *
+ * financial_year_end is the calendar year the FY ends in — 2026 for 2025–26,
+ * matching lib/tax/fy.ts.
+ */
+export type PropertyFyFacts = {
+  property_id: string;
+  financial_year_end: number;
+  /** The owner's share, 0 < pct <= 100. Apportions income and deductions. */
+  ownership_pct: number;
+  /**
+   * Resolved day count that apportionment reads. Derived from
+   * available_from/available_to when those are supplied.
+   * Apportions DEDUCTIONS only; income is not reduced by availability.
+   */
+  days_available_for_rent: number | null;
+  /**
+   * Date the property became genuinely available to rent — on the market,
+   * which can precede the first tenant. Null means available from the start
+   * of the financial year.
+   */
+  available_from: string | null;
+  /** Null means still available at the end of the financial year. */
+  available_to: string | null;
+  private_use_days: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * An annual loan statement and the interest it evidences.
+ *
+ * Rows are per statement rather than per property: a property can carry
+ * several loan accounts, each issuing its own statement, and the financial
+ * year's deduction is their sum.
+ *
+ * `interest_paid` is only claimable once `confirmed_at` is set — extraction
+ * proposes, a human confirms.
+ */
+export type LoanStatement = {
+  id: string;
+  property_id: string;
+  financial_year_end: number;
+  interest_paid: number | null;
+  lender: string | null;
+  /** Distinguishes multiple loan accounts on the same property. */
+  account_ref: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  /** Path into the `property-files` bucket. See docs/account-deletion.md. */
+  storage_path: string | null;
+  extracted: Record<string, unknown> | null;
+  confidence: number | null;
+  confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Quantity surveyor depreciation figures for one property in one financial
+ * year. The product records what the QS determined rather than deriving
+ * Division 40 itself — effective lives, prime cost versus diminishing value,
+ * and the post-9-May-2017 second-hand plant restriction are the surveyor's
+ * determination, not the product's.
+ *
+ * The same underlying report normally covers several years, so `storage_path`
+ * repeats across rows by design.
+ */
+export type DepreciationMethod = "diminishing_value" | "prime_cost";
+
+export type DepreciationReport = {
+  property_id: string;
+  financial_year_end: number;
+  div43_annual: number | null;
+  div40_annual: number | null;
+  /**
+   * Which column of the QS schedule div40_annual came from. Division 43 is
+   * identical under both methods, so it is unaffected.
+   */
+  depreciation_method: DepreciationMethod | null;
+  /** Path into the `property-files` bucket. See docs/account-deletion.md. */
+  storage_path: string | null;
+  qs_firm: string | null;
+  report_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * A rent payment actually received, ingested from an agent's emailed
+ * statement via the inbound webhook. Distinct from rental_periods, which holds
+ * the tenancy terms income can be accrued from.
+ */
+export type RentalPayment = {
+  id: string;
+  property_id: string;
+  rental_period_id: string | null;
+  payment_date: string;
+  amount: number;
+  period_start: string | null;
+  period_end: string | null;
+  /** Dedup key for the source email; null for manually entered payments. */
+  source_email_id: string | null;
+  raw_subject: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -456,8 +569,11 @@ export interface Database {
         ];
       };
       roi_calculator_inputs: {
+        // Keyed on property_id since migration 009_roi_per_property.sql, which
+        // dropped and recreated this table. There is no user_id column; access
+        // is scoped through property ownership by RLS.
         Row: {
-          user_id: string;
+          property_id: string;
           purchase_price: number | null;
           stamp_duty: number | null;
           legal_fees: number | null;
@@ -475,11 +591,9 @@ export interface Database {
           marginal_tax_rate: number | null;
           annual_household_income: number | null;
           updated_at: string;
-          property_id: string;
         };
         Insert: {
-          user_id: string;
-          property_id?: string;
+          property_id: string;
           purchase_price?: number | null;
           stamp_duty?: number | null;
           legal_fees?: number | null;
@@ -520,10 +634,10 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "roi_calculator_inputs_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: "roi_calculator_inputs_property_id_fkey";
+            columns: ["property_id"];
             isOneToOne: true;
-            referencedRelation: "profiles";
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];
@@ -544,6 +658,14 @@ export interface Database {
           abn: string | null;
           gst_amount: number | null;
           contractor_id: string | null;
+          /**
+           * Completion date of the capital works; starts the 40-year Div 43
+           * clock. Null where the expense is not capital works, or where the
+           * date has not been determined.
+           */
+          capital_works_start_date: string | null;
+          /** Annual Div 43 rate. Defaults to the residential standard, 2.5%. */
+          capital_works_rate_pct: number;
           created_at: string;
           updated_at: string;
         };
@@ -562,6 +684,8 @@ export interface Database {
           abn?: string | null;
           gst_amount?: number | null;
           contractor_id?: string | null;
+          capital_works_start_date?: string | null;
+          capital_works_rate_pct?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -579,6 +703,8 @@ export interface Database {
           abn?: string | null;
           gst_amount?: number | null;
           contractor_id?: string | null;
+          capital_works_start_date?: string | null;
+          capital_works_rate_pct?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -951,15 +1077,19 @@ export interface Database {
           property_id: string;
           loan_amount: number;
           loan_term_years: number;
+          /** Drawdown date; interest is only estimated from here onward. */
+          start_date: string | null;
           updated_at: string;
         };
         Insert: {
           property_id: string;
           loan_amount: number;
           loan_term_years: number;
+          start_date?: string | null;
           updated_at?: string;
         };
         Update: {
+          start_date?: string | null;
           loan_amount?: number;
           loan_term_years?: number;
           updated_at?: string;
@@ -1446,6 +1576,154 @@ export interface Database {
             columns: ["expense_id"];
             isOneToOne: true;
             referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      depreciation_reports: {
+        Row: DepreciationReport;
+        Insert: {
+          property_id: string;
+          financial_year_end: number;
+          div43_annual?: number | null;
+          div40_annual?: number | null;
+          depreciation_method?: DepreciationMethod | null;
+          storage_path?: string | null;
+          qs_firm?: string | null;
+          report_date?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          div43_annual?: number | null;
+          div40_annual?: number | null;
+          depreciation_method?: DepreciationMethod | null;
+          storage_path?: string | null;
+          qs_firm?: string | null;
+          report_date?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_reports_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loan_statements: {
+        Row: LoanStatement;
+        Insert: {
+          id?: string;
+          property_id: string;
+          financial_year_end: number;
+          interest_paid?: number | null;
+          lender?: string | null;
+          account_ref?: string | null;
+          period_start?: string | null;
+          period_end?: string | null;
+          storage_path?: string | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          interest_paid?: number | null;
+          lender?: string | null;
+          account_ref?: string | null;
+          period_start?: string | null;
+          period_end?: string | null;
+          storage_path?: string | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loan_statements_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rental_payments: {
+        Row: RentalPayment;
+        Insert: {
+          id?: string;
+          property_id: string;
+          rental_period_id?: string | null;
+          payment_date: string;
+          amount: number;
+          period_start?: string | null;
+          period_end?: string | null;
+          source_email_id?: string | null;
+          raw_subject?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          rental_period_id?: string | null;
+          payment_date?: string;
+          amount?: number;
+          period_start?: string | null;
+          period_end?: string | null;
+          notes?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rental_payments_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rental_payments_rental_period_id_fkey";
+            columns: ["rental_period_id"];
+            isOneToOne: false;
+            referencedRelation: "rental_periods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      property_fy_facts: {
+        Row: PropertyFyFacts;
+        Insert: {
+          property_id: string;
+          financial_year_end: number;
+          ownership_pct?: number;
+          days_available_for_rent?: number | null;
+          available_from?: string | null;
+          available_to?: string | null;
+          private_use_days?: number | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          ownership_pct?: number;
+          days_available_for_rent?: number | null;
+          available_from?: string | null;
+          available_to?: string | null;
+          private_use_days?: number | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "property_fy_facts_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];

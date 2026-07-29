@@ -1,0 +1,340 @@
+import { describe, expect, it } from "vitest";
+import {
+  currentFyEndYear,
+  daysAvailableInFy,
+  daysInFy,
+  formatFyLabel,
+  fyBounds,
+  mostRecentCompletedFyEndYear,
+  resolveFyEndYear,
+  selectableFyEndYears,
+  suggestAvailabilityFromTenancies,
+} from "@/lib/tax/fy";
+
+// All dates are constructed with Date.UTC so these assertions are independent
+// of the machine's timezone. The helper itself must also work in UTC: building
+// bounds with local-time Date constructors and then calling toISOString() shifts
+// the date backwards a day in any positive-offset zone (e.g. Australia), which
+// is precisely the defect this helper replaces.
+const utc = (y: number, m: number, d: number) => new Date(Date.UTC(y, m - 1, d));
+
+describe("fyBounds", () => {
+  it("returns the Australian default 1 July – 30 June year", () => {
+    expect(fyBounds(2026)).toEqual({
+      fyEndYear: 2026,
+      startDate: "2025-07-01",
+      endDate: "2026-06-30",
+      label: "2025–26",
+    });
+  });
+
+  it("handles an earlier financial year", () => {
+    const fy = fyBounds(2024);
+    expect(fy.startDate).toBe("2023-07-01");
+    expect(fy.endDate).toBe("2024-06-30");
+    expect(fy.label).toBe("2023–24");
+  });
+
+  it("ends on 29 February when the financial year closes in a leap year", () => {
+    // A 1 March start means the year ends on the last day of February.
+    const fy = fyBounds(2024, 3, 1);
+    expect(fy.startDate).toBe("2023-03-01");
+    expect(fy.endDate).toBe("2024-02-29");
+  });
+
+  it("ends on 28 February in a non-leap year", () => {
+    const fy = fyBounds(2023, 3, 1);
+    expect(fy.startDate).toBe("2022-03-01");
+    expect(fy.endDate).toBe("2023-02-28");
+  });
+
+  it("treats a 1 January start as a single calendar year", () => {
+    const fy = fyBounds(2025, 1, 1);
+    expect(fy.startDate).toBe("2025-01-01");
+    expect(fy.endDate).toBe("2025-12-31");
+    expect(fy.label).toBe("2025");
+  });
+
+  it("produces bounds that are inclusive and exactly one year apart", () => {
+    const fy = fyBounds(2026);
+    // Inclusive bounds: the day after endDate is the next year's startDate.
+    expect(fyBounds(2027).startDate).toBe("2026-07-01");
+    expect(fy.endDate).toBe("2026-06-30");
+  });
+});
+
+describe("currentFyEndYear", () => {
+  it("treats 30 June as still inside the closing financial year", () => {
+    expect(currentFyEndYear(utc(2026, 6, 30))).toBe(2026);
+  });
+
+  it("rolls over on 1 July", () => {
+    expect(currentFyEndYear(utc(2026, 7, 1))).toBe(2027);
+  });
+
+  it("reports the current year for a mid-year date", () => {
+    expect(currentFyEndYear(utc(2026, 5, 15))).toBe(2026);
+  });
+
+  it("honours a custom financial year start", () => {
+    // With a 1 April start, 31 March 2026 is still the year ending 2026.
+    expect(currentFyEndYear(utc(2026, 3, 31), 4, 1)).toBe(2026);
+    expect(currentFyEndYear(utc(2026, 4, 1), 4, 1)).toBe(2027);
+  });
+});
+
+describe("mostRecentCompletedFyEndYear", () => {
+  it("returns the year just ended when today is in the new financial year", () => {
+    // 29 July 2026: FY2025–26 closed on 30 June 2026 and is the year a
+    // 2026 return is prepared for. Deriving the FY from "today" instead
+    // returns 2026–27, which is the bug this helper exists to prevent.
+    expect(mostRecentCompletedFyEndYear(utc(2026, 7, 29))).toBe(2026);
+  });
+
+  it("does not count the year that ends today", () => {
+    // On 30 June 2026 the financial year has not finished yet.
+    expect(mostRecentCompletedFyEndYear(utc(2026, 6, 30))).toBe(2025);
+  });
+
+  it("counts it from the following day", () => {
+    expect(mostRecentCompletedFyEndYear(utc(2026, 7, 1))).toBe(2026);
+  });
+
+  it("honours a custom financial year start", () => {
+    expect(mostRecentCompletedFyEndYear(utc(2026, 4, 1), 4, 1)).toBe(2026);
+    expect(mostRecentCompletedFyEndYear(utc(2026, 3, 31), 4, 1)).toBe(2025);
+  });
+});
+
+describe("formatFyLabel", () => {
+  it("renders a spanning year with an en dash", () => {
+    expect(formatFyLabel(2026)).toBe("2025–26");
+  });
+
+  it("pads the second half of the label", () => {
+    expect(formatFyLabel(2030)).toBe("2029–30");
+    expect(formatFyLabel(2001)).toBe("2000–01");
+  });
+
+  it("renders a calendar financial year as a single year", () => {
+    expect(formatFyLabel(2025, 1, 1)).toBe("2025");
+  });
+});
+
+describe("selectableFyEndYears", () => {
+  it("lists completed years newest first", () => {
+    expect(selectableFyEndYears(utc(2026, 7, 29), 4)).toEqual([
+      2026, 2025, 2024, 2023,
+    ]);
+  });
+
+  it("excludes the in-progress year", () => {
+    const years = selectableFyEndYears(utc(2026, 6, 30), 3);
+    expect(years).toEqual([2025, 2024, 2023]);
+    expect(years).not.toContain(2026);
+  });
+
+  it("returns an empty list when asked for none", () => {
+    expect(selectableFyEndYears(utc(2026, 7, 29), 0)).toEqual([]);
+  });
+});
+
+describe("daysInFy", () => {
+  it("counts an ordinary Australian financial year as 365 days", () => {
+    expect(daysInFy(2026)).toBe(365);
+  });
+
+  it("counts 366 when the year contains 29 February", () => {
+    // 1 Jul 2023 – 30 Jun 2024 spans February 2024, a leap month.
+    expect(daysInFy(2024)).toBe(366);
+  });
+
+  it("counts a calendar financial year correctly", () => {
+    expect(daysInFy(2025, 1, 1)).toBe(365);
+    expect(daysInFy(2024, 1, 1)).toBe(366);
+  });
+});
+
+describe("daysAvailableInFy", () => {
+  it("counts an availability date through to year end, inclusive", () => {
+    // Available from 22 Nov 2025 in FY 2025–26: 9 days of November, then
+    // December through June.
+    expect(daysAvailableInFy(2026, "2025-11-22", null)).toBe(221);
+  });
+
+  it("treats a missing start as available from the first day of the year", () => {
+    expect(daysAvailableInFy(2026, null, null)).toBe(365);
+  });
+
+  it("clamps a start before the year to the year's first day", () => {
+    // Owned and available for years — the count is the whole year, not the
+    // span since purchase.
+    expect(daysAvailableInFy(2026, "2019-03-01", null)).toBe(365);
+  });
+
+  it("clamps an end after the year to the year's last day", () => {
+    expect(daysAvailableInFy(2026, "2025-07-01", "2030-01-01")).toBe(365);
+  });
+
+  it("counts a closed range inside the year", () => {
+    // 1 Sep 2025 to 30 Sep 2025 inclusive.
+    expect(daysAvailableInFy(2026, "2025-09-01", "2025-09-30")).toBe(30);
+  });
+
+  it("counts a single day when start and end are equal", () => {
+    expect(daysAvailableInFy(2026, "2025-09-01", "2025-09-01")).toBe(1);
+  });
+
+  it("returns 0 when availability starts after the year ends", () => {
+    expect(daysAvailableInFy(2026, "2026-08-01", null)).toBe(0);
+  });
+
+  it("returns 0 when availability ended before the year began", () => {
+    expect(daysAvailableInFy(2026, "2024-01-01", "2025-06-30")).toBe(0);
+  });
+
+  it("returns 0 when the range is inverted", () => {
+    expect(daysAvailableInFy(2026, "2026-01-01", "2025-09-01")).toBe(0);
+  });
+
+  it("includes 29 February in a leap financial year", () => {
+    // FY 2023–24 spans February 2024.
+    expect(daysAvailableInFy(2024, "2024-02-01", "2024-02-29")).toBe(29);
+  });
+
+  it("never exceeds the days in the year", () => {
+    expect(daysAvailableInFy(2026, "1990-01-01", "2090-01-01")).toBe(
+      daysInFy(2026),
+    );
+  });
+});
+
+describe("suggestAvailabilityFromTenancies", () => {
+  it("returns null when there are no tenancies", () => {
+    expect(suggestAvailabilityFromTenancies([], 2026)).toBeNull();
+  });
+
+  it("returns null when no tenancy overlaps the year", () => {
+    const periods = [{ start_date: "2020-01-01", end_date: "2020-12-31" }];
+    expect(suggestAvailabilityFromTenancies(periods, 2026)).toBeNull();
+  });
+
+  it("spans a single tenancy", () => {
+    const periods = [{ start_date: "2025-09-01", end_date: "2026-03-31" }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s).toMatchObject({
+      from: "2025-09-01",
+      to: "2026-03-31",
+      bridgedDays: 0,
+      tenancyCount: 1,
+    });
+    expect(s?.days).toBe(212);
+  });
+
+  it("clamps a tenancy that began before the year", () => {
+    const periods = [{ start_date: "2023-01-01", end_date: "2025-12-31" }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-07-01");
+    expect(s?.to).toBe("2025-12-31");
+  });
+
+  it("treats an open-ended tenancy as running to year end", () => {
+    const periods = [{ start_date: "2025-09-01", end_date: null }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.to).toBe("2026-06-30");
+  });
+
+  it("bridges a vacancy between two tenancies and reports the gap", () => {
+    // Tenant A to 30 Sep, tenant B from 1 Nov: October is vacant.
+    const periods = [
+      { start_date: "2025-07-01", end_date: "2025-09-30" },
+      { start_date: "2025-11-01", end_date: "2026-06-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-07-01");
+    expect(s?.to).toBe("2026-06-30");
+    expect(s?.days).toBe(365);
+    expect(s?.bridgedDays).toBe(31); // all of October
+    expect(s?.tenancyCount).toBe(2);
+  });
+
+  it("does not double-count overlapping tenancies", () => {
+    const periods = [
+      { start_date: "2025-07-01", end_date: "2025-12-31" },
+      { start_date: "2025-10-01", end_date: "2026-06-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.days).toBe(365);
+    expect(s?.bridgedDays).toBe(0);
+  });
+
+  it("ignores tenancies outside the year when others overlap", () => {
+    const periods = [
+      { start_date: "2019-01-01", end_date: "2019-06-30" },
+      { start_date: "2025-09-01", end_date: "2025-09-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-09-01");
+    expect(s?.to).toBe("2025-09-30");
+    expect(s?.tenancyCount).toBe(1);
+  });
+
+  it("agrees with daysAvailableInFy for the span it returns", () => {
+    const periods = [
+      { start_date: "2025-11-22", end_date: null },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.days).toBe(daysAvailableInFy(2026, s!.from, s!.to));
+    expect(s?.days).toBe(221);
+  });
+});
+
+describe("resolveFyEndYear", () => {
+  const available = [2026, 2025, 2024, 2023];
+
+  it("accepts a year that is on offer", () => {
+    expect(resolveFyEndYear("2024", available)).toBe(2024);
+    expect(resolveFyEndYear(2025, available)).toBe(2025);
+  });
+
+  it("defaults to the newest year when none is requested", () => {
+    expect(resolveFyEndYear(undefined, available)).toBe(2026);
+    expect(resolveFyEndYear(null, available)).toBe(2026);
+  });
+
+  it("falls back rather than erroring on malformed input", () => {
+    expect(resolveFyEndYear("not-a-year", available)).toBe(2026);
+    expect(resolveFyEndYear("2024.5", available)).toBe(2026);
+    expect(resolveFyEndYear("", available)).toBe(2026);
+  });
+
+  it("rejects a year outside the offered range", () => {
+    // A future year would otherwise produce a partial or empty report.
+    expect(resolveFyEndYear("2099", available)).toBe(2026);
+    expect(resolveFyEndYear("1999", available)).toBe(2026);
+  });
+
+  it("returns null when nothing is available", () => {
+    expect(resolveFyEndYear("2026", [])).toBeNull();
+  });
+});
+
+describe("selecting FY 2025–26", () => {
+  // The acceptance criterion for this phase: in July 2026, the report must be
+  // able to produce the year a 2026 return covers.
+  it("is the default on 29 July 2026 and spans 1 Jul 2025 – 30 Jun 2026", () => {
+    const available = selectableFyEndYears(utc(2026, 7, 29), 6);
+    const selected = resolveFyEndYear(undefined, available);
+    expect(selected).toBe(2026);
+
+    const fy = fyBounds(selected as number);
+    expect(fy.startDate).toBe("2025-07-01");
+    expect(fy.endDate).toBe("2026-06-30");
+    expect(fy.label).toBe("2025–26");
+  });
+
+  it("can still be reached explicitly from a later year", () => {
+    const available = selectableFyEndYears(utc(2028, 9, 1), 6);
+    expect(resolveFyEndYear("2026", available)).toBe(2026);
+  });
+});

@@ -341,7 +341,9 @@ export function TaxReport({
   const [xlsxDownloading, setXlsxDownloading] = useState(false);
 
   const purchasePrice = property.purchase_price ?? 0;
-  const stampDuty = property.stamp_duty ?? 0;
+  // Resolved server-side. Previously this read property.stamp_duty while the
+  // PDF read roiInputs.stamp_duty, so the two could disagree on the cost base.
+  const stampDuty = data.stampDuty.amount;
   const initialRepairTotal = sum(initialRepairs);
   const capitalTotal = sum(capitalImprovements);
   const costBase =
@@ -547,7 +549,7 @@ export function TaxReport({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tax-report-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.pdf`;
+      a.download = `tax-pack-${property.address.replace(/\s+/g, "-").toLowerCase()}-${financialYear.replace("–", "-")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -561,7 +563,7 @@ export function TaxReport({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            Tax Report{" "}
+            Tax pack{" "}
             <span className="text-muted-foreground font-normal text-lg">
               FY{financialYear}
             </span>
@@ -647,12 +649,23 @@ export function TaxReport({
               <SummaryRow
                 label="Gross rental income"
                 value={formatCurrency(totalRentalIncome)}
-                sub="(from rental periods)"
+                sub={
+                  data.income.source === "actual"
+                    ? "(from recorded payments)"
+                    : "(estimated from tenancy terms)"
+                }
               />
               {totalAgentFees > 0 && (
                 <SummaryRow
                   label="Less: Agent management fees"
                   value={`(${formatCurrency(totalAgentFees)})`}
+                />
+              )}
+              {data.totalLoanInterest > 0 && (
+                <SummaryRow
+                  label="Less: Loan interest"
+                  value={`(${formatCurrency(data.totalLoanInterest)})`}
+                  sub="(confirmed statements only)"
                 />
               )}
               {totalOperatingExpenses > 0 && (
@@ -667,6 +680,49 @@ export function TaxReport({
                   value={formatCurrency(netRentalIncome)}
                   bold
                 />
+              )}
+              {(data.apportionment.ownershipPct < 100 ||
+                data.apportionment.deductibleDayPct < 100) && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Figures above are your share:{" "}
+                  <strong>
+                    {data.apportionment.ownershipPct.toFixed(0)}% ownership
+                  </strong>
+                  {data.apportionment.assumedSoleOwnership && " (assumed)"}
+                  {data.apportionment.deductibleDayPct < 100 && (
+                    <>
+                      , deductions further apportioned to{" "}
+                      <strong>
+                        {data.apportionment.deductibleDayPct.toFixed(0)}% of the
+                        year
+                      </strong>{" "}
+                      available for rent
+                      {data.apportionment.assumedFullYear && " (assumed)"}
+                    </>
+                  )}
+                  . Income is apportioned by ownership only. Expense tables
+                  below show full amounts before apportionment.
+                </p>
+              )}
+              {data.income.materialDivergence && (
+                <div className="mt-3 flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p>
+                    Recorded payments total{" "}
+                    <strong>{formatCurrency(data.income.actual!)}</strong>, but
+                    the tenancy terms accrue{" "}
+                    <strong>{formatCurrency(data.income.accrued!)}</strong> — a
+                    difference of{" "}
+                    <strong>
+                      {formatCurrency(
+                        Math.abs(data.income.actual! - data.income.accrued!),
+                      )}
+                    </strong>
+                    . This usually means some payments are missing rather than
+                    that either figure is wrong. The reported income uses the
+                    recorded payments; check them before lodging.
+                  </p>
+                </div>
               )}
             </>
           )}
