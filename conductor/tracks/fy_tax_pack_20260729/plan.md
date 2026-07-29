@@ -43,7 +43,7 @@ financial year.*
 
 ---
 
-## Phase 2 — Schema and per-FY property facts
+## Phase 2 — Schema and per-FY property facts [checkpoint: ca78938]
 
 *Goal: the data model can express ownership, availability, interest and depreciation per year.*
 
@@ -98,7 +98,7 @@ financial year.*
   - [x] Offer the suggestion in the panel with one-click accept, labelled as derived from tenancies and disclosing bridged vacancy
   - [x] Verify against tenancies in a local database
 
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `ca78938`
 
 ---
 
