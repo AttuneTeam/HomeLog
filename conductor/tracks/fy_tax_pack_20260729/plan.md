@@ -54,10 +54,10 @@ financial year.*
   - [x] Verify a non-owner is **denied** access, not merely that the owner is allowed
   - [x] Confirm `npm run db:reset` replays cleanly
 
-- [ ] Task: Add `loan_statements` (migration 055)
-  - [ ] Write the migration: per loan per FY — `financial_year_end`, `interest_paid`, `lender`, `account_ref`, `period_start`, `period_end`, `storage_path`, `extracted` JSONB, `confidence`, `confirmed_at`
-  - [ ] Add the RLS policy and hand-add the row type
-  - [ ] Verify non-owner denial and a clean `db:reset`
+- [x] Task: Add `loan_statements` (migration 055) `f266f47`
+  - [x] Write the migration: per loan per FY — `financial_year_end`, `interest_paid`, `lender`, `account_ref`, `period_start`, `period_end`, `storage_path`, `extracted` JSONB, `confidence`, `confirmed_at`
+  - [x] Add the RLS policy and hand-add the row type
+  - [x] Verify non-owner denial and a clean `db:reset`
 
 - [ ] Task: Add `depreciation_reports` (migration 056)
   - [ ] Write the migration: per property per FY — `div43_annual`, `div40_annual`, `storage_path`, `qs_firm`, `report_date`
