@@ -83,9 +83,14 @@ prevent.
 
 - Authenticate, then **store the document before extracting** — a failed extraction must not lose
   the upload.
-- Pass the file to Claude via a new `lib/ai/extract-rental-statement.ts`, returning gross rent,
-  the four fee buckets, other outgoings, net received, agent name, statement ref, period and a
-  confidence score.
+- Pass the file to the extraction model via a new `lib/ai/extract-rental-statement.ts`, returning
+  gross rent, the four fee buckets, other outgoings, net received, agent name, statement ref,
+  period and a confidence score.
+
+  > **Amended during implementation.** This originally said "Claude". It uses `extractionModel`
+  > from `lib/ai/openai-client.ts`, because CLAUDE.md assigns extraction to `openai-client` and
+  > classification/vision to `anthropic-client`, and `extract-loan-statement.ts` — the module this
+  > mirrors — does the same. Model wiring stays centralised rather than overridden at a call site.
 - No server-side `pdf-parse`. The comment in the loan-statements route records why that path was
   abandoned: `pdf-parse` lists a `browser` condition first in its exports map, so Vercel's
   bundler resolved a build referencing `DOMMatrix`, and the route returned 500 before any handler

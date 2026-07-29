@@ -14,6 +14,7 @@
     "verify:deletion": "tsx scripts/verify-account-deletion.ts",
     "verify:rent-ingest": "tsx scripts/verify-rental-statement-ingest.ts",
     "verify:rent-extract": "tsx scripts/verify-rental-statement-extract.ts",
+    "verify:rent-route": "tsx scripts/verify-rental-statement-route.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
