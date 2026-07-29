@@ -1,0 +1,59 @@
+Tasks: "Write failing tests for the statement reconciliation helper" AND
+       "Implement the reconciliation helper to green" (Phase 2, Tier 1)
+
+WHAT CHANGED
+  lib/tax/statement-reconciliation.ts (new) — RECONCILIATION_TOLERANCE,
+    reconcileStatement
+  tests/lib/tax/statement-reconciliation.test.ts (new) — 10 tests
+
+THE IDENTITY
+  (gross rent + other income) − agent fees − third-party outgoings = disbursed
+
+A statement that ties is evidence: every figure has been read and the result
+matches what reached the bank. A statement that does not tie usually means a
+line was MISSED rather than that any single figure is wrong, which is why this
+reports the gap instead of correcting anything.
+
+DESIGN DECISIONS
+- ADVISORY ONLY, never blocks a save. A balance brought forward from the
+  previous statement legitimately breaks the identity; treating that as user
+  error would train people to ignore the warning, which is worse than having no
+  warning. There is an explicit test that it reports rather than throws.
+- `applicable: false` is distinct from `ties: false`. No disbursed figure, or no
+  statement detail at all (a bare email-ingested row), is UNKNOWN — not broken.
+  Reporting unknown as a failure is the fastest way to make a check worthless.
+- $1.00 tolerance. Fees are GST-inclusive and rounded per line so a cent or two
+  of drift is normal; a dollar absorbs that while still failing on the smallest
+  real fee line observed, a $4.40 bank charge. Both directions are tested.
+- Other income is money IN alongside rent, NOT a reduction in fees. There is a
+  test asserting totalMoneyIn is 4406.80 while totalFees stays 121.00, because
+  netting it against fees would produce the right total for the wrong reason.
+- `difference` is signed (computedNet − net_received) so a caller can say which
+  way the statement is out, not merely that it is.
+
+VERIFICATION PERFORMED
+  RED — CI=true npm test before implementing:
+    FAIL tests/lib/tax/statement-reconciliation.test.ts
+    Error: Cannot find package '@/lib/tax/statement-reconciliation'
+    → 1 failed suite | 14 passed
+
+  GREEN — CI=true npm test:
+    → 15 files, 235 tests passed (was 225; 10 added)
+
+  Real figures asserted:
+    Statement #1: 4400 − 1493.80 − 2146 = 760.20, ties
+    Statement #7: 2200 − 125.40 = 2074.60, ties (absent components as zero)
+    December:     (4400 + 6.80) − 121 − 266.86 = 4018.94, ties
+                  WITHOUT other_income the difference is exactly −6.80 and it
+                  does NOT tie — the case that justifies migration 065
+    Tolerance:    +$0.70 passes, +$60.20 fails
+    Not applicable: net_received null; bare row with no detail
+    Edge:         zero amount does not throw
+
+  npm run build → ✓ Compiled successfully
+
+VERIFICATION DEBT
+None. Pure module, no I/O, tests written first.
+
+Not yet called from anywhere — the UI indicator is Phase 4 and the pack
+disclosure is Phase 5.
