@@ -123,11 +123,11 @@ financial year.*
   - [x] Wire model access through `lib/ai/anthropic-client.ts` and `lib/ai/openai-client.ts`, not at the call site
   - [x] Confirm the schema rejects malformed extractions rather than coercing them
 
-- [~] Task: Loan statement review UI
-  - [ ] Present the extracted figures for confirmation with the confidence score visible and every field editable, per the staged-review pattern
-  - [ ] Persist on confirm; retain the file as evidence
-  - [ ] Show the computed rate-schedule estimate where no statement exists, labelled an estimate and excluded from claimed totals
-  - [ ] Verify with a real statement PDF and with a deliberately unreadable file
+- [x] Task: Loan statement review UI `4697152`
+  - [x] Present the extracted figures for confirmation with the confidence score visible and every field editable, per the staged-review pattern
+  - [x] Persist on confirm; retain the file as evidence
+  - [x] Show the computed rate-schedule estimate where no statement exists, labelled an estimate and excluded from claimed totals
+  - [~] Verify with a real statement PDF and with a deliberately unreadable file *(deferred to the phase checkpoint — needs documents to test with)*
 
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
