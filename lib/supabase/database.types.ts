@@ -619,6 +619,14 @@ export interface Database {
           abn: string | null;
           gst_amount: number | null;
           contractor_id: string | null;
+          /**
+           * Completion date of the capital works; starts the 40-year Div 43
+           * clock. Null where the expense is not capital works, or where the
+           * date has not been determined.
+           */
+          capital_works_start_date: string | null;
+          /** Annual Div 43 rate. Defaults to the residential standard, 2.5%. */
+          capital_works_rate_pct: number;
           created_at: string;
           updated_at: string;
         };
@@ -637,6 +645,8 @@ export interface Database {
           abn?: string | null;
           gst_amount?: number | null;
           contractor_id?: string | null;
+          capital_works_start_date?: string | null;
+          capital_works_rate_pct?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -654,6 +664,8 @@ export interface Database {
           abn?: string | null;
           gst_amount?: number | null;
           contractor_id?: string | null;
+          capital_works_start_date?: string | null;
+          capital_works_rate_pct?: number;
           updated_at?: string;
         };
         Relationships: [
