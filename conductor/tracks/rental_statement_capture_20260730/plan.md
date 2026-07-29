@@ -84,29 +84,31 @@ is where the parser's figure belongs.
 
 ## Phase 2: Domain logic  (Tier 1 — tests first)
 
-- [ ] Task: Write failing tests for `lib/tax/agent-fees.ts`
-  - [ ] Confirmed statement fees resolve as `source: "actual"`
-  - [ ] No statements in the year → `management_fee_pct` estimate, `source: "estimated"`
-  - [ ] UNCONFIRMED fees are excluded; the estimate is returned instead
-  - [ ] Actual and estimate are NEVER summed (guards the $242 double-count)
-  - [ ] Payments outside the financial year are excluded
-  - [ ] Financial-year boundary respects a non-July FY start from the profile
-  - [ ] `sundry_fees` is returned separately from the commission fees
-  - [ ] OWN10905 fixture resolves to $1,485.00 commission and $8.80 sundry
-- [ ] Task: Implement `resolveAgentFees` to green, mirroring `resolveRentalIncome`'s shape
-- [ ] Task: Write failing tests for the statement reconciliation helper
-  - [ ] OWN10905 ties: `4400 − 1493.80 − 2146 = 760.20`
-  - [ ] December ties ONLY with other income: `(4400 + 6.80) − 387.86 = 4018.94`; without it the
+- [x] Task: Write failing tests for `lib/tax/agent-fees.ts` `44a8873`
+  - [x] Confirmed statement fees resolve as `source: "actual"`
+  - [x] No statements in the year → `management_fee_pct` estimate, `source: "estimated"`
+  - [x] UNCONFIRMED fees are excluded; the estimate is returned instead
+  - [x] Actual and estimate are NEVER summed (guards the $242 double-count)
+  - [x] Payments outside the financial year are excluded
+  - [x] Financial-year boundary respects a non-July FY start from the profile
+  - [x] `sundry_fees` is returned separately from the commission fees
+  - [x] OWN10905 fixture resolves to $1,485.00 commission and $8.80 sundry
+- [x] Task: Implement `resolveAgentFees` to green, mirroring `resolveRentalIncome`'s shape `44a8873`
+  - [x] Added beyond plan: `partial` / `paymentsInYear` / `paymentsWithConfirmedFees`, because a
+        partial actual can be SMALLER than the estimate and must be disclosed, not hidden
+- [x] Task: Write failing tests for the statement reconciliation helper `8b477a3`
+  - [x] OWN10905 ties: `4400 − 1493.80 − 2146 = 760.20`
+  - [x] December ties ONLY with other income: `(4400 + 6.80) − 387.86 = 4018.94`; without it the
         identity is off by exactly $6.80 and would flag a correct statement (FR14)
-  - [ ] A discrepancy within the $1.00 tolerance passes; beyond it fails
-  - [ ] Absent `net_received` returns not-applicable, not a failure
-  - [ ] A brought-forward balance mismatch reports, never throws
-- [ ] Task: Implement the reconciliation helper to green
-- [ ] Task: Add `agentSundries` and `otherIncome` to `RentalScheduleInput`
-  - [ ] Test: commission feeds `agent_fees`, sundries feed the existing `sundry` line
-  - [ ] Test: other income surfaces as "Other rental-related income" and is NOT folded into gross
+  - [x] A discrepancy within the $1.00 tolerance passes; beyond it fails
+  - [x] Absent `net_received` returns not-applicable, not a failure
+  - [x] A brought-forward balance mismatch reports, never throws
+- [x] Task: Implement the reconciliation helper to green `8b477a3`
+- [x] Task: Add `agentSundries` and `otherIncome` to `RentalScheduleInput` `a14a2e3`
+  - [x] Test: commission feeds `agent_fees`, sundries feed the existing `sundry` line
+  - [x] Test: other income surfaces as "Other rental-related income" and is NOT folded into gross
         rent — folding it would break the accrual cross-check against `weekly_rent × weeks` (FR14)
-  - [ ] Test: existing `rental-schedule` and `portfolio` tests still pass unchanged
+  - [x] Test: existing `rental-schedule` and `portfolio` tests still pass unchanged
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Extraction & upload  (Tier 2)
