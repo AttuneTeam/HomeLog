@@ -661,6 +661,13 @@ export function TaxReport({
                   value={`(${formatCurrency(totalAgentFees)})`}
                 />
               )}
+              {data.totalLoanInterest > 0 && (
+                <SummaryRow
+                  label="Less: Loan interest"
+                  value={`(${formatCurrency(data.totalLoanInterest)})`}
+                  sub="(confirmed statements only)"
+                />
+              )}
               {totalOperatingExpenses > 0 && (
                 <SummaryRow
                   label="Less: Operating expenses"

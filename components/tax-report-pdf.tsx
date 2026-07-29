@@ -94,6 +94,8 @@ export interface TaxReportData {
   totalRentalIncome: number | null;
   totalAgentFees: number;
   totalOperatingExpenses: number;
+  /** Confirmed loan interest only. Unconfirmed extractions are excluded. */
+  totalLoanInterest: number;
   netRentalIncome: number | null;
   generatedAt: string;
 }
@@ -536,6 +538,14 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
                     Less: Agent management fees
                   </Text>
                   <Text style={S.summaryValue}>({fmt(totalAgentFees)})</Text>
+                </View>
+              )}
+              {data.totalLoanInterest > 0 && (
+                <View style={S.summaryRow}>
+                  <Text style={S.summaryLabel}>Less: Loan interest</Text>
+                  <Text style={S.summaryValue}>
+                    ({fmt(data.totalLoanInterest)})
+                  </Text>
                 </View>
               )}
               {totalOperatingExpenses > 0 && (

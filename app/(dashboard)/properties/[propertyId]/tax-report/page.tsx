@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { FinancialYearSelect } from "@/components/financial-year-select";
 import { PropertyFyFactsPanel } from "@/components/property-fy-facts-panel";
+import { LoanStatementsPanel } from "@/components/loan-statements-panel";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
@@ -148,6 +149,46 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     fyStartDay,
   );
 
+  // Loan statements for this year, plus the loan terms behind the estimate
+  // shown when none has been uploaded.
+  const [{ data: loanStatements }, { data: propertyLoan }, { data: interestRates }] =
+    await Promise.all([
+      supabase
+        .from("loan_statements")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("financial_year_end", selectedFyEndYear)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("property_loans")
+        .select("loan_amount")
+        .eq("property_id", propertyId)
+        .maybeSingle(),
+      supabase
+        .from("loan_interest_rates")
+        .select("rate, effective_date")
+        .eq("property_id", propertyId)
+        .order("effective_date", { ascending: true }),
+    ]);
+
+  // Crude estimate: balance x the rate in force at the start of the year. It
+  // ignores amortisation and offset balances, which is precisely why it is
+  // shown as an estimate and excluded from claimed totals.
+  const rateAtFyStart =
+    interestRates?.filter((r) => r.effective_date <= fyStartStr).pop() ??
+    interestRates?.[0] ??
+    null;
+  const estimatedInterest =
+    propertyLoan?.loan_amount != null && rateAtFyStart != null
+      ? Number(propertyLoan.loan_amount) * (Number(rateAtFyStart.rate) / 100)
+      : null;
+
+  // Only confirmed statements are claimable. An unconfirmed extraction is a
+  // model's proposal, not evidence.
+  const confirmedInterest = (loanStatements ?? [])
+    .filter((s) => s.confirmed_at != null && s.interest_paid != null)
+    .reduce((sum, s) => sum + Number(s.interest_paid), 0);
+
   // Fetch rental operating expenses and recorded payments now that FY dates
   // are known. Payments are the actuals a return is built on; the tenancy
   // accrual below is the cross-check.
@@ -220,10 +261,17 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     grossOperatingExpenses,
     apportionment,
   );
+  const apportionedInterest = apportionDeduction(
+    confirmedInterest,
+    apportionment,
+  );
 
   const netRentalIncome =
     apportionedIncome != null
-      ? apportionedIncome - apportionedAgentFees - apportionedOperatingExpenses
+      ? apportionedIncome -
+        apportionedAgentFees -
+        apportionedOperatingExpenses -
+        apportionedInterest
       : null;
 
   // Resolve effective classification for each expense and generate signed URLs
@@ -323,6 +371,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     totalRentalIncome: apportionedIncome,
     totalAgentFees: apportionedAgentFees,
     totalOperatingExpenses: apportionedOperatingExpenses,
+    totalLoanInterest: apportionedInterest,
     netRentalIncome,
     apportionment: {
       ownershipPct: apportionment.ownershipFraction * 100,
@@ -376,6 +425,16 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           fyStartMonth={fyStartMonth}
           fyStartDay={fyStartDay}
           suggestion={availabilitySuggestion}
+        />
+      </div>
+
+      <div className="mb-6">
+        <LoanStatementsPanel
+          propertyId={propertyId}
+          financialYearEnd={selectedFyEndYear}
+          financialYearLabel={financialYear}
+          statements={loanStatements ?? []}
+          estimatedInterest={estimatedInterest}
         />
       </div>
 
