@@ -1,0 +1,91 @@
+Task: Correct the affected historical rows (Phase 1.5, Tier 1)
+
+WHAT CHANGED
+Added scripts/fix-rental-payment-gross-net.ts — a dry-run-by-default, idempotent
+correction for rows ingested before the parser was repointed. Applied against
+the local database.
+
+Files: scripts/fix-rental-payment-gross-net.ts (new)
+
+SOURCE DOCUMENTS FOUND
+  ~/Downloads/Statement #1 - OWN10905 .pdf
+  ~/Desktop/Statement #7 - OWN10905 .pdf
+  ~/Desktop/OWN10905 - Financial Summary 30 Jun 2026.pdf   (FY2026, authoritative)
+Statements #2–#6 were not located anywhere on the filesystem.
+
+THE PROOF THAT `amount` HELD NET
+Statement #7, 29 May 2026: Money In $2,200.00 / Money Out $125.40 /
+You Received $2,074.60. The database held exactly $2,074.60. That is
+documentary confirmation, not inference — the earlier evidence was the parser
+prompt plus amounts that were not multiples of the $1,100 weekly rent.
+
+CORRECTED (source document in hand, both reconcile exactly)
+  2025-11-28  Statement #1  amount $4,400.00 already gross (owner had fixed it
+              by hand). Fee breakdown added: management $242.00, letting
+              $1,210.00, lease $33.00, sundry $8.80, other outgoings $2,146.00
+              (Supa Blinds), net received $760.20.
+              4400 − 1493.80 − 2146 = 760.20 ✓
+  2026-05-29  Statement #7  amount $2,074.60 → $2,200.00. Management $121.00,
+              sundry $4.40, net received $2,074.60.
+              2200 − 125.40 − 0 = 2074.60 ✓
+Both have fees_confirmed_at set: a human transcribed them from the source
+document, which is exactly what the confirmation gate means.
+
+FLAGGED, NOT GUESSED (5 rows: 2025-12-24, 2026-01-30, 2026-02-27, 2026-03-31,
+2026-04-30)
+`notes` records that `amount` may hold the net figure and names the FY2026 gross
+rent from the agent's summary.
+
+Gross rent CANNOT be recovered from a net figure without that statement's own
+fees, and the monthly columns in the annual summary do not map onto statement
+boundaries — Statement #7 shows $2,200 of rent on 29 May while the summary's May
+Rent column is $0.00 and April's is $6,600.00, because the summary allocates by
+a different date basis. Reconstructing per-statement gross from it would be
+fabrication. The script refuses any correction that does not reconcile against
+its own statement, so a transcription error cannot be written either.
+
+FY2026 POSITION
+  Agent's annual summary, gross rent   $28,600.00
+  Sum of rental_payments.amount        $26,222.68  (after this correction)
+  Still unaccounted for                 $2,377.32
+Assessable rental income for FY2026 remains understated by $2,377.32 until
+statements #2–#6 are supplied.
+
+ALSO ESTABLISHED FROM THE ANNUAL SUMMARY (feeds Phase 2 and 5)
+  FY2026 agent fees, actual:
+    Lease Fees                $1,210.00
+    Lease preparation fee         $33.00
+    Management Fee             $1,573.00
+    Bank & Sundries               $35.20
+    TOTAL                      $2,851.20
+  The management_fee_pct estimate for the same year computes ~$1,728.57
+  (31.43 clamped tenancy weeks x $1,100 x 5%), understating by ~$1,122.63 —
+  and it over-counts weeks while doing so, since actual rent covered 26 weeks.
+  This is the FR6/FR7 case, now measured against a real annual statement rather
+  than a single month.
+
+VERIFICATION PERFORMED
+  Dry run (default, no writes) → 2 would be corrected, 5 flagged, both
+    corrections reported as reconciling.
+  --apply → 2 corrected, 5 flagged, 0 skipped.
+  Post-state read back from the database: both corrected rows show the full fee
+    breakdown and fees_confirmed_at set; the 5 flagged rows have notes set and
+    fees_confirmed_at null.
+  Second dry run → "0 corrected, 0 flagged, 2 skipped", every row reported as
+    already handled. Idempotency confirmed.
+  CI=true npm test → 201 passed
+  npm run build → ✓ Compiled successfully
+
+SCOPE OF THE FIX — IMPORTANT
+Applied to the LOCAL database only. Production holds the same defective rows and
+this script must be run against it, after migrations 063/064 are applied there.
+Local is restorable with npm run db:sync, which would also DISCARD this
+correction — so the production run is what makes it durable.
+
+NOT INVESTIGATED (raised, not actioned)
+The annual summary lists $3,724.02 of FY2026 third-party costs the agent paid
+(R&M electrical $99, R&M general $143, R&M plumbing $1,045, water rates $291.02,
+windows and blinds $2,146). Whether all of these exist as expenses in the system
+was not checked, and any that are missing are unclaimed deductions. Also, the
+$44.84 of water usage recovered from the tenant is assessable income that may
+not be recorded.
