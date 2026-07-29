@@ -57,3 +57,68 @@ for the net, so its net figure already includes other income while its
 totalGrossRent correctly does not. Whether the portfolio needs to surface
 otherIncome separately is deferred to Phase 5, where the pack's consumer is
 known — adding a field with no consumer now would be speculative.
+
+════════════════════════════════════════════════════════════════════
+PHASE 2 VERIFICATION REPORT — Domain logic
+════════════════════════════════════════════════════════════════════
+
+SCOPE
+git diff --name-only d3b700f HEAD (Phase 1.5 checkpoint).
+Code files — all under lib/tax/ or tests/lib/tax/:
+  lib/tax/agent-fees.ts                        (new)
+  lib/tax/statement-reconciliation.ts          (new)
+  lib/tax/rental-schedule.ts                   (modified)
+  tests/lib/tax/agent-fees.test.ts             (new)
+  tests/lib/tax/statement-reconciliation.test.ts (new)
+  tests/lib/tax/rental-schedule.test.ts        (modified)
+
+Tasks: 5 of 5 complete — 44a8873, 8b477a3, a14a2e3.
+
+AUTOMATED CHECKS
+  npm run build    → ✓ Compiled successfully
+  CI=true npm test → ✓ 15 files, 243 tests passed (186 at track start)
+
+Test growth this phase: 206 → 243 (+37). Track total: +57.
+
+VERIFICATION DEBT
+None. All three modules are pure with no I/O, every one written Red/Green with
+the failing state recorded in its task note. Every pre-existing rental-schedule
+and portfolio test passes unchanged, which was an explicit plan requirement.
+
+ADDED BEYOND THE APPROVED PLAN
+resolveAgentFees returns `partial`, `paymentsInYear` and
+`paymentsWithConfirmedFees`. Real FY2026 data forced this:
+
+  Actual from statements #1 and #7    $1,619.20
+  Percentage estimate                ~$1,728.57
+  True total (agent annual summary)   $2,851.20
+
+The partial actual is SMALLER than the estimate. Preferring it silently would
+understate the deduction with no indication why — the inverse of the defect this
+track exists to fix. Phase 5 uses the flag to disclose it as a pack omission.
+With all seven statements present the flag would never fire and the gap would
+have shipped invisible.
+
+MANUAL VERIFICATION PERFORMED
+Arithmetic checked against the source PDFs rather than through the UI, because
+none of these modules is wired into a surface yet — that is Phase 5, deliberately.
+
+  Agent fees, statement #1: 242 + 1210 + 33 = 1485 commission, 8.80 sundry
+  Agent fees, statement #7: 121 commission, 4.40 sundry
+  Combined FY2026:          1606 commission, 13.20 sundry
+  Reconciliation #1:        4400 − 1493.80 − 2146 = 760.20 ties
+  Reconciliation #7:        2200 − 125.40 = 2074.60 ties
+  Reconciliation December:  (4400 + 6.80) − 121 − 266.86 = 4018.94 ties, and
+                            fails by exactly 6.80 without other_income
+All match the PDFs.
+
+CARRIED FORWARD FROM EARLIER PHASES (unchanged)
+  - db:reset clean replay still not run for migration 065.
+  - Statements #2–#6 outstanding; FY2026 income understated by $2,377.32.
+  - The data correction is local only; production run still required.
+  - The $2,146 blinds expense is classified "Repair" while this track's
+    acceptance criterion 5 assumes Division 40. Criterion 5 needs revisiting in
+    Phase 5.
+
+USER CONFIRMATION
+Confirmed 2026-07-30: "yes".
