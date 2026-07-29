@@ -1,0 +1,107 @@
+Task: Consolidate onto the property page and rename (Phase 5)
+INSERTED - user: "rename tax report to tax pack and put a download on the
+tax report page instead as that is where you see all the info and we
+remove it from the main nav".
+
+DECISION TAKEN WITH THE USER
+The pack was portfolio-wide; the page it moved onto is per-property. Asked
+rather than assumed, because it changes what the ZIP contains. User chose
+per-property: what is on screen is what downloads. Standalone page deleted
+rather than kept unlisted.
+
+CHANGES
+- Route renamed to /properties/[id]/tax-pack; every link and
+  revalidatePath updated.
+- app/(dashboard)/tax-pack/page.tsx deleted (493 lines); nav entry removed.
+- Pack assembly moved into the property page, scoped to one property.
+- Labels, PDF title and subject, and download filename renamed.
+
+Portfolio-wide generation is deferred WITH the accountant roster view,
+already scoped as a follow-on track - that is where bulk multi-client
+export belongs, not on a single property's page.
+
+MISTAKE MADE AND CORRECTED
+Used `git add -A`, which swept in the user's uncommitted app/page.tsx and
+untracked .claude/ - files deliberately kept out of every commit this
+session. Caught on reading the commit stat, reset --soft and re-committed
+without them; working tree left exactly as before. Explicit staging had
+been used all session and should not have been abandoned.
+
+================================================================
+PHASE VERIFICATION REPORT
+Phase 5 - Pack generation and output
+Track: fy_tax_pack_20260729
+================================================================
+
+SCOPE
+Commits 1a75892..HEAD. Seven tasks: five planned, two inserted from user
+feedback (scope the questionnaire to property; consolidate and rename).
+
+New: lib/tax/questionnaire.ts, components/tax-pack-document.tsx,
+components/tax-pack-generator.tsx. jszip added.
+
+AUTOMATED CHECKS
+  npm run build     -> PASS, 38 routes
+  CI=true npm test  -> PASS, 170 tests across 11 files
+
+MANUAL VERIFICATION
+Plan presented covering nav removal, page composition, pack generation,
+opening the ZIP offline, PDF contents including the narrowed
+questionnaire, a real loan statement upload, and a forced missing-file
+failure. User response: confirmed "yes".
+
+ACCEPTANCE CRITERIA (spec.md)
+  1  FY 2025-26 selectable in Jul 2026        VERIFIED (tests + live)
+  2  CGT cost base / dead column fixed        VERIFIED (live, Phase 1)
+  3  Actual vs accrued labelled               VERIFIED (tests + SQL)
+  4  50% ownership halves rent and deductions VERIFIED (tests)
+  5  Loan statement -> confirm -> interest     PARTIAL - confirmed-only
+                                              totalling verified live;
+                                              extraction never run against
+                                              a real lender statement
+  6  Div 43 years/part-year/written-down      VERIFIED (tests + SQL)
+  7  ZIP opens offline, manifest complete     USER-CONFIRMED at checkpoint
+  8  Primary residence / non-claimable absent VERIFIED (tests)
+  9  Questionnaire scope stated               VERIFIED (tests) - criterion
+                                              amended at user's direction
+ 10  build passes; db:reset replays cleanly   VERIFIED (build; db:reset
+                                              last replayed all 61
+                                              migrations at 061, none
+                                              added since - not re-run per
+                                              the user's standing
+                                              instruction to ask first)
+
+SPEC AMENDED DURING THE PHASE
+FR10 and criterion 9 were narrowed at the user's direction: the pack no
+longer reproduces the personal sections of a return. The spec records the
+amendment rather than being left to drift from what was built.
+
+DESIGN DECISIONS
+- Evidence EMBEDDED, not linked: signed URLs live 60 minutes and a pack of
+  links is broken by the time an accountant opens the email.
+- Partial failure reported, never fatal. Missing documents are named on
+  the cover and marked NOT INCLUDED in manifest.csv; unconfirmed loan
+  statements and capital works items lacking completion dates surface as
+  omissions rather than quietly shrinking a total.
+- Cost base stated at 100%, not apportioned, and the PDF says why.
+- Scope stated once rather than sixteen blank questions; every
+  questionnaire item now carries an answer, asserted by test.
+
+DEFECT FOUND BY RUNNING AGAINST REAL DATA
+The Div 43 register was wired behind a pre-filter that dropped items with
+no completion date, defeating its own itemsMissingStartDate reporting -
+the pack would have shown zero Division 43 with no explanation. Unit tests
+did not catch it; only the restored production data did.
+
+VERIFICATION DEBT CARRIED OUT OF THE TRACK
+- Criterion 5 remains partial: the AI extraction has not been run against
+  a real lender statement in any session.
+- ATO line ORDER has not been checked against a current ATO form by a
+  human. Keying order is the point of the sequence; worth an accountant's
+  eye before the pack is relied on.
+- No automated coverage for components, Server Actions, API routes or the
+  PDF. Only pure modules are tested.
+- AiTaxClassification (a third vocabulary) remains unmapped.
+- Migrations 054-061 are applied locally and to no other environment;
+  057's backfill will populate capital_works_start_date when it reaches
+  production.
