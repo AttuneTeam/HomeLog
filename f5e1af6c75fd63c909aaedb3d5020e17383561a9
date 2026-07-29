@@ -1,0 +1,56 @@
+Task: Replace date-derived FY with explicit selection (Phase 1, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+The tax report now takes its financial year from an explicit selection
+rather than inferring it from today's date.
+
+FILES
+- lib/tax/fy.ts - added resolveFyEndYear
+- tests/lib/tax/fy.test.ts - 7 new tests (29 total)
+- components/financial-year-select.tsx (new) - client Select writing ?fy=
+- app/(dashboard)/properties/[propertyId]/tax-report/page.tsx - accepts
+  searchParams, uses fyBounds/selectableFyEndYears/resolveFyEndYear,
+  resolves stamp duty, renders the selector beside the breadcrumb
+- components/tax-report-pdf.tsx - TaxReportData gains stampDuty
+  {amount, source}; exported stampDutyLabelFor
+- components/tax-report.tsx - reads the resolved stamp duty
+
+DEFECTS FIXED
+1. Wrong year. The derivation returned the IN-PROGRESS financial year. On
+   29 July 2026 it produced 2026-27; a 2026 return needs 2025-26. There
+   was no way to request a past year at all.
+2. Timezone drift. Bounds were built with new Date(y, m, d) (local) then
+   serialised via toISOString(). At UTC+10 the start became 30 June
+   instead of 1 July, pulling a day of the prior year's expenses in.
+3. Divergent stamp duty. tax-report.tsx read property.stamp_duty while
+   tax-report-pdf.tsx read roiInputs.stamp_duty, so the screen and the
+   PDF could show different CGT cost bases for the same property. Now
+   resolved once server-side: recorded purchase cost first, ROI planning
+   input as a labelled fallback, "(not recorded)" when absent.
+
+DESIGN NOTES
+- Only completed years are offered. A partial year cannot produce a
+  meaningful tax report, and offering it is what made the wrong year easy
+  to pick.
+- An unrecognised ?fy= falls back to the newest year rather than 404ing,
+  so a stale link still renders something correct.
+- Query-parameter resolution was extracted into resolveFyEndYear so it is
+  pure and testable rather than inline page logic.
+- Open-ended tenancies clamp to the year end rather than today.
+  Equivalent for completed years, and removes the date dependence.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 2 files, 29 tests passed.
+  Includes a test named for this phase's acceptance criterion: on
+  29 July 2026 the default selection is FY end 2026, and fyBounds yields
+  2025-07-01 .. 2026-06-30 labelled "2025-26". A second test confirms
+  2025-26 remains reachable explicitly from a later year.
+- npm run build -> Compiled successfully, TypeScript passed, all 37 pages
+  generated.
+
+VERIFICATION DEBT
+Not exercised in a browser. Doing so needs the local Supabase stack,
+whose ports are currently held by an unrelated project that was restored
+after the previous task. Deferred to the phase checkpoint's manual
+verification plan, where the user drives it.
