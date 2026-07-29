@@ -75,6 +75,17 @@ export interface TaxReportData {
     accrued: number | null;
     materialDivergence: boolean;
   };
+  /**
+   * The basis on which the summary figures were apportioned to the taxpayer's
+   * share. Stated in the report so an accountant can see whether a figure is
+   * 100% of the property or a part share, and whether either was assumed.
+   */
+  apportionment: {
+    ownershipPct: number;
+    deductibleDayPct: number;
+    assumedSoleOwnership: boolean;
+    assumedFullYear: boolean;
+  };
   repairs: TaxExpense[];
   initialRepairs: TaxExpense[];
   capitalImprovements: TaxExpense[];

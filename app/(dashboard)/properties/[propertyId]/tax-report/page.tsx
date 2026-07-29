@@ -8,6 +8,11 @@ import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
 import { resolveRentalIncome } from "@/lib/tax/rental-income";
 import {
+  apportionDeduction,
+  apportionIncome,
+  computeApportionment,
+} from "@/lib/tax/apportionment";
+import {
   AU_FY_START_DAY,
   AU_FY_START_MONTH,
   daysInFy,
@@ -200,12 +205,25 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
       return sum + weeks * period.weekly_rent * (period.management_fee_pct / 100);
     }, 0) ?? 0;
 
-  const totalOperatingExpenses =
+  const grossOperatingExpenses =
     rentalExpenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
 
-  const netRentalIncome =
+  // Apportion to the taxpayer's share. Ownership applies to both sides;
+  // availability and private use reduce deductions only, never income.
+  const apportionment = computeApportionment(fyFacts, daysInYear);
+  const apportionedIncome =
     totalRentalIncome != null
-      ? totalRentalIncome - totalAgentFees - totalOperatingExpenses
+      ? apportionIncome(totalRentalIncome, apportionment)
+      : null;
+  const apportionedAgentFees = apportionDeduction(totalAgentFees, apportionment);
+  const apportionedOperatingExpenses = apportionDeduction(
+    grossOperatingExpenses,
+    apportionment,
+  );
+
+  const netRentalIncome =
+    apportionedIncome != null
+      ? apportionedIncome - apportionedAgentFees - apportionedOperatingExpenses
       : null;
 
   // Resolve effective classification for each expense and generate signed URLs
@@ -302,10 +320,16 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
       materialDivergence: income.materialDivergence,
     },
     financialYear,
-    totalRentalIncome,
-    totalAgentFees,
-    totalOperatingExpenses,
+    totalRentalIncome: apportionedIncome,
+    totalAgentFees: apportionedAgentFees,
+    totalOperatingExpenses: apportionedOperatingExpenses,
     netRentalIncome,
+    apportionment: {
+      ownershipPct: apportionment.ownershipFraction * 100,
+      deductibleDayPct: apportionment.deductibleDayFraction * 100,
+      assumedSoleOwnership: apportionment.assumedSoleOwnership,
+      assumedFullYear: apportionment.assumedFullYear,
+    },
     rentalExpenses: rentalExpensesWithUrls,
     repairs,
     initialRepairs,

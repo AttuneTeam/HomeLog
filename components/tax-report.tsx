@@ -674,6 +674,29 @@ export function TaxReport({
                   bold
                 />
               )}
+              {(data.apportionment.ownershipPct < 100 ||
+                data.apportionment.deductibleDayPct < 100) && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Figures above are your share:{" "}
+                  <strong>
+                    {data.apportionment.ownershipPct.toFixed(0)}% ownership
+                  </strong>
+                  {data.apportionment.assumedSoleOwnership && " (assumed)"}
+                  {data.apportionment.deductibleDayPct < 100 && (
+                    <>
+                      , deductions further apportioned to{" "}
+                      <strong>
+                        {data.apportionment.deductibleDayPct.toFixed(0)}% of the
+                        year
+                      </strong>{" "}
+                      available for rent
+                      {data.apportionment.assumedFullYear && " (assumed)"}
+                    </>
+                  )}
+                  . Income is apportioned by ownership only. Expense tables
+                  below show full amounts before apportionment.
+                </p>
+              )}
               {data.income.materialDivergence && (
                 <div className="mt-3 flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
