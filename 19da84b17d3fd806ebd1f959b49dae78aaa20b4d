@@ -1,0 +1,66 @@
+Task: Improve the interest estimate with loan start date and offset
+(Phase 3, Tier 1) - INSERTED from user feedback at the checkpoint:
+"I want to capture when the loan started ... which will help us calculate
+more accurate interest estimates" and "we also have an offset account
+which saves us some interest which is also in the system".
+
+FILES
+- supabase/migrations/060_property_loans_start_date.sql (new)
+- lib/tax/loan-interest.ts (new) - estimateInterestForFy
+- tests/lib/tax/loan-interest.test.ts (new) - 12 tests (118 total)
+- app/actions/property-loans.ts - accepts startDate
+- components/loan-interest-rates-section.tsx - captures it
+- components/loan-statements-panel.tsx - shows the basis
+- app/(dashboard)/.../tax-report/page.tsx - fetches offset accounts, uses
+  the estimator
+- lib/supabase/database.types.ts - start_date on property_loans
+
+WHAT WAS WRONG
+The estimate was loanAmount x latestRate: a full year of interest
+regardless of drawdown date, at whichever rate was most recent, with the
+offset account ignored despite already being in the schema.
+
+MEASURED IMPACT (cross-checked in SQL against the user's own example,
+loan from 27 Oct 2025, FY2025-26, $500k at 6%):
+  days in window           247 of 365
+  old full-year estimate   $30,000.00
+  new prorated estimate    $20,301.37   (32% overstatement removed)
+  with a $100k offset      $16,241.10
+The TypeScript helper and Postgres agree to the cent.
+
+DESIGN DECISIONS
+- Rate segments rather than a single rate. The opening rate is the latest
+  one effective on or before charging begins; later ones split the window.
+  Rates effective before the loan started are correctly ignored as
+  boundaries but still supply the opening rate.
+- Offset netted off the principal, floored at zero, so an offset larger
+  than the loan yields zero interest rather than a negative deduction.
+- Inclusive day counts, and daysInFy for the denominator, so a leap year
+  divides by 366.
+- Only start_date was added, not an end date: a discharged loan drops out
+  of the balance, and an end date would imply a repayment history this
+  table does not hold.
+- NOT amortised. Repayment type is unknown, and assuming P&I would be a
+  guess. assumedConstantBalance is returned so the UI states the
+  limitation rather than leaving the reader to assume precision.
+
+KNOWN LIMITATION (disclosed, not hidden)
+property_offset_accounts.balance is a CURRENT balance with no effective
+date, so applying it to a past financial year is an approximation. That is
+acceptable for a figure explicitly excluded from claims, but it is the
+reason this remains an estimate rather than becoming claimable.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 7 files, 118 tests passed. Covers full-year, mid-year
+  start (the reported 247-day case), start after year end, offset netting,
+  offset exceeding the loan, a mid-year rate change split into two
+  segments, rate changes outside the window, leap year, and both
+  "assumed" flags.
+- npm run db:reset -> 60 migrations replay cleanly.
+- npm run build -> Compiled successfully.
+- Independent SQL cross-check of the day count and all three dollar
+  figures (table above).
+
+VERIFICATION DEBT
+Start-date input and the revised estimate copy not seen in a browser;
+folded into the phase checkpoint.
