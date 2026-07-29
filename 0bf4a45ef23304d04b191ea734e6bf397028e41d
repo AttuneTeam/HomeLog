@@ -1,0 +1,44 @@
+Task: Div 40 via quantity surveyor report (Phase 4, Tier 2/3)
+Track: fy_tax_pack_20260729
+
+FILES
+- app/actions/depreciation-reports.ts (new) - upsertDepreciationReport
+- components/depreciation-report-panel.tsx (new)
+- app/(dashboard)/.../tax-report/page.tsx - computes the Div 43 register
+  and renders the panel
+
+DECISION: RECORD, DO NOT DERIVE
+Div 40 needs per-asset effective lives, a prime cost / diminishing value
+election, and the second-hand plant restriction. A QS determines these.
+Deriving them here would duplicate paid work and take on liability that
+conflicts with conductor/product.md. The panel captures their stated
+annual figures and keeps the schedule as evidence.
+
+WHY THE COMPARISON LINE MATTERS
+The Div 43 register computed from the owner's own capital works is shown
+next to the QS figure, with a note that the surveyor's number is normally
+HIGHER because it covers original construction the owner never paid for.
+Without that note the two would read as a discrepancy and invite someone
+to "correct" the larger, correct figure downward.
+
+ABSENCE IS STATED, NOT SILENT
+With no schedule recorded the panel says plant and equipment is not
+tracked and why, so the pack can instruct the accountant to request it.
+An omitted deduction that nobody is told about is the failure mode here.
+
+Storage path preservation: saving figures without re-uploading keeps the
+existing report rather than clearing storage_path, so editing a number
+does not orphan the evidence.
+
+VERIFICATION PERFORMED
+- Live upsert against local Supabase as the owner: two writes for the same
+  (property, year) -> 1 row, values updated to the second write
+  (div43 5600, div40 3100). Confirms the composite-key upsert targets the
+  right conflict and each year stays independent.
+- CI=true npm test -> 144 tests passed.
+- npm run build -> Compiled successfully, 38 routes.
+
+VERIFICATION DEBT
+Upload path and panel not exercised in a browser; deferred to the phase
+checkpoint. The QS figures are captured but not yet fed into the rendered
+schedule - that happens when the pack is assembled in Phase 5.
