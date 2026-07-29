@@ -1,0 +1,48 @@
+Task: Loan statement upload and extraction (Phase 3, Tier 1/2)
+Track: fy_tax_pack_20260729
+
+FILES
+- lib/ai/extract-loan-statement.ts (new) - zod schema + extraction
+- app/api/loan-statements/extract/route.ts (new) - upload, extract, stage
+- tests/lib/ai/loan-statement-schema.test.ts (new) - 8 tests (106 total)
+
+DESIGN DECISIONS
+- Staged review, not trust. The row is created with confirmed_at null;
+  the DB treats it as unclaimable until a human confirms. Mirrors
+  staged_receipts.
+- Store the document BEFORE extracting, and create the row even when
+  extraction throws. The statement is the evidence the pack ships; losing
+  it because a model call failed is worse than a missing figure the user
+  can type in.
+- PDF text layer preferred over vision, matching extractInvoiceFields.
+  Lender statements are dense tables which read more reliably as text and
+  cost far fewer tokens.
+- Prompt explicitly excludes principal, redraw, offset balances and the
+  loan balance. A statement shows all of these near the interest total and
+  the wrong line would land in a return.
+- Every field nullable: "not found" must surface as null, never as a
+  fabricated number. confidence carries a rubric so 0.9+ means a labelled
+  total was read directly rather than inferred.
+- Model wiring via lib/ai/openai-client.ts per tech-stack.md, not at the
+  call site.
+- Upload uses the RLS-scoped client, so the storage prefix is the user's
+  own and the loan_statements insert is authorised by
+  has_property_write_access in the database, not by a check in the route.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 6 files, 106 tests passed. Schema tests assert the
+  strictness that matters: a string "21450.32" is REJECTED rather than
+  coerced (coercion would silently mangle a currency-formatted figure into
+  a wrong number in a tax return); confidence outside 0-1 rejected;
+  confidence and interest_paid keys required to be present even when null,
+  so a truncated model response fails loudly rather than reading as "not
+  found"; account masking preserved verbatim.
+- npm run build -> Compiled successfully; the new route appears in the
+  build output (38 routes, up from 37).
+
+VERIFICATION DEBT
+Not exercised against a real statement PDF or a deliberately unreadable
+file - that is the next task's sub-task and needs a document to test with.
+No test covers the route handler itself (no HTTP-level test harness
+exists); the schema and the storage-before-extract ordering are the parts
+covered.
