@@ -1,0 +1,66 @@
+Tasks: Pack PDF, XLSX workbook, questionnaire, evidence bundle, generation UI
+(Phase 5, Tiers 1-3)
+Track: fy_tax_pack_20260729
+
+Committed together because they are one deliverable: the PDF renders the
+questionnaire, the generator builds the workbook and bundle, and the page
+assembles the data all three consume.
+
+FILES
+- lib/tax/questionnaire.ts (new) + tests - 17 tests (170 total)
+- components/tax-pack-document.tsx (new) - the PDF
+- components/tax-pack-generator.tsx (new) - XLSX, evidence, ZIP, progress
+- app/(dashboard)/tax-pack/page.tsx (new) - portfolio-wide assembly
+- components/sidebar.tsx - nav entry
+- jszip added
+
+DESIGN DECISIONS
+- Evidence EMBEDDED, not linked. Signed URLs live 60 minutes; a pack of
+  links is broken by the time an accountant opens the email. Files are
+  fetched during generation and written into evidence/ with a
+  manifest.csv mapping each to the schedule line it supports.
+- Client-side generation, matching the existing tax report. Keeps large
+  binaries off the server and lets progress be shown per document.
+- PARTIAL FAILURE IS REPORTED, NEVER FATAL. A document that cannot be
+  fetched is named on the PDF cover and marked "NOT INCLUDED" in the
+  manifest; the pack still builds. Same for unconfirmed loan statements
+  and capital works items lacking a completion date - both surface as
+  omissions rather than quietly shrinking a total.
+- The questionnaire states what is NOT tracked. A silently omitted section
+  reads as "nothing to declare", the one reading that could make a return
+  wrong. Every untracked question is emitted with a null answer and an
+  explicit status.
+- Cost base is stated at 100%, NOT apportioned, and the PDF says why: a
+  disposal is calculated per owner at the time. Everything else in the
+  pack is the apportioned share.
+- A QS Div 43 figure supersedes the computed register, because the
+  surveyor also values original construction the owner never paid for.
+
+DEFECT FOUND BY RUNNING AGAINST REAL DATA
+The register was wired with a pre-filter that dropped capital works items
+having no completion date. That defeated div43RegisterForFy's own
+itemsMissingStartDate reporting - the omission warning could never fire,
+and the pack would have shown zero Division 43 with no explanation.
+Corrected to pass every capital works item and let the register report
+the gaps. On the user's real property this changes silence into
+"10 capital works item(s) have no completion date, so no Division 43
+deduction is claimed for them". Unit tests did not catch this; only
+running it against restored production data did.
+
+Related note: the local DB was restored from prod via db:sync, which
+predates migration 057, so capital_works_start_date is null there. The
+backfill will populate it when 057 is applied to production.
+
+VERIFICATION PERFORMED
+- npm run build -> Compiled successfully, 39 routes (tax-pack added).
+- CI=true npm test -> 170 tests passed.
+- Real-data shape confirmed against the restored database: 56 Forbes St
+  (investment, 1 tenancy, 7 FY26 payments, 10 renovations, 13 invoices,
+  1 QS report) and Unit 72 28 Gower St (primary_residence, which
+  exercises the exclusion path).
+- A sidebar import was broken by a scripted edit and caught by the build.
+
+VERIFICATION DEBT
+The pack has NOT been generated end to end in a browser: the ZIP contents,
+the fetch loop, progress, and the PDF's rendered layout are all
+unconfirmed. That is the next task and needs a browser.
