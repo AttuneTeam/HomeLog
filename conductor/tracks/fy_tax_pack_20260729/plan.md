@@ -11,7 +11,7 @@ Verification tiers are per `workflow.md`. Tier 1 tasks write tests first.
 
 ---
 
-## Phase 1 — Foundations: correctness and financial year
+## Phase 1 — Foundations: correctness and financial year [checkpoint: f5e1af6]
 
 *Goal: the existing per-property tax report becomes correct and can be generated for any past
 financial year.*
@@ -39,7 +39,7 @@ financial year.*
   - [x] Resolve stamp duty from `properties.stamp_duty` first, falling back to `roi_calculator_inputs`, with the source labelled
   - [x] Verify FY 2025–26 can be generated and returns 1 Jul 2025 – 30 Jun 2026 data
 
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `f5e1af6`
 
 ---
 
