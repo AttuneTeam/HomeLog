@@ -199,6 +199,35 @@ invariant the app's own ingestion path contradicts would be worse than a larger 
 - Affected historical rows are restated. Any row that cannot be corrected without its source
   document is reported, not guessed.
 
+### FR14 — Other rental-related income
+
+> **Added during implementation**, after the FY2026 annual summary showed $44.84 of water usage
+> recovered from the tenant that the model cannot represent.
+
+Amounts a tenant reimburses the owner for are assessable rental income, and the ATO rental
+schedule carries them on a separate line from gross rent. The system currently has nowhere to put
+them: `rental_payments.amount` is gross rent, and there is no other income field.
+
+This is not merely a missing figure — **the reconciliation in FR5 is incorrect without it.** The
+December 2025 statement carries $6.80 of water recovery:
+
+```
+Money In:  rent 4,400.00 + water 6.80 = 4,406.80
+Money Out:                                387.86
+Net:                                    4,018.94   ✓
+```
+
+FR5's identity computes `4400 − 387.86 = 4012.14` against a stated net of `4018.94` and reports a
+correct statement as broken. Every period with a tenant reimbursement would trip it.
+
+- Migration 065 adds `other_income numeric(10,2)` and `other_income_note text`.
+- FR5's identity becomes `(amount + other_income) − fees − other_outgoings = net_received`.
+- `RentalScheduleInput` gains `otherIncome`, surfaced as **"Other rental-related income"** — a
+  separate line, so gross rent stays comparable to the tenancy accrual cross-check in
+  `lib/tax/rental-income.ts`, which compares against `weekly_rent × weeks` and would be broken by
+  folding non-rent income into it.
+- The parser extracts it, with `other_income_note` recording what it was for.
+
 ### FR13 — Fees are GST-inclusive
 
 The statement's $242 management fee is $220 plus 10% GST. The `management_fee_pct` estimate

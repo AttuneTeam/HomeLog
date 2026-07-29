@@ -66,6 +66,20 @@ is where the parser's figure belongs.
   - [x] Report any row that cannot be corrected without the source document rather than guessing
         (5 rows flagged in `notes`; FY2026 income still understated by $2,377.32)
   - [ ] **OPEN — needs the user:** statements #2–#6, and a production run of the script
+- [x] Task: Migration 065 — other rental-related income `d3b700f`
+  - [x] Add `other_income numeric(10,2)` and `other_income_note text`, both nullable
+  - [x] Header comment records that tenant reimbursements are assessable income on a SEPARATE ATO
+        line from gross rent, and that FR5's reconciliation is wrong without them
+  - [x] Hand-update `database.types.ts` (Row / Insert / Update)
+  - [x] Existing rows unaffected
+  - [ ] **DEBT:** `npm run db:reset` clean replay deferred — would discard the 618b576 data
+        correction, whose restore needs interactive `db:sync`
+- [x] Task: Extend the parser for other income `d3b700f`
+  - [x] Failing test first: a December-shaped fixture with $6.80 water recovery reconciles only
+        when `otherIncome` is included, and fails on the FR5 identity without it
+  - [x] Prompt asks for `otherIncome` and `otherIncomeNote`, and states that a tenant
+        reimbursement is NOT rent and must not be added to `amount`
+  - [x] Handler persists both columns
 - [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Domain logic  (Tier 1 — tests first)
@@ -82,12 +96,16 @@ is where the parser's figure belongs.
 - [ ] Task: Implement `resolveAgentFees` to green, mirroring `resolveRentalIncome`'s shape
 - [ ] Task: Write failing tests for the statement reconciliation helper
   - [ ] OWN10905 ties: `4400 − 1493.80 − 2146 = 760.20`
+  - [ ] December ties ONLY with other income: `(4400 + 6.80) − 387.86 = 4018.94`; without it the
+        identity is off by exactly $6.80 and would flag a correct statement (FR14)
   - [ ] A discrepancy within the $1.00 tolerance passes; beyond it fails
   - [ ] Absent `net_received` returns not-applicable, not a failure
   - [ ] A brought-forward balance mismatch reports, never throws
 - [ ] Task: Implement the reconciliation helper to green
-- [ ] Task: Add `agentSundries` to `RentalScheduleInput`
+- [ ] Task: Add `agentSundries` and `otherIncome` to `RentalScheduleInput`
   - [ ] Test: commission feeds `agent_fees`, sundries feed the existing `sundry` line
+  - [ ] Test: other income surfaces as "Other rental-related income" and is NOT folded into gross
+        rent — folding it would break the accrual cross-check against `weekly_rent × weeks` (FR14)
   - [ ] Test: existing `rental-schedule` and `portfolio` tests still pass unchanged
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
