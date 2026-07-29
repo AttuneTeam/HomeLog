@@ -33,11 +33,11 @@ financial year.*
   - [x] Hand-correct `lib/supabase/database.types.ts` to remove the stale `user_id` declaration so this cannot silently type-check again
   - [x] Verify against a local database that stamp duty and depreciation now appear in the CGT cost base
 
-- [ ] Task: Replace date-derived FY with explicit selection
-  - [ ] Wire `lib/tax/fy.ts` into the tax report page, removing the `new Date()` derivation
-  - [ ] Add a financial-year selector defaulting to the most recently completed FY, reflected in the URL
-  - [ ] Resolve stamp duty from `properties.stamp_duty` first, falling back to `roi_calculator_inputs`, with the source labelled
-  - [ ] Verify FY 2025–26 can be generated and returns 1 Jul 2025 – 30 Jun 2026 data
+- [x] Task: Replace date-derived FY with explicit selection `f5e1af6`
+  - [x] Wire `lib/tax/fy.ts` into the tax report page, removing the `new Date()` derivation
+  - [x] Add a financial-year selector defaulting to the most recently completed FY, reflected in the URL
+  - [x] Resolve stamp duty from `properties.stamp_duty` first, falling back to `roi_calculator_inputs`, with the source labelled
+  - [x] Verify FY 2025–26 can be generated and returns 1 Jul 2025 – 30 Jun 2026 data
 
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
