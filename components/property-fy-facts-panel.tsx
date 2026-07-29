@@ -30,6 +30,13 @@ interface Props {
   facts: PropertyFyFacts | null;
   /** Days in this financial year — 366 in a leap year. */
   daysInYear: number;
+  /**
+   * Days the property was held this year. Availability is measured against
+   * this, not the whole year: a property bought part-way through incurs no
+   * expenses before it is owned, so there is nothing to apportion away for the
+   * earlier months.
+   */
+  daysOwnedInYear: number;
   /** Inclusive bounds of the year, as `yyyy-mm-dd`, used to bound the pickers. */
   fyStartDate: string;
   fyEndDate: string;
@@ -61,6 +68,7 @@ export function PropertyFyFactsPanel({
   financialYearLabel,
   facts,
   daysInYear,
+  daysOwnedInYear,
   fyStartDate,
   fyEndDate,
   fyStartMonth,
@@ -164,7 +172,10 @@ export function PropertyFyFactsPanel({
             <p>
               Nothing recorded for this year. The report assumes{" "}
               <strong>sole ownership (100%)</strong> and that the property was{" "}
-              <strong>available to rent for all {daysInYear} days</strong>, and
+              <strong>
+                available to rent for all {daysOwnedInYear} days you owned it
+              </strong>
+              , and
               says so wherever those figures are used.
             </p>
           </div>
@@ -282,15 +293,21 @@ export function PropertyFyFactsPanel({
             <>
               <span className="font-medium tabular-nums">{derivedDays}</span>{" "}
               <span className="text-muted-foreground">
-                of {daysInYear} days available for rent in {financialYearLabel}
-                {derivedDays === daysInYear ? " (the whole year)" : ""}.
+                of {daysOwnedInYear} days owned, available for rent in{" "}
+                {financialYearLabel}
+                {derivedDays === daysOwnedInYear
+                  ? daysOwnedInYear === daysInYear
+                    ? " (the whole year)"
+                    : " (the whole time you owned it)"
+                  : ""}
+                .
                 Calculated from the dates above.
               </span>
             </>
           ) : (
             <span className="text-muted-foreground">
               No availability dates set — the report treats the property as
-              available for all {daysInYear} days.
+              available for all {daysOwnedInYear} days you owned it.
             </span>
           )}
         </div>

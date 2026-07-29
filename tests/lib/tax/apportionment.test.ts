@@ -93,6 +93,92 @@ describe("computeApportionment", () => {
   });
 });
 
+describe("mid-year acquisition", () => {
+  // Regression: every test above assumed a property held all year, which is
+  // why this shipped. A property settled on 27 Oct 2025 is owned for 247 days
+  // of FY2025–26. Expenses it incurs fall wholly inside those 247 days, so
+  // dividing by 365 charges the taxpayer twice for the same part-year.
+  const OWNED = 247;
+
+  it("does not reduce deductions when available for the whole period owned", () => {
+    const a = computeApportionment(
+      {
+        ownership_pct: 100,
+        days_available_for_rent: OWNED,
+        private_use_days: null,
+      },
+      DAYS,
+      OWNED,
+    );
+    expect(a.deductibleDayFraction).toBe(1);
+  });
+
+  it("claims the full interest on a loan that did not exist earlier in the year", () => {
+    const a = computeApportionment(
+      { ownership_pct: 100, days_available_for_rent: OWNED, private_use_days: null },
+      DAYS,
+      OWNED,
+    );
+    // The reported case: $75,763.60 was being cut to $51,270.16.
+    expect(apportionDeduction(75_763.6, a)).toBeCloseTo(75_763.6, 6);
+  });
+
+  it("still reduces for private use within the period owned", () => {
+    const a = computeApportionment(
+      { ownership_pct: 100, days_available_for_rent: 217, private_use_days: null },
+      DAYS,
+      OWNED,
+    );
+    expect(a.deductibleDayFraction).toBeCloseTo(217 / 247, 10);
+  });
+
+  it("assumes availability for the period owned, not the whole year", () => {
+    const a = computeApportionment(null, DAYS, OWNED);
+    expect(a.deductibleDayFraction).toBe(1);
+    expect(a.assumedFullYear).toBe(true);
+  });
+
+  it("caps recorded availability at the period owned", () => {
+    // A stale 365 recorded against a property owned 247 days must not produce
+    // a fraction above 1.
+    const a = computeApportionment(
+      { ownership_pct: 100, days_available_for_rent: 365, private_use_days: null },
+      DAYS,
+      OWNED,
+    );
+    expect(a.deductibleDayFraction).toBe(1);
+  });
+
+  it("still combines with a part ownership share", () => {
+    const a = computeApportionment(
+      { ownership_pct: 50, days_available_for_rent: OWNED, private_use_days: null },
+      DAYS,
+      OWNED,
+    );
+    expect(apportionDeduction(1000, a)).toBeCloseTo(500, 10);
+  });
+
+  it("returns zero when the property was not owned during the year", () => {
+    const a = computeApportionment(null, DAYS, 0);
+    expect(a.deductibleDayFraction).toBe(0);
+    expect(apportionDeduction(1000, a)).toBe(0);
+  });
+
+  it("behaves as before for a property held all year", () => {
+    const withOwned = computeApportionment(
+      { ownership_pct: 100, days_available_for_rent: 200, private_use_days: null },
+      DAYS,
+      DAYS,
+    );
+    const withoutOwned = computeApportionment(
+      { ownership_pct: 100, days_available_for_rent: 200, private_use_days: null },
+      DAYS,
+    );
+    expect(withOwned.deductibleDayFraction).toBeCloseTo(200 / 365, 10);
+    expect(withoutOwned.deductibleDayFraction).toBeCloseTo(200 / 365, 10);
+  });
+});
+
 describe("apportionIncome", () => {
   it("applies ownership only", () => {
     const a = computeApportionment(
