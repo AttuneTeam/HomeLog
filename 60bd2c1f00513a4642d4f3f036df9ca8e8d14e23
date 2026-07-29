@@ -1,0 +1,73 @@
+Task: Rental income resolver (Phase 3, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+lib/tax/rental-income.ts: accruedRentForFy, actualRentForFy,
+resolveRentalIncome, plus exported MATERIAL_DIVERGENCE_PCT and
+MATERIAL_DIVERGENCE_MIN_ABSOLUTE.
+
+FILES
+- lib/tax/rental-income.ts (new)
+- tests/lib/tax/rental-income.test.ts (new) - 21 tests (82 total)
+- app/(dashboard)/.../tax-report/page.tsx - fetches rental_payments and
+  resolves income
+- components/tax-report-pdf.tsx - TaxReportData.income + incomeLabelFor
+- components/tax-report.tsx - source label + divergence warning
+- lib/supabase/database.types.ts - rental_payments added
+- components/rental-payments-section.tsx - three `as any` casts removed
+
+DEFECT ADDRESSED
+The report accrued income from tenancy terms only and presented that
+estimate as the figure. rental_payments - money actually received,
+ingested from agent statements - was already captured and ignored.
+
+DESIGN DECISIONS
+- 52-week year. The tenancy span is measured exclusively, so a full year
+  accrues 52 x weekly rather than 52.14. Annual rent is conventionally
+  52 x weekly; an inclusive count would inflate every full-year accrual.
+  This matches the behaviour the page already had.
+- null vs 0. No payment records means UNKNOWN, not "no rent received".
+  Conflating them would report a property with no data as having earned
+  nothing.
+- Divergence thresholds 5% AND $500, both required. A missing month is
+  ~8% of a year (triggers); rent straddling 30 June is ~2% (does not).
+  The dollar floor stops a large percentage on a trivial amount - e.g. a
+  tenancy running a few days - from raising a pointless warning.
+  Divergence is symmetric: unexpectedly high receipts flag too.
+- Thresholds exported so the UI can explain them rather than hardcoding
+  numbers in copy.
+
+TYPES CLEANUP
+rental_payments was absent from the hand-maintained types, so
+rental-payments-section.tsx cast the client to `any` with a comment
+saying to fix it when types were regenerated. Per the project override in
+code_styleguides/typescript.md - a cast around a Supabase query usually
+means the types are stale, not that the cast is right - the table was
+added and all three casts removed. The file now type-checks against the
+real schema.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 4 files, 82 tests passed. Covers full year, clamped
+  and part-year tenancies, open-ended tenancies, multiple tenancies at
+  different rents, FY-boundary payment inclusion/exclusion, null-vs-zero,
+  source preference, and each divergence case (one-week timing NOT
+  flagged, missing month flagged, trivial amount not flagged, actual
+  exceeding accrued flagged, single-source never flagged).
+- npm run build -> Compiled successfully, including after cast removal.
+- Live cross-check in SQL against seeded data: accrued 33,800.00
+  (52 x 650), 11 of 12 payments inside the FY totalling 30,987.00, gap
+  2,813.00 = 8.32%, threshold predicate -> true. Matches the unit tests.
+
+PROCESS NOTE
+My first cross-check query was scoped by date but not by property, so it
+swept up 7 pre-existing rental_payments rows in the local database and
+returned 18 payments / 57,084.28. That was a fault in my verification
+query, not the code - the numbers reconciled exactly once separated
+(11 inserted = 30,987 plus 7 existing = 26,097.28). Re-run scoped to an
+isolated property. All checks ran in rolled-back transactions; the 7
+pre-existing rows were confirmed intact afterwards.
+
+VERIFICATION DEBT
+Divergence warning not seen rendered in a browser; deferred to the phase
+checkpoint. The PDF carries the source label but not the warning - worth
+deciding at the checkpoint whether the agent-facing PDF should show it too.
