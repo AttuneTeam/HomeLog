@@ -1,0 +1,61 @@
+Task: Add property_fy_facts (migration 054) (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+New table public.property_fy_facts, PK (property_id, financial_year_end).
+Columns: ownership_pct (numeric(5,2) default 100, 0 < pct <= 100),
+days_available_for_rent, private_use_days (both 0..366 for leap years),
+notes, created_at, updated_at.
+
+FILES
+- supabase/migrations/054_property_fy_facts.sql (new)
+- lib/supabase/database.types.ts - PropertyFyFacts row type hand-added
+  plus the Tables entry, per the hand-maintained-types rule in CLAUDE.md
+
+WHY PER-YEAR
+Ownership share and rental availability change over time. Storing them on
+properties would mean today's value silently rewrites history: a property
+sold down from 100% to 50% would restate last year's figures at the new
+share and overstate the deduction. Each year is its own row.
+
+financial_year_end is the calendar year the FY ends in (2026 for 2025-26),
+matching lib/tax/fy.ts.
+
+RLS follows migration 030: read via has_property_read_access (owner,
+active co-owner, or property viewer), write via has_property_write_access
+(owner or co-owner only). An accountant holding a viewer share stays
+read-only.
+
+VERIFICATION PERFORMED (live, local Supabase)
+npm run db:reset -> all 54 migrations replayed cleanly from scratch.
+
+RLS, exercised with SET LOCAL role authenticated and a forged
+request.jwt.claims sub, two unrelated users, savepoints isolating each
+expected failure:
+  1. Owner SELECT              -> 1 row, ownership_pct 50.00
+  2. Stranger SELECT           -> 0 rows
+  3. Stranger INSERT           -> DENIED, "new row violates row-level
+                                  security policy for table
+                                  property_fy_facts"
+  4. Stranger UPDATE           -> UPDATE 0
+  5. Stranger DELETE           -> DELETE 0
+  6. Owner row after attacks   -> intact, still 50.00
+Denial was asserted explicitly, not merely owner-allowed.
+
+Constraints:
+  7a. ownership_pct = 0        -> property_fy_facts_ownership_pct_check
+  7b. days_available = 400     -> property_fy_facts_days_available_..._check
+  7c. duplicate (prop, year)   -> property_fy_facts_pkey
+Cascade:
+  8.  DELETE property          -> facts rows 0
+
+All inside a transaction, rolled back; no local data retained.
+
+npm run build     -> Compiled successfully, no type errors.
+CI=true npm test  -> 29 tests passed.
+
+NOTES
+No storage column on this table, so the deletion functions in migrations
+052/053 need no change for it. The two file-bearing tables in this phase
+(loan_statements, depreciation_reports) do, and are handled in their own
+tasks plus the deletion-invariants task.
