@@ -8,6 +8,7 @@ import {
   mostRecentCompletedFyEndYear,
   resolveFyEndYear,
   selectableFyEndYears,
+  suggestAvailabilityFromTenancies,
 } from "@/lib/tax/fy";
 
 // All dates are constructed with Date.UTC so these assertions are independent
@@ -205,6 +206,86 @@ describe("daysAvailableInFy", () => {
     expect(daysAvailableInFy(2026, "1990-01-01", "2090-01-01")).toBe(
       daysInFy(2026),
     );
+  });
+});
+
+describe("suggestAvailabilityFromTenancies", () => {
+  it("returns null when there are no tenancies", () => {
+    expect(suggestAvailabilityFromTenancies([], 2026)).toBeNull();
+  });
+
+  it("returns null when no tenancy overlaps the year", () => {
+    const periods = [{ start_date: "2020-01-01", end_date: "2020-12-31" }];
+    expect(suggestAvailabilityFromTenancies(periods, 2026)).toBeNull();
+  });
+
+  it("spans a single tenancy", () => {
+    const periods = [{ start_date: "2025-09-01", end_date: "2026-03-31" }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s).toMatchObject({
+      from: "2025-09-01",
+      to: "2026-03-31",
+      bridgedDays: 0,
+      tenancyCount: 1,
+    });
+    expect(s?.days).toBe(212);
+  });
+
+  it("clamps a tenancy that began before the year", () => {
+    const periods = [{ start_date: "2023-01-01", end_date: "2025-12-31" }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-07-01");
+    expect(s?.to).toBe("2025-12-31");
+  });
+
+  it("treats an open-ended tenancy as running to year end", () => {
+    const periods = [{ start_date: "2025-09-01", end_date: null }];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.to).toBe("2026-06-30");
+  });
+
+  it("bridges a vacancy between two tenancies and reports the gap", () => {
+    // Tenant A to 30 Sep, tenant B from 1 Nov: October is vacant.
+    const periods = [
+      { start_date: "2025-07-01", end_date: "2025-09-30" },
+      { start_date: "2025-11-01", end_date: "2026-06-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-07-01");
+    expect(s?.to).toBe("2026-06-30");
+    expect(s?.days).toBe(365);
+    expect(s?.bridgedDays).toBe(31); // all of October
+    expect(s?.tenancyCount).toBe(2);
+  });
+
+  it("does not double-count overlapping tenancies", () => {
+    const periods = [
+      { start_date: "2025-07-01", end_date: "2025-12-31" },
+      { start_date: "2025-10-01", end_date: "2026-06-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.days).toBe(365);
+    expect(s?.bridgedDays).toBe(0);
+  });
+
+  it("ignores tenancies outside the year when others overlap", () => {
+    const periods = [
+      { start_date: "2019-01-01", end_date: "2019-06-30" },
+      { start_date: "2025-09-01", end_date: "2025-09-30" },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.from).toBe("2025-09-01");
+    expect(s?.to).toBe("2025-09-30");
+    expect(s?.tenancyCount).toBe(1);
+  });
+
+  it("agrees with daysAvailableInFy for the span it returns", () => {
+    const periods = [
+      { start_date: "2025-11-22", end_date: null },
+    ];
+    const s = suggestAvailabilityFromTenancies(periods, 2026);
+    expect(s?.days).toBe(daysAvailableInFy(2026, s!.from, s!.to));
+    expect(s?.days).toBe(221);
   });
 });
 

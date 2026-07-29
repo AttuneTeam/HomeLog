@@ -14,6 +14,7 @@ import {
   fyBounds,
   resolveFyEndYear,
   selectableFyEndYears,
+  suggestAvailabilityFromTenancies,
 } from "@/lib/tax/fy";
 
 /** How many completed financial years to offer in the selector. */
@@ -130,6 +131,16 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   // Inclusive day count for the selected year — 366 in a leap year, so the
   // "available all year" default is never quietly wrong.
   const daysInYear = daysInFy(selectedFyEndYear, fyStartMonth, fyStartDay);
+
+  // Availability starting point derived from tenancies already recorded, so
+  // the user confirms rather than retypes dates the system can infer. Tenancy
+  // is a lower bound on availability, never the recorded fact itself.
+  const availabilitySuggestion = suggestAvailabilityFromTenancies(
+    rentalPeriods ?? [],
+    selectedFyEndYear,
+    fyStartMonth,
+    fyStartDay,
+  );
 
   // Fetch rental operating expenses now that FY dates are known
   const { data: rentalExpenses } = await supabase
@@ -321,6 +332,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           fyEndDate={fyEndStr}
           fyStartMonth={fyStartMonth}
           fyStartDay={fyStartDay}
+          suggestion={availabilitySuggestion}
         />
       </div>
 

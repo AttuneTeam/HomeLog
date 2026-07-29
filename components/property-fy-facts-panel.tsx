@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Info, Loader2 } from "lucide-react";
+import { CalendarRange, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { upsertPropertyFyFacts } from "@/app/actions/property-fy-facts";
 import { daysAvailableInFy } from "@/lib/tax/fy";
+import type { AvailabilitySuggestion } from "@/lib/tax/fy";
 import type { PropertyFyFacts } from "@/lib/supabase/database.types";
+
+/** Dates arrive as `yyyy-mm-dd`; parsed as UTC so the day never shifts. */
+function formatShortDate(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
 
 interface Props {
   propertyId: string;
@@ -24,6 +35,11 @@ interface Props {
   fyEndDate: string;
   fyStartMonth: number;
   fyStartDay: number;
+  /**
+   * Derived from tenancies already recorded for this property. A starting
+   * point only — tenancy is a lower bound on availability.
+   */
+  suggestion: AvailabilitySuggestion | null;
 }
 
 /**
@@ -49,6 +65,7 @@ export function PropertyFyFactsPanel({
   fyEndDate,
   fyStartMonth,
   fyStartDay,
+  suggestion,
 }: Props) {
   const [ownershipPct, setOwnershipPct] = useState(
     facts?.ownership_pct != null ? String(facts.ownership_pct) : "",
@@ -64,6 +81,12 @@ export function PropertyFyFactsPanel({
 
   const isRecorded = facts != null;
   const hasDates = availableFrom !== "" || availableTo !== "";
+  // Hide the suggestion once the inputs already hold it, so accepting it makes
+  // the prompt disappear rather than lingering as an unfinished action.
+  const matchesSuggestion =
+    suggestion != null &&
+    availableFrom === suggestion.from &&
+    availableTo === suggestion.to;
   const invertedRange =
     availableFrom !== "" && availableTo !== "" && availableTo < availableFrom;
 
@@ -144,6 +167,45 @@ export function PropertyFyFactsPanel({
               <strong>available to rent for all {daysInYear} days</strong>, and
               says so wherever those figures are used.
             </p>
+          </div>
+        )}
+
+        {suggestion && !matchesSuggestion && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border p-3 text-xs">
+            <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-muted-foreground flex-1 min-w-[16rem]">
+              From your {suggestion.tenancyCount} recorded{" "}
+              {suggestion.tenancyCount === 1 ? "tenancy" : "tenancies"}:{" "}
+              <strong className="text-foreground">
+                {formatShortDate(suggestion.from)} –{" "}
+                {formatShortDate(suggestion.to)}
+              </strong>{" "}
+              ({suggestion.days} days)
+              {suggestion.bridgedDays > 0 && (
+                <>
+                  , including{" "}
+                  <strong className="text-foreground">
+                    {suggestion.bridgedDays} vacant days
+                  </strong>{" "}
+                  between tenancies — counted as available, since a property
+                  between tenants is normally still on the market. Adjust if it
+                  was withdrawn.
+                </>
+              )}
+              . Tenancy is a lower bound: widen the dates if it was listed
+              earlier.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setAvailableFrom(suggestion.from);
+                setAvailableTo(suggestion.to);
+              }}
+            >
+              Use these dates
+            </Button>
           </div>
         )}
 

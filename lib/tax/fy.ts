@@ -204,6 +204,98 @@ export function daysAvailableInFy(
   return Math.round((end - start) / MS_PER_DAY) + 1;
 }
 
+export interface AvailabilitySuggestion {
+  /** Earliest tenancy start within the year, as `yyyy-mm-dd`. */
+  from: string;
+  /** Latest tenancy end within the year, as `yyyy-mm-dd`. */
+  to: string;
+  /** Inclusive days in the span. */
+  days: number;
+  /**
+   * Days inside the span not covered by any tenancy — vacancy the span
+   * bridges. Disclosed so the user can correct it when the property was
+   * genuinely withdrawn from the market rather than between tenants.
+   */
+  bridgedDays: number;
+  /** Tenancies that overlapped the year. */
+  tenancyCount: number;
+}
+
+/**
+ * Suggest availability dates from tenancies already recorded for a property.
+ *
+ * Tenancy is NOT availability. A property is available for rent once it is
+ * genuinely on the market, which can start before the first tenant moves in
+ * and continue between leases. Recorded tenancies are therefore a lower bound,
+ * and this is offered as a starting point for the user to accept or widen —
+ * never as the recorded fact itself.
+ *
+ * Vacancy between tenancies is bridged, because a property between tenants is
+ * normally still advertised. `bridgedDays` reports how much was bridged so the
+ * interface can say so rather than quietly assuming it.
+ *
+ * Returns null when no tenancy overlaps the year, in which case there is
+ * nothing to suggest.
+ */
+export function suggestAvailabilityFromTenancies(
+  periods: ReadonlyArray<{ start_date: string; end_date: string | null }>,
+  fyEndYear: number,
+  startMonth: number = AU_FY_START_MONTH,
+  startDay: number = AU_FY_START_DAY,
+): AvailabilitySuggestion | null {
+  const { startDate, endDate } = fyBounds(fyEndYear, startMonth, startDay);
+  const fyStart = Date.parse(`${startDate}T00:00:00Z`);
+  const fyEnd = Date.parse(`${endDate}T00:00:00Z`);
+
+  // Clamp each tenancy to the year, discarding any that fall outside it.
+  const clamped: Array<{ start: number; end: number }> = [];
+  for (const period of periods) {
+    const rawStart = Date.parse(`${period.start_date}T00:00:00Z`);
+    const rawEnd = period.end_date
+      ? Date.parse(`${period.end_date}T00:00:00Z`)
+      : fyEnd;
+    if (Number.isNaN(rawStart) || Number.isNaN(rawEnd)) continue;
+
+    const start = Math.max(rawStart, fyStart);
+    const end = Math.min(rawEnd, fyEnd);
+    if (end < start) continue;
+    clamped.push({ start, end });
+  }
+
+  if (clamped.length === 0) return null;
+
+  const from = Math.min(...clamped.map((c) => c.start));
+  const to = Math.max(...clamped.map((c) => c.end));
+  const days = Math.round((to - from) / MS_PER_DAY) + 1;
+
+  // Merge overlapping tenancies before counting, so an overlap is not counted
+  // twice and mistaken for a negative gap.
+  const sorted = [...clamped].sort((a, b) => a.start - b.start);
+  const merged: Array<{ start: number; end: number }> = [];
+  for (const interval of sorted) {
+    const last = merged[merged.length - 1];
+    // Adjacent days (end + 1 === start) are contiguous, not a gap.
+    if (last && interval.start <= last.end + MS_PER_DAY) {
+      last.end = Math.max(last.end, interval.end);
+    } else {
+      merged.push({ ...interval });
+    }
+  }
+
+  const tenantedDays = merged.reduce(
+    (sum, m) => sum + Math.round((m.end - m.start) / MS_PER_DAY) + 1,
+    0,
+  );
+
+  return {
+    from: new Date(from).toISOString().slice(0, 10),
+    to: new Date(to).toISOString().slice(0, 10),
+    days,
+    bridgedDays: days - tenantedDays,
+    tenancyCount: clamped.length,
+  };
+}
+
 /**
  * Resolve a requested financial year (typically from a query parameter) against
  * the years actually on offer.
