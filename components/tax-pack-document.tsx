@@ -444,10 +444,11 @@ export function TaxPackDocument({ data }: { data: PackData }) {
 
       {/* Questionnaire */}
       <Page size="A4" style={S.page}>
-        <Text style={S.h1}>Tax agent questionnaire</Text>
+        <Text style={S.h1}>Rental property questionnaire</Text>
         <Text style={[S.note, { marginTop: -4, marginBottom: 10 }]}>
-          The rental section is answered from recorded data. Every other section
-          is outside what Home Base tracks and needs the client&apos;s answer.
+          Answered from the client&apos;s records. This pack covers the rental
+          property section of the return only — the client supplies the
+          remaining sections separately.
         </Text>
         {data.questionnaire.map((section) => (
           <View key={section.title} wrap={false}>

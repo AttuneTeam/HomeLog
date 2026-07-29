@@ -28,14 +28,14 @@ time and opens the distribution channel.
    manual assembly.
 3. Every figure is traceable to the document behind it, and estimates are visibly distinguished
    from recorded facts.
-4. What Home Base does *not* track is stated explicitly rather than silently omitted.
+4. What the pack does *not* cover is stated explicitly rather than silently omitted.
 
 ## Non-goals
 
 - Lodging or preparing a tax return. The pack is decision support for a human agent.
 - Answering the non-rental sections of a tax checklist (work-related deductions, offsets, shares
-  and crypto, business income, HELP debt). These are out of the product's domain; the pack flags
-  them as untracked.
+  and crypto, business income, HELP debt). These are out of the product's domain. The pack names
+  them once as out of scope; the taxpayer answers them separately and merges the result.
 - The accountant roster view and bulk multi-client generation. Deferred to a follow-on track.
 
 ## Users & stories
@@ -143,13 +143,20 @@ Per property, in ATO rental-schedule line order:
 
 ### FR10 — Pre-filled questionnaire
 
-- The pack includes the tax-agent checklist with the rental-property section pre-answered from the
-  data, and every other section marked **"Not tracked in Home Base — please answer."**
-- Sections explicitly listed as untracked: motor vehicle, travel, clothing and laundry,
-  self-education, other work-related expenses and WFH hours, private health insurance, spouse and
-  dependants, zone offsets, shares/managed funds/crypto disposals, business income, HELP/HECS.
-- Where the product *can* partially answer — property purchased or sold during the year, derived
-  from `properties.purchase_date` — it does so and marks it for confirmation.
+*Amended during Phase 5 at the user's direction: the pack is scoped to property only.*
+
+- The pack includes the rental-property section of a tax-agent checklist, pre-answered from
+  the data.
+- It does **not** reproduce the personal sections of a return. The taxpayer answers those and
+  merges them with this pack; sixteen blank questions would pad an agent-facing property
+  document without answering anything.
+- A single closing statement names what the pack does not cover — work-related deductions
+  (including WFH hours), offsets and rebates, other investments, business income, HELP/HECS —
+  so the boundary is stated rather than inferred from an absence. An unseen omission reads as
+  "nothing to declare", which is the one interpretation that could make a return wrong.
+- Where the product *can* partially answer — property purchased during the year, derived from
+  `properties.purchase_date` — it does so and marks it for confirmation. Disposals are not
+  tracked and are always raised.
 
 ### FR11 — Output
 
@@ -207,7 +214,7 @@ Every new table gets an RLS policy scoped through property ownership, and a hand
 7. The downloaded ZIP opens without network access, and every document referenced in the PDF is
    present in `evidence/` and listed in `manifest.csv`.
 8. A primary residence and a renovation marked `claimable = false` appear nowhere in the pack.
-9. The questionnaire lists every untracked section explicitly.
+9. The questionnaire covers rental property only, and states in one place what the pack does not cover.
 10. `npm run build` passes; `npm run db:reset` replays all migrations cleanly.
 
 ## Out of scope

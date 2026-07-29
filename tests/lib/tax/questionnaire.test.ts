@@ -28,40 +28,42 @@ function allItems(sections: ReturnType<typeof buildQuestionnaire>) {
 }
 
 describe("buildQuestionnaire", () => {
-  it("always includes every untracked section", () => {
+  it("covers rental property and nothing else", () => {
+    // Scoped deliberately: personal sections of a return are supplied by the
+    // taxpayer separately and merged with this pack.
     const titles = buildQuestionnaire(input()).map((s) => s.title);
-    expect(titles).toContain("Work-related deductions");
-    expect(titles).toContain("Offsets and rebates");
-    expect(titles).toContain("Other investments");
-    expect(titles).toContain("Business income");
-    expect(titles).toContain("Other");
+    expect(titles).toEqual([
+      "Rental properties — 2025–26",
+      "Not covered by this pack",
+    ]);
   });
 
-  it("marks every untracked question as not_tracked with no answer", () => {
-    const sections = buildQuestionnaire(input()).filter(
-      (s) => !s.title.startsWith("Rental properties"),
-    );
-    for (const item of allItems(sections)) {
-      expect(item.status).toBe("not_tracked");
-      expect(item.answer).toBeNull();
-    }
-  });
-
-  it("covers the specific work-related topics an agent asks about", () => {
-    const work = buildQuestionnaire(input()).find(
-      (s) => s.title === "Work-related deductions",
+  it("states the boundary rather than leaving it to be inferred", () => {
+    // An omission the reader cannot see reads as "nothing to declare".
+    const scope = buildQuestionnaire(input()).find(
+      (s) => s.title === "Not covered by this pack",
     )!;
-    const text = work.items.map((i) => i.question).join(" ").toLowerCase();
-    for (const topic of [
-      "motor vehicle",
-      "travel",
-      "laundry",
-      "self-education",
-      "union fees",
+    expect(scope.items).toHaveLength(1);
+    const answer = scope.items[0].answer!.toLowerCase();
+    for (const area of [
+      "work-related",
       "working from home",
+      "private health",
+      "cryptocurrency",
+      "business",
+      "help/hecs",
     ]) {
-      expect(text).toContain(topic);
+      expect(answer).toContain(area);
     }
+    expect(answer).toContain("supplies those separately");
+    expect(scope.items[0].status).toBe("not_tracked");
+  });
+
+  it("does not pad the pack with blank personal questions", () => {
+    const items = allItems(buildQuestionnaire(input()));
+    // Every item must carry an answer; a bare unanswered prompt belongs in the
+    // taxpayer's own checklist, not in an agent-facing property pack.
+    expect(items.every((i) => i.answer != null)).toBe(true);
   });
 
   it("answers the ownership question from recorded data", () => {
@@ -195,8 +197,8 @@ describe("buildQuestionnaire", () => {
 });
 
 describe("statusLabel", () => {
-  it("says plainly when the user must answer", () => {
-    expect(statusLabel("not_tracked")).toContain("Not tracked");
+  it("names where an unanswered item comes from", () => {
+    expect(statusLabel("not_tracked")).toContain("Supplied separately");
     expect(statusLabel("check")).toBe("Please confirm");
     expect(statusLabel("answered")).toBe("From your records");
   });

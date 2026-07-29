@@ -1,14 +1,17 @@
 /**
- * The tax-agent questionnaire, pre-answered where Home Base holds the data.
+ * The rental-property section of a tax-agent questionnaire, pre-answered from
+ * recorded data.
  *
- * A standard agent checklist covers a whole return; this product covers one
- * section of it. The pack answers the rental-property section from recorded
- * data and marks every other section **not tracked**, so the investor answers
- * a handful of personal questions instead of assembling the lot.
+ * The pack is deliberately scoped to property. Personal sections of a return —
+ * work-related deductions, offsets, other investments, business income — are
+ * supplied by the taxpayer separately and merged with this pack; reproducing
+ * them here as sixteen blank questions would pad an agent-facing document
+ * without answering anything.
  *
- * Stating what is NOT tracked is the point. A section silently omitted reads
- * as "nothing to declare", which is the one interpretation that could cause a
- * return to be wrong.
+ * What is retained is a single statement of scope. An omission the reader
+ * cannot see reads as "nothing to declare", which is the one interpretation
+ * that could make a return wrong; naming the boundary once prevents that
+ * without the clutter.
  */
 
 export type AnswerStatus =
@@ -50,49 +53,14 @@ export interface QuestionnaireInput {
   purchasedDuringYear: string[];
 }
 
-const NOT_TRACKED_SECTIONS: Array<{ title: string; questions: string[] }> = [
-  {
-    title: "Work-related deductions",
-    questions: [
-      "Motor vehicle expenses — method claimed, work-use percentage, total kilometres, running costs",
-      "Travel expenses — flights, accommodation, meals, incidentals, and any employer reimbursement",
-      "Clothing, laundry and protective equipment",
-      "Self-education — course fees, textbooks, stationery, travel",
-      "Other work-related expenses — tools, union fees, professional memberships, subscriptions, seminars",
-      "Working from home — average weekly hours",
-    ],
-  },
-  {
-    title: "Offsets and rebates",
-    questions: [
-      "Private health insurance — annual statement from your fund",
-      "Spouse and dependants during the year",
-      "Zone or remote area offsets",
-    ],
-  },
-  {
-    title: "Other investments",
-    questions: [
-      "Shares, managed funds or cryptocurrency bought, sold or disposed of",
-      "Capital gains or losses, transaction summaries and annual tax statements",
-    ],
-  },
-  {
-    title: "Business income",
-    questions: [
-      "Sole trader or other business income",
-      "Profit and loss statement, income and expenses summary",
-      "Asset purchases or disposals",
-    ],
-  },
-  {
-    title: "Other",
-    questions: [
-      "HELP/HECS debt or Trade Support Loan",
-      "Changes in circumstances — employment, marriage, separation, dependants",
-    ],
-  },
-];
+/** Areas of a return this pack does not cover, named so the gap is visible. */
+const OUT_OF_SCOPE = [
+  "work-related deductions (motor vehicle, travel, clothing and laundry, self-education, tools, union fees, working from home)",
+  "offsets and rebates (private health insurance, spouse and dependants, zone offsets)",
+  "other investments (shares, managed funds, cryptocurrency and their capital gains)",
+  "business or sole trader income",
+  "HELP/HECS and other study loans",
+].join("; ");
 
 function money(amount: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -105,8 +73,9 @@ function money(amount: number): string {
 /**
  * Build the questionnaire for a financial year.
  *
- * The rental section is answered from the pack's own figures; everything else
- * is returned as an explicit "not tracked" prompt rather than omitted.
+ * The rental section is answered from the pack's own figures. A closing
+ * section names what the pack does not cover, so the boundary is stated rather
+ * than left to be inferred from an absence.
  */
 export function buildQuestionnaire(
   input: QuestionnaireInput,
@@ -181,27 +150,24 @@ export function buildQuestionnaire(
     status: "check",
   });
 
-  const sections: QuestionnaireSection[] = [
+  return [
     { title: `Rental properties — ${input.financialYearLabel}`, items },
+    {
+      title: "Not covered by this pack",
+      items: [
+        {
+          question: "Everything outside the rental property section",
+          answer: `This pack covers rental property only. It does not cover ${OUT_OF_SCOPE}. The taxpayer supplies those separately.`,
+          status: "not_tracked",
+        },
+      ],
+    },
   ];
-
-  for (const section of NOT_TRACKED_SECTIONS) {
-    sections.push({
-      title: section.title,
-      items: section.questions.map((question) => ({
-        question,
-        answer: null,
-        status: "not_tracked" as const,
-      })),
-    });
-  }
-
-  return sections;
 }
 
 /** Human-readable label for a status, used in the rendered pack. */
 export function statusLabel(status: AnswerStatus): string {
   if (status === "answered") return "From your records";
   if (status === "check") return "Please confirm";
-  return "Not tracked in Home Base — please answer";
+  return "Supplied separately by the taxpayer";
 }
