@@ -59,10 +59,10 @@ financial year.*
   - [x] Add the RLS policy and hand-add the row type
   - [x] Verify non-owner denial and a clean `db:reset`
 
-- [ ] Task: Add `depreciation_reports` (migration 056)
-  - [ ] Write the migration: per property per FY — `div43_annual`, `div40_annual`, `storage_path`, `qs_firm`, `report_date`
-  - [ ] Add the RLS policy and hand-add the row type
-  - [ ] Verify non-owner denial and a clean `db:reset`
+- [x] Task: Add `depreciation_reports` (migration 056) `103e0e5`
+  - [x] Write the migration: per property per FY — `div43_annual`, `div40_annual`, `storage_path`, `qs_firm`, `report_date`
+  - [x] Add the RLS policy and hand-add the row type
+  - [x] Verify non-owner denial and a clean `db:reset`
 
 - [ ] Task: Add Div 43 capital works item fields (migration 057)
   - [ ] Add `start_date` and `rate_pct` (default 2.5) to capital works expenses, per the spec's data model section
