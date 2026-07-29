@@ -217,6 +217,35 @@ export type PropertyFyFacts = {
   updated_at: string;
 };
 
+/**
+ * An annual loan statement and the interest it evidences.
+ *
+ * Rows are per statement rather than per property: a property can carry
+ * several loan accounts, each issuing its own statement, and the financial
+ * year's deduction is their sum.
+ *
+ * `interest_paid` is only claimable once `confirmed_at` is set — extraction
+ * proposes, a human confirms.
+ */
+export type LoanStatement = {
+  id: string;
+  property_id: string;
+  financial_year_end: number;
+  interest_paid: number | null;
+  lender: string | null;
+  /** Distinguishes multiple loan accounts on the same property. */
+  account_ref: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  /** Path into the `property-files` bucket. See docs/account-deletion.md. */
+  storage_path: string | null;
+  extracted: Record<string, unknown> | null;
+  confidence: number | null;
+  confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -1468,6 +1497,46 @@ export interface Database {
             columns: ["expense_id"];
             isOneToOne: true;
             referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loan_statements: {
+        Row: LoanStatement;
+        Insert: {
+          id?: string;
+          property_id: string;
+          financial_year_end: number;
+          interest_paid?: number | null;
+          lender?: string | null;
+          account_ref?: string | null;
+          period_start?: string | null;
+          period_end?: string | null;
+          storage_path?: string | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          interest_paid?: number | null;
+          lender?: string | null;
+          account_ref?: string | null;
+          period_start?: string | null;
+          period_end?: string | null;
+          storage_path?: string | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          confirmed_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loan_statements_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];
