@@ -113,22 +113,24 @@ is where the parser's figure belongs.
 
 ## Phase 3: Extraction & upload  (Tier 2)
 
-- [ ] Task: `lib/ai/extract-rental-statement.ts`
+- [x] Task: `lib/ai/extract-rental-statement.ts` `ded6702`
   - [ ] Zod schema: gross rent, four fee buckets, other outgoings, net received, agent name,
         statement ref, period start/end, confidence
   - [ ] File passed to Claude directly — no server-side `pdf-parse` (see the comment in
         `app/api/loan-statements/extract/route.ts` for why)
   - [ ] Model wiring via `lib/ai/anthropic-client.ts`, not at the call site
   - [ ] Fixture-based test using the OWN10905 text; no live model call
-- [ ] Task: `POST /api/rental-statements/extract`
+- [x] Task: `POST /api/rental-statements/extract` `79f1614`
   - [ ] Auth check; store to `property-files` BEFORE extraction
   - [ ] Extraction failure keeps the upload and records the error in `extracted`
   - [ ] `fees_confirmed_at` left null
   - [ ] Insert failure removes the stored object; RLS rejection → 403 with a human message
-- [ ] Task: `app/actions/rental-statements.ts` — confirm and delete
+- [x] Task: `app/actions/rental-statements.ts` — confirm and delete `79f1614`
   - [ ] Confirm sets `fees_confirmed_at`
   - [ ] Delete removes the storage object as well as the column value
-- [ ] Task: Verify — happy path with the real OWN10905 PDF, plus two failure paths
+- [x] Task: Verify — happy path with the real OWN10905 PDF, plus two failure paths `79f1614`
+        (`npm run verify:rent-route`, 22 checks over real HTTP; `verify:rent-extract`, 18 checks
+        against both statement PDFs)
         (unreadable file, and a property the caller cannot write to)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
