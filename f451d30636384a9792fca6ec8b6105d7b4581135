@@ -1,0 +1,44 @@
+Task: Rental schedule builder (Phase 4, Tier 1)
+Track: fy_tax_pack_20260729
+
+FILES
+- lib/tax/rental-schedule.ts (new) - buildRentalSchedule
+- tests/lib/tax/rental-schedule.test.ts (new) - 14 tests (144 total)
+
+PAYS DOWN CARRIED-FORWARD DEBT
+Phase 2's note recorded that lib/tax/classification.ts was not yet consumed
+by any schedule builder and that Phase 4 must route through it rather than
+re-deriving. This does. Three tests assert the NEGATIVE cases explicitly -
+an inherited capital_improvement and an inherited initial_repair must not
+appear on the repairs line, and a manual override is honoured in both
+directions - so the vocabulary defect cannot reappear through this path.
+
+ORDERING DECISION
+Cash expenses alphabetically (body corporate, council rates, insurance,
+interest, land tax, agent fees, repairs, water, sundry), then the two
+computed deductions (capital works Div 43, decline in value Div 40) last.
+Computed deductions have no invoice behind them, so grouping them apart
+from paid expenses makes the evidence index legible. Empty lines are
+omitted rather than shown as zero.
+
+OTHER BEHAVIOUR
+- primary_residence returns an excluded result with a reason, not an empty
+  schedule that could be mistaken for a property with no activity.
+- Renovation repairs and operating repairs_maintenance merge onto ONE
+  repairs line; two separate lines would not match a rental schedule.
+- Non-claimable renovations excluded.
+- declineInValue omitted entirely when no QS figure exists, rather than
+  shown as zero - zero would imply a determination was made.
+- Apportionment applied per line via apportionIncome/apportionDeduction,
+  preserving the income-vs-deduction asymmetry from Phase 3.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 9 files, 144 tests passed.
+- npm run build -> Compiled successfully.
+
+VERIFICATION DEBT
+Not yet rendered anywhere - the schedule is consumed by the pack in
+Phase 5. The ATO line ORDER is modelled on the standard rental schedule
+but has not been checked against a current ATO form by a human; worth an
+accountant's eye before the pack ships, since keying order is the whole
+point of the sequence.
