@@ -62,6 +62,77 @@ describe("buildRentalSchedule", () => {
     expect(s.deductions.map((d) => d.key)).toEqual(["agent_fees"]);
   });
 
+  describe("agent sundries", () => {
+    it("routes agent sundries to the sundry line, not to commission", () => {
+      // Bank and admin charges are not commission. Keeping them off the
+      // agent_fees line is what leaves that figure comparable to the
+      // management_fee_pct estimate it replaces.
+      const s = buildRentalSchedule({ ...base, agentSundries: 8.8 });
+      const agentFees = s.deductions.find((d) => d.key === "agent_fees");
+      const sundry = s.deductions.find((d) => d.key === "sundry");
+      expect(agentFees!.amount).toBeCloseTo(2_704, 2);
+      expect(sundry!.amount).toBeCloseTo(8.8, 2);
+    });
+
+    it("combines agent sundries with sundry operating expenses on one line", () => {
+      // The ATO reports one sundry line, whatever the charges were for.
+      const s = buildRentalSchedule({
+        ...base,
+        agentSundries: 8.8,
+        operatingExpenses: [{ category: "other", amount: 150 }],
+      });
+      const sundry = s.deductions.find((d) => d.key === "sundry");
+      expect(sundry!.amount).toBeCloseTo(158.8, 2);
+    });
+
+    it("omits the sundry line when there are no sundries", () => {
+      const s = buildRentalSchedule({ ...base, agentSundries: 0 });
+      expect(s.deductions.map((d) => d.key)).toEqual(["agent_fees"]);
+    });
+  });
+
+  describe("other rental-related income", () => {
+    it("reports other income separately from gross rent", () => {
+      // Folding a tenant water recovery into gross rent would break the
+      // tenancy accrual cross-check in rental-income.ts, which compares
+      // against weekly_rent x weeks.
+      const s = buildRentalSchedule({ ...base, otherIncome: 44.84 });
+      expect(s.grossRent).toBeCloseTo(33_800, 2);
+      expect(s.otherIncome).toBeCloseTo(44.84, 2);
+      expect(s.totalIncome).toBeCloseTo(33_844.84, 2);
+    });
+
+    it("includes other income in the net result", () => {
+      const s = buildRentalSchedule({ ...base, otherIncome: 44.84 });
+      expect(s.netResult).toBeCloseTo(33_844.84 - 2_704, 2);
+    });
+
+    it("apportions other income by ownership, as income not a deduction", () => {
+      const s = buildRentalSchedule({
+        ...base,
+        otherIncome: 100,
+        apportionment: halfOwner,
+      });
+      expect(s.otherIncome).toBeCloseTo(50, 2);
+    });
+
+    it("defaults other income to zero when absent", () => {
+      const s = buildRentalSchedule(base);
+      expect(s.otherIncome).toBe(0);
+      expect(s.totalIncome).toBeCloseTo(s.grossRent, 2);
+    });
+
+    it("stays zero for an excluded primary residence", () => {
+      const s = buildRentalSchedule({
+        ...base,
+        otherIncome: 44.84,
+        propertyType: "primary_residence",
+      });
+      expect(s.otherIncome).toBe(0);
+      expect(s.totalIncome).toBe(0);
+    });
+  });
+
   describe("classification routing", () => {
     it("counts a plain repair as a deduction", () => {
       const s = buildRentalSchedule({
