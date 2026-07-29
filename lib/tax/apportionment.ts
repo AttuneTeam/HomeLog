@@ -41,13 +41,29 @@ function clamp01(value: number): number {
 /**
  * Resolve the apportionment factors for a property-year.
  *
- * Absent facts fall back to sole ownership and full-year availability, and the
- * fallback is reported through `assumed*` so the report can say it assumed
- * rather than presenting an assumption as a recorded fact.
+ * `daysOwnedInYear` is the denominator for availability, NOT the days in the
+ * financial year. This matters for a property acquired or sold mid-year.
+ *
+ * A property settled on 27 October leaves 247 days of a 1 July year. Every
+ * expense it incurs — interest on a loan that did not exist before settlement,
+ * insurance covering the ownership period — falls inside those 247 days. There
+ * is nothing to pro-rate away for the 118 days before it was owned, and
+ * dividing by 365 charges the taxpayer twice for the same part-year: on one
+ * real case it cut a $75,763 interest deduction to $51,270.
+ *
+ * Availability apportions deductions only where the property was OWNED but not
+ * available — private use, or withdrawn from the market. Hence
+ * available / owned, not available / year.
+ *
+ * Absent facts fall back to sole ownership and availability for the whole
+ * period owned, and the fallback is reported through `assumed*` so the report
+ * can say it assumed rather than presenting an assumption as a recorded fact.
  */
 export function computeApportionment(
   facts: ApportionmentFacts | null | undefined,
   daysInYear: number,
+  /** Days the property was held during the year. Defaults to the whole year. */
+  daysOwnedInYear: number = daysInYear,
 ): Apportionment {
   const ownershipRecorded = facts?.ownership_pct != null;
   const availabilityRecorded = facts?.days_available_for_rent != null;
@@ -56,16 +72,19 @@ export function computeApportionment(
     ? clamp01(Number(facts!.ownership_pct) / 100)
     : 1;
 
+  // Availability cannot exceed the period owned — a stale or over-stated figure
+  // must not manufacture a fraction above 1.
+  const ownedDays = Math.max(0, Math.min(daysOwnedInYear, daysInYear));
   const availableDays = availabilityRecorded
-    ? Number(facts!.days_available_for_rent)
-    : daysInYear;
+    ? Math.min(Number(facts!.days_available_for_rent), ownedDays)
+    : ownedDays;
   const privateDays = facts?.private_use_days ?? 0;
 
   // A day of private use is not a day available to rent, so it is removed from
   // the available days rather than applied as a second factor.
   const deductibleDays = Math.max(0, availableDays - Number(privateDays));
   const deductibleDayFraction =
-    daysInYear > 0 ? clamp01(deductibleDays / daysInYear) : 0;
+    ownedDays > 0 ? clamp01(deductibleDays / ownedDays) : 0;
 
   return {
     ownershipFraction,

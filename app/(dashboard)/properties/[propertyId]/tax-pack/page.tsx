@@ -29,6 +29,7 @@ import {
   fyBounds,
   resolveFyEndYear,
   selectableFyEndYears,
+  daysAvailableInFy,
   suggestAvailabilityFromTenancies,
 } from "@/lib/tax/fy";
 
@@ -152,6 +153,18 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   // Inclusive day count for the selected year — 366 in a leap year, so the
   // "available all year" default is never quietly wrong.
   const daysInYear = daysInFy(selectedFyEndYear, fyStartMonth, fyStartDay);
+
+  // Days the property was actually held this year. Availability is apportioned
+  // against this, not against the whole year — a property settled part-way
+  // through incurs no expenses before it is owned, so there is nothing to
+  // pro-rate away for the earlier months.
+  const daysOwnedInYear = daysAvailableInFy(
+    selectedFyEndYear,
+    property.purchase_date,
+    null,
+    fyStartMonth,
+    fyStartDay,
+  );
 
   // Availability starting point derived from tenancies already recorded, so
   // the user confirms rather than retypes dates the system can infer. Tenancy
@@ -277,7 +290,11 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
 
   // Apportion to the taxpayer's share. Ownership applies to both sides;
   // availability and private use reduce deductions only, never income.
-  const apportionment = computeApportionment(fyFacts, daysInYear);
+  const apportionment = computeApportionment(
+    fyFacts,
+    daysInYear,
+    daysOwnedInYear,
+  );
   const apportionedIncome =
     totalRentalIncome != null
       ? apportionIncome(totalRentalIncome, apportionment)
@@ -717,6 +734,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
           financialYearLabel={financialYear}
           facts={fyFacts ?? null}
           daysInYear={daysInYear}
+          daysOwnedInYear={daysOwnedInYear}
           fyStartDate={fyStartStr}
           fyEndDate={fyEndStr}
           fyStartMonth={fyStartMonth}
