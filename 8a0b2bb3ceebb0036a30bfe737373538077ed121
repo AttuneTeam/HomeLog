@@ -1,0 +1,65 @@
+Task: Derive days available from dates (Phase 2, Tier 1/2)
+Track: fy_tax_pack_20260729
+INSERTED TASK - user feedback raised at the Phase 2 checkpoint: "Where we
+ask 'Days available for rent' can we supply a date and auto calculate it.
+For example my property was available from 22/11/2025."
+
+SUMMARY
+Availability is captured as dates and the day count derived, replacing
+direct entry of the number.
+
+FILES
+- supabase/migrations/059_property_fy_facts_availability_dates.sql (new)
+  adds available_from / available_to + a range check
+- lib/tax/fy.ts - added daysAvailableInFy
+- tests/lib/tax/fy.test.ts - 11 new tests (52 total)
+- app/actions/property-fy-facts.ts - derives the count server-side
+- components/property-fy-facts-panel.tsx - date inputs, live computed count
+- lib/supabase/database.types.ts, tax-report page.tsx - wiring
+
+WHY
+The owner knows the date, not the count. Deriving 221 days from
+22 Nov 2025 across a year boundary is error-prone by hand, and once only
+the number is stored the figure cannot be checked or re-derived.
+
+Storing the dates keeps the evidence behind the number - the same
+recorded-fact-vs-derived-value distinction the tax pack has to preserve
+elsewhere.
+
+days_available_for_rent is RETAINED as the resolved value apportionment
+reads, computed from the dates when supplied. Phase 3 therefore consumes
+one field and need not know whether it came from dates or was entered
+directly (the latter still supported for a year with several separate
+availability windows).
+
+Clamping semantics: the range is clamped to the FY, so dates outside the
+year are permitted and meaningful - a property available since 2019 is
+recorded as such and reports the full year. Only an inverted range is
+rejected, by a named check constraint.
+
+ATO NUANCE
+Labelled "when it went on the market, not when a tenant moved in".
+Availability precedes tenancy under the ATO test - the user noted their
+property "was listed earlier", which is exactly this distinction.
+
+VERIFICATION PERFORMED
+- Red/green: 11 new tests, covering the reported case (22 Nov 2025 -> 221
+  days), null start/end, clamping on both sides, closed ranges, a single
+  day, zero when the range misses the year entirely, an inverted range,
+  29 February in a leap FY, and a guard that the result never exceeds
+  daysInFy.
+- CI=true npm test -> 52 tests passed.
+- npm run db:reset -> 59 migrations replayed cleanly.
+- Live round-trip, with an INDEPENDENT cross-check: Postgres computed
+  (date '2026-06-30' - available_from + 1) = 221, matching the TypeScript
+  helper exactly. Cross-checking against the database's own date
+  arithmetic rules out a shared bug in my own day-count logic.
+- Constraints: start date before the FY allowed (2019 -> 365 days);
+  inverted range -> property_fy_facts_available_range_check;
+  equal from/to -> 1 day.
+- npm run build -> Compiled successfully.
+
+VERIFICATION DEBT
+Date pickers not exercised in a browser: the min/max bounds, the live
+recalculation as dates change, and the disabled-save state on an inverted
+range are unconfirmed. Folded into the phase checkpoint's manual plan.
