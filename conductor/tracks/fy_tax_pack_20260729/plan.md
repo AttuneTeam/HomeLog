@@ -81,10 +81,10 @@ financial year.*
   - [x] Default to 100% ownership and full-year availability, showing these as assumptions rather than recorded values
   - [~] Verify in light and dark themes, and on a narrow viewport *(deferred to the phase checkpoint — needs a browser)*
 
-- [ ] Task: Verify account-deletion invariants still hold
-  - [ ] Review `docs/account-deletion.md` — each new file-bearing table must be covered by deletion
-  - [ ] Extend deletion to cover `loan_statements` and `depreciation_reports` storage objects
-  - [ ] Run `npm run verify:deletion`
+- [x] Task: Verify account-deletion invariants still hold `c4d8297`
+  - [x] Review `docs/account-deletion.md` — each new file-bearing table must be covered by deletion
+  - [x] Extend deletion to cover `loan_statements` and `depreciation_reports` storage objects *(migration 058)*
+  - [x] Run `npm run verify:deletion`
 
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
