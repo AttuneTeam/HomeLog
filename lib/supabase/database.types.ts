@@ -246,6 +246,30 @@ export type LoanStatement = {
   updated_at: string;
 };
 
+/**
+ * Quantity surveyor depreciation figures for one property in one financial
+ * year. The product records what the QS determined rather than deriving
+ * Division 40 itself — effective lives, prime cost versus diminishing value,
+ * and the post-9-May-2017 second-hand plant restriction are the surveyor's
+ * determination, not the product's.
+ *
+ * The same underlying report normally covers several years, so `storage_path`
+ * repeats across rows by design.
+ */
+export type DepreciationReport = {
+  property_id: string;
+  financial_year_end: number;
+  div43_annual: number | null;
+  div40_annual: number | null;
+  /** Path into the `property-files` bucket. See docs/account-deletion.md. */
+  storage_path: string | null;
+  qs_firm: string | null;
+  report_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -1497,6 +1521,39 @@ export interface Database {
             columns: ["expense_id"];
             isOneToOne: true;
             referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      depreciation_reports: {
+        Row: DepreciationReport;
+        Insert: {
+          property_id: string;
+          financial_year_end: number;
+          div43_annual?: number | null;
+          div40_annual?: number | null;
+          storage_path?: string | null;
+          qs_firm?: string | null;
+          report_date?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          div43_annual?: number | null;
+          div40_annual?: number | null;
+          storage_path?: string | null;
+          qs_firm?: string | null;
+          report_date?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "depreciation_reports_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
             referencedColumns: ["id"];
           },
         ];
