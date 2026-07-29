@@ -54,3 +54,65 @@ Not exercised in a browser. Doing so needs the local Supabase stack,
 whose ports are currently held by an unrelated project that was restored
 after the previous task. Deferred to the phase checkpoint's manual
 verification plan, where the user drives it.
+
+================================================================
+PHASE VERIFICATION REPORT
+Phase 1 - Foundations: correctness and financial year
+Track: fy_tax_pack_20260729
+================================================================
+
+SCOPE
+Commits 02b9392..f5e1af6 (4 functional tasks, 4 plan updates).
+Code files changed:
+  lib/tax/fy.ts                            Tier 1 (pure)
+  lib/supabase/database.types.ts           Tier 1 (types)
+  app/(dashboard)/.../tax-report/page.tsx  Tier 2
+  components/roi-calculator.tsx            Tier 2
+  components/financial-year-select.tsx     Tier 3
+  components/tax-report.tsx                Tier 3
+  components/tax-report-pdf.tsx            Tier 3
+  tests/, vitest.config.ts, package.json   tooling
+
+AUTOMATED CHECKS
+  npm run build      -> PASS. Compiled successfully; TypeScript passed;
+                        all 37 routes generated.
+  CI=true npm test   -> PASS. 2 files, 29 tests.
+
+MANUAL VERIFICATION
+Plan presented to the user covering: the selector rendering beside the
+breadcrumb; defaulting to 2025-26 rather than the in-progress 2026-27;
+?fy= round-tripping through the URL and surviving reload; expenses dated
+exactly 1 Jul 2025 / 30 Jun 2026 falling inside the year (the timezone
+boundary fix); and the CGT cost base showing stamp duty with a
+source-accurate label.
+
+User response: confirmed "yes".
+
+DEFECTS RESOLVED IN THIS PHASE
+1. Tax report always produced the in-progress financial year and offered
+   no way to request a past one. It could not generate FY2025-26, the
+   year a 2026 return covers.
+2. FY bounds were built in local time then serialised via toISOString(),
+   shifting the start back a day at UTC+10 and pulling the prior year's
+   expenses into scope.
+3. roi_calculator_inputs was queried by a user_id column dropped in
+   migration 009. The query errored silently, so stamp duty and
+   depreciation were absent from the CGT cost base.
+4. Screen report and PDF read stamp duty from different sources and
+   could disagree on the cost base for the same property.
+5. RoiCalculator discarded its upsert result, so a failed write was
+   indistinguishable from a successful one.
+
+VERIFICATION DEBT CARRIED FORWARD
+- No automated coverage for the page, the selector component, or the PDF
+  document. Only pure logic is covered. Browser behaviour rests on the
+  user's manual confirmation above.
+- RLS and migrations remain manually verified; Phase 2 adds four
+  migrations and must verify non-owner denial explicitly per the plan.
+- components/roi-calculator.tsx is exported but never rendered anywhere
+  in the repo. Its fix is therefore unexercised at runtime. Worth
+  deciding in a later track whether the component should be wired up or
+  deleted.
+
+STATUS: Phase 1 complete. The tax report can now generate a correct
+FY2025-26 report - the deliverable this phase was ordered first to reach.
