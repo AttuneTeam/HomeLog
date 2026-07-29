@@ -1,0 +1,51 @@
+Task: Add depreciation_reports (migration 056) (Phase 2, Tier 1)
+Track: fy_tax_pack_20260729
+
+SUMMARY
+New table public.depreciation_reports, PK (property_id,
+financial_year_end). Columns: div43_annual, div40_annual (both >= 0),
+storage_path, qs_firm, report_date, notes, timestamps.
+
+FILES
+- supabase/migrations/056_depreciation_reports.sql (new)
+- lib/supabase/database.types.ts - DepreciationReport row type + Tables
+  entry
+
+DESIGN DECISION: RECORD, DO NOT DERIVE
+Div 40 depends on per-asset effective lives, prime cost vs diminishing
+value, and the post-9-May-2017 restriction on previously-used plant in
+second-hand residential property. A QS already determines this and issues
+a schedule. Deriving it here would duplicate paid work and take on
+liability that conflicts with "decision support, never automated filing"
+in conductor/product.md. The table stores the surveyor's stated annual
+figures and keeps the report as evidence.
+
+One row per property per FY. The same PDF normally covers several years,
+so storage_path repeating across rows is intended, not a duplicate -
+explicitly verified as permitted.
+
+VERIFICATION PERFORMED (live, local Supabase)
+npm run db:reset -> 56 migrations replayed cleanly from scratch.
+
+RLS, three users (owner, unrelated stranger, ACTIVE account_members
+co_owner), savepoints isolating expected failures:
+  1. Owner SELECT      -> 1 row, BMT / 5500.00 / 3200.00
+  2. Stranger SELECT   -> 0 rows
+  3. Stranger INSERT   -> DENIED (RLS policy violation)
+  4. Stranger UPDATE   -> UPDATE 0; DELETE -> DELETE 0
+  5. Co-owner SELECT   -> 1 row
+  6. Co-owner INSERT   -> ALLOWED, table then holds 2 rows
+Confirms write access is granted to a co-owner but denied to a stranger -
+the two halves of has_property_write_access, checked in both directions.
+
+Constraints:
+  negative div40_annual          -> depreciation_reports_div40_annual_check
+  duplicate (property, year)     -> depreciation_reports_pkey
+  same storage_path across years -> ALLOWED (2 rows share one file)
+Cascade:
+  DELETE property                -> reports 0
+
+All inside a transaction, rolled back; no local data retained.
+
+npm run build     -> Compiled successfully, no type errors.
+CI=true npm test  -> 29 tests passed.
