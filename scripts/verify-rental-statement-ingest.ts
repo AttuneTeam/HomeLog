@@ -87,6 +87,8 @@ async function main() {
       lease_fees: parsed.leaseFees,
       sundry_fees: parsed.sundryFees,
       other_outgoings: parsed.otherOutgoings,
+      other_income: parsed.otherIncome,
+      other_income_note: parsed.otherIncomeNote,
       net_received: parsed.netReceived,
       extracted: { ...parsed, source: "inbound_email" },
       confidence: parsed.confidence,
@@ -135,6 +137,77 @@ async function main() {
     .eq("id", row.id)
     .maybeSingle();
   check("verification row cleaned up", !gone);
+
+  // ── December: the case that needs other_income to reconcile ────────────────
+  // rent 4,400.00 + water usage 6.80 in, 387.86 out, 4,018.94 disbursed.
+  console.log("\nDecember — tenant water recovery (needs other_income):");
+  const december = parseStatementResponse(
+    JSON.stringify({
+      type: "rental_payment",
+      amount: 4400,
+      paymentDate: "2025-12-24",
+      confidence: 0.9,
+      managementFees: 121,
+      otherOutgoings: 266.86,
+      otherIncome: 6.8,
+      otherIncomeNote: "Water usage recovered from tenant",
+      netReceived: 4018.94,
+    }),
+  );
+
+  const { data: decRow, error: decError } = await admin
+    .from("rental_payments")
+    .insert({
+      property_id: property.id,
+      payment_date: december.paymentDate!,
+      amount: december.amount!,
+      management_fees: december.managementFees,
+      other_outgoings: december.otherOutgoings,
+      other_income: december.otherIncome,
+      other_income_note: december.otherIncomeNote,
+      net_received: december.netReceived,
+      source_email_id: "verify-mapping-test-dec",
+      raw_subject: "Statement #2 (verification)",
+      confidence: december.confidence,
+    })
+    .select("*")
+    .single();
+
+  if (decError || !decRow) {
+    console.error(`  ✗ insert failed: ${decError?.message}`);
+    process.exit(1);
+  }
+
+  check("other_income = 6.80 persisted", Number(decRow.other_income) === 6.8);
+  check(
+    "other_income_note persisted",
+    decRow.other_income_note === "Water usage recovered from tenant",
+  );
+  check(
+    "gross rent stayed 4400 — the recovery was NOT folded in",
+    Number(decRow.amount) === 4400,
+  );
+
+  const decFees = Number(decRow.management_fees);
+  const withoutOther =
+    Number(decRow.amount) - decFees - Number(decRow.other_outgoings);
+  const withOther = withoutOther + Number(decRow.other_income);
+  check(
+    `WITHOUT other_income the identity is off by 6.80 (${withoutOther.toFixed(2)} vs ${Number(decRow.net_received).toFixed(2)})`,
+    Math.abs(withoutOther - Number(decRow.net_received)) > 1,
+  );
+  check(
+    `WITH other_income it ties: 4400 + 6.80 − ${decFees.toFixed(2)} − 266.86 = ${withOther.toFixed(2)}`,
+    Math.abs(withOther - Number(decRow.net_received)) <= 0.01,
+  );
+
+  await admin.from("rental_payments").delete().eq("id", decRow.id);
+  const { data: decGone } = await admin
+    .from("rental_payments")
+    .select("id")
+    .eq("id", decRow.id)
+    .maybeSingle();
+  check("December verification row cleaned up", !decGone);
 
   console.log(
     failures === 0 ? "\n✓ All checks passed.\n" : `\n✗ ${failures} check(s) failed.\n`,

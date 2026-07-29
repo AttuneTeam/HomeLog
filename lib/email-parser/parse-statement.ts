@@ -57,7 +57,18 @@ const statementSchema = z.object({
    * their own invoice, the only path that classifies them correctly.
    */
   otherOutgoings: numberField,
-  /** What the agent disbursed: amount − fees − otherOutgoings. */
+  /**
+   * Assessable income that is NOT rent — a tenant reimbursement for water
+   * usage, a retained letting fee, an insurance payout for lost rent. Reported
+   * on the ATO's "Other rental-related income" line.
+   *
+   * Deliberately not folded into `amount`: gross rent is cross-checked against
+   * the tenancy accrual (weekly_rent x weeks), which a water recovery would
+   * make diverge for a legitimate reason.
+   */
+  otherIncome: numberField,
+  otherIncomeNote: stringField,
+  /** What the agent disbursed: (amount + otherIncome) − fees − otherOutgoings. */
   netReceived: numberField,
 });
 
@@ -80,6 +91,8 @@ const UNKNOWN_STATEMENT: ParsedStatement = {
   leaseFees: null,
   sundryFees: null,
   otherOutgoings: null,
+  otherIncome: null,
+  otherIncomeNote: null,
   netReceived: null,
 };
 
@@ -121,6 +134,8 @@ Extract the following and return as JSON:
   "leaseFees": number or null (lease preparation or renewal fee),
   "sundryFees": number or null (bank charges, postage, admin sundries charged by the agent),
   "otherOutgoings": number or null (total the agent paid to THIRD PARTIES on the owner's behalf — tradespeople, suppliers, councils),
+  "otherIncome": number or null (money in that is NOT rent — see the rules),
+  "otherIncomeNote": string or null (what that other income was for, e.g. "Water usage recovered from tenant"),
   "netReceived": number or null (the amount actually disbursed to the owner)
 }
 
@@ -132,7 +147,8 @@ Rules:
 - For rental_payment: "netReceived" is the amount the agent paid out to the owner — look for "You Received", "Withdrawal by EFT", or "Net to owner". This is NOT the same as "amount" and must never be reported as it.
 - For rental_payment: report each agent fee in its own field, GST-INCLUSIVE, exactly as it appears on the statement. Do not merge them into one figure.
 - For rental_payment: put payments the agent made to third parties (tradespeople, suppliers) in "otherOutgoings", NOT in any fee field. These are the owner's expenses but are evidenced by the supplier's own invoice.
-- For rental_payment: the figures should satisfy amount − (all fees) − otherOutgoings = netReceived. If they do not, still report each figure exactly as read rather than adjusting any of them to force a balance.
+- For rental_payment: "otherIncome" is money in that is NOT rent — most often an amount the tenant reimbursed the owner for, such as water usage, but also a retained letting fee or an insurance payout for lost rent. Put it here, NOT in "amount". "amount" is rent only, because it is compared against the tenancy's weekly rent.
+- For rental_payment: the figures should satisfy (amount + otherIncome) − (all fees) − otherOutgoings = netReceived. If they do not, still report each figure exactly as read rather than adjusting any of them to force a balance.
 - For rental_payment (owner/landlord statements): paymentDate is the statement date or EFT disbursement date (the date the agent paid the owner), NOT the dates the tenant paid rent
 - For dates, today is ${today}`;
 }

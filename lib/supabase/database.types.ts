@@ -342,7 +342,19 @@ export type RentalPayment = {
    * from this column would double-count every such cost.
    */
   other_outgoings: number | null;
-  /** What the agent disbursed: amount − fees − other_outgoings. */
+  /**
+   * Assessable income that is NOT rent — tenant reimbursements (water usage),
+   * retained letting fees, insurance payouts for lost rent. Reported on the
+   * ATO's "Other rental-related income" line, separate from gross rent.
+   *
+   * Kept out of `amount` deliberately: gross rent is cross-checked against the
+   * tenancy accrual (`weekly_rent × weeks`) in lib/tax/rental-income.ts, and
+   * folding non-rent income in would make that comparison diverge for a
+   * legitimate reason.
+   */
+  other_income: number | null;
+  other_income_note: string | null;
+  /** What the agent disbursed: (amount + other_income) − fees − other_outgoings. */
   net_received: number | null;
   /** Raw AI extraction, kept so a confirmed figure can be compared to it. */
   extracted: Record<string, unknown> | null;
@@ -1723,6 +1735,9 @@ export interface Database {
           sundry_fees?: number | null;
           /** Reconciliation only — never a deduction. */
           other_outgoings?: number | null;
+          /** Assessable but NOT rent — kept out of `amount`. */
+          other_income?: number | null;
+          other_income_note?: string | null;
           net_received?: number | null;
           extracted?: Record<string, unknown> | null;
           confidence?: number | null;
@@ -1741,6 +1756,8 @@ export interface Database {
           lease_fees?: number | null;
           sundry_fees?: number | null;
           other_outgoings?: number | null;
+          other_income?: number | null;
+          other_income_note?: string | null;
           net_received?: number | null;
           extracted?: Record<string, unknown> | null;
           confidence?: number | null;

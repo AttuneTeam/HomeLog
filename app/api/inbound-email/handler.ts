@@ -104,6 +104,11 @@ export async function handleInboundEmail(
         // Reconciliation only — never deducted. The supplier's own invoice is
         // what makes these claimable, and classifies them correctly.
         other_outgoings: parsed.otherOutgoings,
+        // Assessable, but NOT rent — kept out of `amount` so gross rent stays
+        // comparable to the tenancy accrual. Without it the reconciliation is
+        // off by exactly the reimbursement.
+        other_income: parsed.otherIncome,
+        other_income_note: parsed.otherIncomeNote,
         net_received: parsed.netReceived,
         extracted: { ...parsed, source: "inbound_email" },
         confidence: parsed.confidence,

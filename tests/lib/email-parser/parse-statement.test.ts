@@ -148,6 +148,81 @@ describe("parseStatementResponse — OWN10905", () => {
   });
 });
 
+/**
+ * December 2025 for the same account, from the FY2026 folio summary. It carries
+ * $6.80 of water usage recovered from the tenant, which is assessable income but
+ * is NOT rent.
+ *
+ *   Money In   rent 4,400.00 + water 6.80 = 4,406.80
+ *   Money Out                                 387.86
+ *   Net                                     4,018.94
+ */
+const DECEMBER_RESPONSE = JSON.stringify({
+  type: "rental_payment",
+  amount: 4400,
+  gstAmount: null,
+  paymentDate: "2025-12-24",
+  periodStart: null,
+  periodEnd: null,
+  supplier: "Rich & Oliva Pty Ltd",
+  abn: "52003845047",
+  category: null,
+  propertyAddress: "56 Forbes St, Croydon Park NSW 2133",
+  confidence: 0.9,
+  managementFees: 121,
+  lettingFees: null,
+  leaseFees: null,
+  sundryFees: null,
+  otherOutgoings: 266.86,
+  otherIncome: 6.8,
+  otherIncomeNote: "Water usage recovered from tenant",
+  netReceived: 4018.94,
+});
+
+describe("parseStatementResponse — tenant reimbursements", () => {
+  const parsed = parseStatementResponse(DECEMBER_RESPONSE);
+
+  it("keeps a water recovery OUT of gross rent", () => {
+    // Folding it into `amount` would break the tenancy accrual cross-check in
+    // lib/tax/rental-income.ts, which compares against weekly_rent x weeks.
+    expect(parsed.amount).toBe(4400);
+    expect(parsed.otherIncome).toBe(6.8);
+  });
+
+  it("records what the other income was for", () => {
+    expect(parsed.otherIncomeNote).toBe("Water usage recovered from tenant");
+  });
+
+  it("reconciles ONLY when other income is included", () => {
+    const fees = parsed.managementFees ?? 0;
+    const withoutOtherIncome =
+      (parsed.amount ?? 0) - fees - (parsed.otherOutgoings ?? 0);
+    const withOtherIncome = withoutOtherIncome + (parsed.otherIncome ?? 0);
+
+    // This is the whole reason the column exists: the identity is off by
+    // exactly the reimbursement, so a correct statement would be flagged.
+    expect(withoutOtherIncome).toBeCloseTo(4012.14, 2);
+    expect(Math.abs(withoutOtherIncome - (parsed.netReceived ?? 0))).toBeCloseTo(
+      6.8,
+      2,
+    );
+    expect(withOtherIncome).toBeCloseTo(parsed.netReceived ?? 0, 2);
+  });
+});
+
+describe("buildStatementPrompt — other income", () => {
+  const prompt = buildStatementPrompt("a@b.com", "Statement", "body", "2026-07-30");
+
+  it("asks for other income and what it was for", () => {
+    expect(prompt).toContain("otherIncome");
+    expect(prompt).toContain("otherIncomeNote");
+  });
+
+  it("states that a tenant reimbursement is not rent", () => {
+    expect(prompt.toLowerCase()).toContain("reimburse");
+  });
+});
+
 describe("parseStatementResponse — malformed and partial input", () => {
   it("extracts JSON embedded in surrounding prose", () => {
     const wrapped = `Here is the data you asked for:\n${OWN10905_RESPONSE}\nHope that helps.`;
