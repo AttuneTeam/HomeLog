@@ -64,6 +64,17 @@ export interface TaxReportData {
     amount: number;
     source: "property" | "roi_inputs" | null;
   };
+  /**
+   * Where the gross rent figure came from, and the other source as a
+   * cross-check. An accrued figure is an estimate from tenancy terms, not a
+   * record of money received, and the report has to say which it is.
+   */
+  income: {
+    source: "actual" | "accrued" | null;
+    actual: number | null;
+    accrued: number | null;
+    materialDivergence: boolean;
+  };
   repairs: TaxExpense[];
   initialRepairs: TaxExpense[];
   capitalImprovements: TaxExpense[];
@@ -89,6 +100,20 @@ export function stampDutyLabelFor(
   if (source === "property") return "Stamp duty";
   if (source === "roi_inputs") return "Stamp duty (estimated, from ROI inputs)";
   return "Stamp duty (not recorded)";
+}
+
+/**
+ * Names the origin of the gross rent figure. An accrued figure is computed
+ * from tenancy terms, not a record of money received; presenting the two
+ * identically would let an estimate pass for a fact.
+ */
+export function incomeLabelFor(
+  source: TaxReportData["income"]["source"],
+): string {
+  if (source === "actual") return "Gross rental income (recorded payments)";
+  if (source === "accrued")
+    return "Gross rental income (estimated from tenancy terms)";
+  return "Gross rental income";
 }
 
 function fmt(n: number | null | undefined): string {
@@ -489,7 +514,9 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
           {totalRentalIncome != null && (
             <>
               <View style={S.summaryRow}>
-                <Text style={S.summaryLabel}>Gross rental income</Text>
+                <Text style={S.summaryLabel}>
+                  {incomeLabelFor(data.income.source)}
+                </Text>
                 <Text style={S.summaryValue}>{fmt(totalRentalIncome)}</Text>
               </View>
               {totalAgentFees > 0 && (

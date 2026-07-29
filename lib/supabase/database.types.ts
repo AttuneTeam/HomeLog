@@ -282,6 +282,26 @@ export type DepreciationReport = {
   updated_at: string;
 };
 
+/**
+ * A rent payment actually received, ingested from an agent's emailed
+ * statement via the inbound webhook. Distinct from rental_periods, which holds
+ * the tenancy terms income can be accrued from.
+ */
+export type RentalPayment = {
+  id: string;
+  property_id: string;
+  rental_period_id: string | null;
+  payment_date: string;
+  amount: number;
+  period_start: string | null;
+  period_end: string | null;
+  /** Dedup key for the source email; null for manually entered payments. */
+  source_email_id: string | null;
+  raw_subject: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -1618,6 +1638,46 @@ export interface Database {
             columns: ["property_id"];
             isOneToOne: false;
             referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rental_payments: {
+        Row: RentalPayment;
+        Insert: {
+          id?: string;
+          property_id: string;
+          rental_period_id?: string | null;
+          payment_date: string;
+          amount: number;
+          period_start?: string | null;
+          period_end?: string | null;
+          source_email_id?: string | null;
+          raw_subject?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          rental_period_id?: string | null;
+          payment_date?: string;
+          amount?: number;
+          period_start?: string | null;
+          period_end?: string | null;
+          notes?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rental_payments_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rental_payments_rental_period_id_fkey";
+            columns: ["rental_period_id"];
+            isOneToOne: false;
+            referencedRelation: "rental_periods";
             referencedColumns: ["id"];
           },
         ];

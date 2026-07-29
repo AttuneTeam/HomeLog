@@ -649,7 +649,11 @@ export function TaxReport({
               <SummaryRow
                 label="Gross rental income"
                 value={formatCurrency(totalRentalIncome)}
-                sub="(from rental periods)"
+                sub={
+                  data.income.source === "actual"
+                    ? "(from recorded payments)"
+                    : "(estimated from tenancy terms)"
+                }
               />
               {totalAgentFees > 0 && (
                 <SummaryRow
@@ -669,6 +673,26 @@ export function TaxReport({
                   value={formatCurrency(netRentalIncome)}
                   bold
                 />
+              )}
+              {data.income.materialDivergence && (
+                <div className="mt-3 flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p>
+                    Recorded payments total{" "}
+                    <strong>{formatCurrency(data.income.actual!)}</strong>, but
+                    the tenancy terms accrue{" "}
+                    <strong>{formatCurrency(data.income.accrued!)}</strong> — a
+                    difference of{" "}
+                    <strong>
+                      {formatCurrency(
+                        Math.abs(data.income.actual! - data.income.accrued!),
+                      )}
+                    </strong>
+                    . This usually means some payments are missing rather than
+                    that either figure is wrong. The reported income uses the
+                    recorded payments; check them before lodging.
+                  </p>
+                </div>
               )}
             </>
           )}

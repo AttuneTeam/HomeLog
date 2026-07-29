@@ -6,6 +6,7 @@ import { PropertyFyFactsPanel } from "@/components/property-fy-facts-panel";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
+import { resolveRentalIncome } from "@/lib/tax/rental-income";
 import {
   AU_FY_START_DAY,
   AU_FY_START_MONTH,
@@ -142,14 +143,23 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     fyStartDay,
   );
 
-  // Fetch rental operating expenses now that FY dates are known
-  const { data: rentalExpenses } = await supabase
-    .from("rental_operating_expenses")
-    .select("*")
-    .eq("property_id", propertyId)
-    .gte("expense_date", fyStartStr)
-    .lte("expense_date", fyEndStr)
-    .order("expense_date", { ascending: true });
+  // Fetch rental operating expenses and recorded payments now that FY dates
+  // are known. Payments are the actuals a return is built on; the tenancy
+  // accrual below is the cross-check.
+  const [{ data: rentalExpenses }, { data: rentalPayments }] = await Promise.all([
+    supabase
+      .from("rental_operating_expenses")
+      .select("*")
+      .eq("property_id", propertyId)
+      .gte("expense_date", fyStartStr)
+      .lte("expense_date", fyEndStr)
+      .order("expense_date", { ascending: true }),
+    supabase
+      .from("rental_payments")
+      .select("payment_date, amount")
+      .eq("property_id", propertyId)
+      .order("payment_date", { ascending: true }),
+  ]);
 
   function fyClampedWeeks(period: {
     start_date: string;
@@ -172,13 +182,16 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     return (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
   }
 
-  const totalRentalIncome =
-    rentalPeriods && rentalPeriods.length > 0
-      ? rentalPeriods.reduce((sum, period) => {
-          const weeks = fyClampedWeeks(period);
-          return sum + weeks * period.weekly_rent;
-        }, 0)
-      : null;
+  // Prefer what was actually received; fall back to the tenancy accrual and
+  // label it. Both figures are carried so the report can show the cross-check.
+  const income = resolveRentalIncome(
+    rentalPayments ?? [],
+    rentalPeriods ?? [],
+    selectedFyEndYear,
+    fyStartMonth,
+    fyStartDay,
+  );
+  const totalRentalIncome = income.amount;
 
   const totalAgentFees =
     rentalPeriods?.reduce((sum, period) => {
@@ -282,6 +295,12 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     property,
     roiInputs: roiInputs ?? null,
     stampDuty: resolvedStampDuty,
+    income: {
+      source: income.source,
+      actual: income.actual,
+      accrued: income.accrued,
+      materialDivergence: income.materialDivergence,
+    },
     financialYear,
     totalRentalIncome,
     totalAgentFees,

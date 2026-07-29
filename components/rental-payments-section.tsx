@@ -101,8 +101,7 @@ export function RentalPaymentsSection({
     };
 
     if (editingPayment) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("rental_payments")
         .update(payload)
         .eq("id", editingPayment.id)
@@ -120,9 +119,7 @@ export function RentalPaymentsSection({
       );
       toast.success("Rental payment updated");
     } else {
-      // rental_payments not yet in generated DB types — cast until types are regenerated
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("rental_payments")
         .insert(payload)
         .select()
@@ -147,8 +144,10 @@ export function RentalPaymentsSection({
   async function handleDelete(payment: RentalPayment) {
     setDeletingId(payment.id);
     const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("rental_payments").delete().eq("id", payment.id);
+    const { error } = await supabase
+      .from("rental_payments")
+      .delete()
+      .eq("id", payment.id);
     if (error) {
       toast.error(error.message);
       setDeletingId(null);
