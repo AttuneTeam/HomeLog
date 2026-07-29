@@ -1,0 +1,26 @@
+{
+  "track_id": "fy_tax_pack_20260729",
+  "title": "FY Tax Pack",
+  "description": "Financial-year-parameterised, portfolio-wide tax pack export that answers the rental-property section of an Australian tax-agent checklist, with evidence bundled.",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-29T05:27:09Z",
+  "updated_at": "2026-07-29T05:27:09Z",
+  "phases": 5,
+  "tasks": 29,
+  "artifacts": {
+    "spec": "./spec.md",
+    "plan": "./plan.md",
+    "index": "./index.md"
+  },
+  "context": {
+    "strategic_link": "docs/b2b-strategy-pitch.md — Phase 0 of the go-to-market",
+    "includes_bug_fix": "roi_calculator_inputs queried by a user_id column dropped in migration 009",
+    "new_migrations": [
+      "054_property_fy_facts",
+      "055_loan_statements",
+      "056_depreciation_reports",
+      "057_capital_works_items"
+    ]
+  }
+}
