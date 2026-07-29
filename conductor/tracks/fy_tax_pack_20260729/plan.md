@@ -64,6 +64,12 @@ financial year.*
   - [x] Add the RLS policy and hand-add the row type
   - [x] Verify non-owner denial and a clean `db:reset`
 
+- [x] Task: Fix the classification vocabulary mismatch *(inserted — see git note)* `2d68ac9`
+  - [x] Write failing tests for a shared resolver mapping `renovations.classification` (`repair`/`capital_improvement`/`initial_repair`) onto the tax vocabulary (`Repair`/`Capital Works`/`Immediate Repair`), with the per-expense manual override taking precedence
+  - [x] Implement `lib/tax/classification.ts`
+  - [x] Wire the tax report to it, replacing the comparison that silently routed unoverridden capital improvements into repairs
+  - [x] Confirm tests pass and the report groups expenses correctly
+
 - [ ] Task: Add Div 43 capital works item fields (migration 057)
   - [ ] Add `start_date` and `rate_pct` (default 2.5) to capital works expenses, per the spec's data model section
   - [ ] Backfill `start_date` from the existing expense or renovation end date
