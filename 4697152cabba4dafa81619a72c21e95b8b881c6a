@@ -1,0 +1,56 @@
+Task: Loan statement review UI (Phase 3, Tier 2/3)
+Track: fy_tax_pack_20260729
+
+FILES
+- app/actions/loan-statements.ts (new) - confirmLoanStatement,
+  deleteLoanStatement
+- components/loan-statements-panel.tsx (new) - upload, review, confirm
+- app/(dashboard)/.../tax-report/page.tsx - fetches statements, computes
+  the estimate, apportions confirmed interest into the deductions
+- components/tax-report.tsx, tax-report-pdf.tsx - "Less: Loan interest"
+
+DESIGN DECISIONS
+- confirmed_at gates claimability. Pending rows appear with their
+  confidence score and are excluded from the total, with the count of
+  those awaiting confirmation shown next to it. The figure feeding a
+  return is never one only a model has seen.
+- An edited figure supersedes the extraction, and the panel shows what was
+  extracted alongside it, so a correction is visible AS a correction.
+  `extracted` retains the original.
+- The rate-schedule estimate is shown only when nothing is uploaded, is
+  labelled an estimate, and is excluded from the report. It ignores
+  amortisation and offset balances and will not tie to the lender - a
+  number that cannot be supported must not look claimable.
+- Failed extraction still surfaces the stored document with a prompt to
+  type the figure. The evidence is what the pack ships.
+- Delete removes the storage object explicitly; storage has no DB cascade.
+
+DEFECT CAUGHT DURING IMPLEMENTATION
+The scripted edit that added the interest row to the PDF swapped the two
+guards: loan interest rendered under `totalOperatingExpenses > 0` and
+operating expenses under `totalLoanInterest > 0`. It compiled cleanly and
+type-checked - JSX structure was valid, only the semantics were inverted -
+so the build would not have caught it. Found by reading the resulting
+block rather than trusting the green build, and corrected before commit.
+Worth noting as a limitation of the sole automated gate: a passing tsc
+says nothing about whether a condition guards the right element.
+
+VERIFICATION PERFORMED
+- Live, against local Supabase: two statements on one property, one
+  confirmed (21,450) and one pending (5,000).
+    claimable (confirmed only) -> 21,450.00
+    all rows                   -> 26,450.00
+    awaiting review            -> 1
+  Confirming the second with an EDITED amount (4,800 rather than the
+  extracted 5,000) -> claimable 26,250.00, proving the edit is what
+  counts, not the extraction.
+- npm run build -> Compiled successfully, 38 routes.
+- CI=true npm test -> 106 tests passed.
+
+VERIFICATION DEBT
+Not exercised end to end in a browser: the upload round trip, a real
+statement PDF, a deliberately unreadable file, and the estimate-only empty
+state are all unconfirmed. The plan's sub-task asking for a real statement
+PDF and an unreadable file needs documents to test with, so it is carried
+to the phase checkpoint for the user to drive.
+No automated coverage of the route handler or the Server Actions.
