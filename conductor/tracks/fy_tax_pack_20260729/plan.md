@@ -102,7 +102,7 @@ financial year.*
 
 ---
 
-## Phase 3 — Income, interest and apportionment
+## Phase 3 — Income, interest and apportionment [checkpoint: 19da84b]
 
 *Goal: every figure that feeds the schedule can be sourced, labelled and apportioned correctly.*
 
@@ -135,7 +135,7 @@ financial year.*
   - [x] Capture the start date in the loan section
   - [x] Wire it into the report's estimate and state the assumptions it rests on
 
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `19da84b`
 
 ---
 
