@@ -43,24 +43,30 @@ assessable income and contradicts the invariant migration 063 documents. Six of 
 are affected. Fixed here rather than deferred, because this track introduces `net_received`, which
 is where the parser's figure belongs.
 
-- [ ] Task: Write a failing regression test for the statement parser
-  - [ ] Fixture from the OWN10905 text asserts `amount` is GROSS rent ($4,400), not net ($760.20)
-  - [ ] Asserts `net_received` captures the disbursed figure
-  - [ ] Asserts the four fee buckets are populated from the statement
-  - [ ] Confirm the test FAILS against the current prompt before changing it
-- [ ] Task: Repoint `lib/email-parser/parse-statement.ts`
-  - [ ] `amount` extracts gross rent; the instruction at line 51 is inverted, with a comment
+- [x] Task: Write a failing regression test for the statement parser `8fd6834`
+  - [x] Fixture from the OWN10905 text asserts `amount` is GROSS rent ($4,400), not net ($760.20)
+  - [x] Asserts `net_received` captures the disbursed figure
+  - [x] Asserts the four fee buckets are populated from the statement
+  - [x] Confirm the test FAILS against the current prompt before changing it
+- [x] Task: Repoint `lib/email-parser/parse-statement.ts` `8fd6834`
+  - [x] `amount` extracts gross rent; the instruction at line 51 is inverted, with a comment
         recording that reporting it as gross is what `actualRentForFy` requires
-  - [ ] `net_received` extracts "You Received" / "Withdrawal by EFT" / "Net to owner"
-  - [ ] Fee buckets and `other_outgoings` extracted while the prompt is being changed
-- [ ] Task: Verify the inbound-email handler persists the new fields
-  - [ ] `app/api/inbound-email/handler.ts` writes gross to `amount` and the rest to their columns
-  - [ ] Ingested rows are NOT auto-confirmed — `fees_confirmed_at` stays null for review
-- [ ] Task: Correct the affected historical rows
-  - [ ] Identify every `rental_payments` row whose `amount` came from the parser
-  - [ ] Restate `amount` as gross and populate `net_received` from the original statements
-  - [ ] Report any row that cannot be corrected without the source document rather than guessing
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+  - [x] `net_received` extracts "You Received" / "Withdrawal by EFT" / "Net to owner"
+  - [x] Fee buckets and `other_outgoings` extracted while the prompt is being changed
+  - [x] Prompt builder and response parser split out of the model call so the invariant is
+        reachable from a test without contacting a provider
+- [x] Task: Verify the inbound-email handler persists the new fields `6e63c55`
+  - [x] `app/api/inbound-email/handler.ts` writes gross to `amount` and the rest to their columns
+  - [x] Ingested rows are NOT auto-confirmed — `fees_confirmed_at` stays null for review
+  - [x] `npm run verify:rent-ingest` proves the mapping end to end (16 checks)
+- [x] Task: Correct the affected historical rows `618b576`
+  - [x] Identify every `rental_payments` row whose `amount` came from the parser
+  - [x] Restate `amount` as gross and populate `net_received` from the original statements
+        (2 of 7 rows — statements #1 and #7 located; both reconcile exactly)
+  - [x] Report any row that cannot be corrected without the source document rather than guessing
+        (5 rows flagged in `notes`; FY2026 income still understated by $2,377.32)
+  - [ ] **OPEN — needs the user:** statements #2–#6, and a production run of the script
+- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Domain logic  (Tier 1 — tests first)
 
