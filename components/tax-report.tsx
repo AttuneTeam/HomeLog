@@ -549,7 +549,7 @@ export function TaxReport({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tax-pack-${property.address.replace(/\s+/g, "-").toLowerCase()}-${new Date().getFullYear()}.pdf`;
+      a.download = `tax-pack-${property.address.replace(/\s+/g, "-").toLowerCase()}-${financialYear.replace("–", "-")}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

@@ -9,6 +9,7 @@ import { TaxPackGenerator, type EvidenceItem } from "@/components/tax-pack-gener
 import type { PackData } from "@/components/tax-pack-document";
 import { buildRentalSchedule } from "@/lib/tax/rental-schedule";
 import { buildQuestionnaire } from "@/lib/tax/questionnaire";
+import { capitalTotalsForCostBase } from "@/lib/tax/cost-base";
 import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
@@ -588,11 +589,20 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     });
   }
 
-  const initialRepairTotal = initialRepairs.reduce((s, e) => s + e.amount, 0);
-  const capitalImprovementTotal = capitalImprovements.reduce(
-    (s, e) => s + e.amount,
-    0,
-  );
+  // Lifetime totals, NOT the selected year's. The display arrays above are
+  // filtered to the reported year; the cost base must not be, or it
+  // understates the base and overstates a future capital gain.
+  const { initialRepairs: initialRepairTotal, capitalImprovements: capitalImprovementTotal } =
+    capitalTotalsForCostBase(
+      (renovations ?? []).map((r) => ({
+        classification: r.classification,
+        claimable: r.claimable,
+        expenses: (r.expenses ?? []).map((e) => ({
+          amount: Number(e.amount),
+          manual_classification: e.manual_classification,
+        })),
+      })),
+    );
   const packCostBase = {
     purchasePrice: Number(property.purchase_price ?? 0),
     stampDuty: resolvedStampDuty.amount,

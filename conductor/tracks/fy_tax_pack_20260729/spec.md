@@ -107,8 +107,12 @@ Per property, in ATO rental-schedule line order:
 
 - Gross rent, then deductions: interest, council rates, water, insurance, land tax, strata fees,
   agent management fees, repairs and maintenance, capital works (Div 43), other.
-- Repairs are drawn from expenses classified `Repair` / `Immediate Repair`, plus
+- Repairs are drawn from expenses whose resolved classification is `Repair`, plus
   `rental_operating_expenses` in the `repairs_maintenance` category.
+  **Corrected during review:** `Immediate Repair` denotes an *initial repair at purchase*, which
+  is capital and belongs in the CGT cost base — it is NOT a deduction. The original wording of
+  this clause was written before that semantics was established and contradicted the
+  implementation.
 - Renovations with `claimable = false` and properties with `property_type = 'primary_residence'`
   are excluded.
 - Each line is apportioned by ownership percentage and, where deductions are affected, by private

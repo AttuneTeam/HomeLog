@@ -129,8 +129,8 @@ function claimForItem(
     startUtc.getUTCDate(),
   ) - MS_PER_DAY;
 
-  // Walk each financial year from completion to the selected one. Capped at
-  // the life in years plus one, so a very old item cannot loop unbounded.
+  // Walk each financial year from completion to the selected one. Years past
+  // the item's life contribute zero, so running past expiry is harmless.
   const firstFy = fyEndYearContaining(start, startMonth, startDay);
   let cumulative = 0;
   let yearsClaimed = 0;
