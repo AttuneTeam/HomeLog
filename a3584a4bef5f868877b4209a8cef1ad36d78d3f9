@@ -65,3 +65,77 @@ VERIFICATION DEBT
 None outstanding for Phase 1. The reconciliation identity is proven in SQL but
 not yet in application code; that is Phase 2, task "Implement the
 reconciliation helper".
+
+════════════════════════════════════════════════════════════════════
+PHASE 1 VERIFICATION REPORT — Schema & storage foundation
+════════════════════════════════════════════════════════════════════
+
+SCOPE
+git diff --name-only 7d85fd9 HEAD (no prior checkpoint on this track).
+Code files (excluding .md/.json):
+  lib/supabase/database.types.ts
+  scripts/verify-account-deletion.ts
+  scripts/verify-rental-payment-rls.sql
+  supabase/migrations/063_rental_payment_statements.sql
+  supabase/migrations/064_deletion_fns_rental_statements.sql
+
+Tasks: 4 of 4 complete — 9b1953a, 9bb0eaa, ff94402, a3584a4.
+
+AUTOMATED CHECKS
+  npm run build                          → ✓ Compiled successfully
+  CI=true npm test                       → ✓ 12 files, 186 tests passed
+  npm run db:reset                       → ✓ clean replay, all 64 migrations
+  npm run verify:deletion                → ✓ 20 checks passed (was 15)
+  scripts/verify-rental-payment-rls.sql  → ✓ non-owner denied on select,
+                                             update and insert; owner allowed
+
+VERIFICATION DEBT
+All five changed files are Tier 1. None is a pure module, so there is no
+unit-test-shaped coverage to add; the evidence is the documented manual
+verification recorded in each task's git note.
+
+One debt item was found and CLOSED rather than carried: verify:deletion passed
+before this phase while having zero coverage of statement_path — it staged only
+`invoices` files and never touched rental_payments. A green harness that does
+not exercise the new column reads as proof and is not. It now stages a rental
+statement in `property-files`, via rental_payments, uploaded by the co-owner
+guest into the owner's property.
+
+Nothing outstanding for Phase 1. The reconciliation identity is proven in SQL
+but not yet in application code; that is Phase 2.
+
+DEVIATIONS FROM THE APPROVED PLAN
+1. The storage-function work became migration 064 rather than part of 063.
+   063 is applied before that task begins and editing an applied migration is
+   forbidden. Matches the existing 055/058 precedent. Spec FR2 amended.
+2. docs/account-deletion.md was updated here rather than in Phase 6, because
+   that file carries the maintenance rule requiring its own registry to be
+   updated whenever a file-bearing column is added.
+3. Phase 1.5 and FR12/FR13 were ADDED mid-phase. While verifying FR1 it emerged
+   that lib/email-parser/parse-statement.ts:51 instructs the model to store the
+   NET disbursed amount in rental_payments.amount, which
+   lib/tax/rental-income.ts#actualRentForFy reports as gross rent. Six of seven
+   production rows are affected; assessable income is understated. The spec had
+   listed this as an out-of-scope hypothetical risk — it is neither
+   hypothetical nor a data-entry error. User approved folding the fix into this
+   track.
+
+MANUAL VERIFICATION PERFORMED
+  npm run db:sync (run by the user — needs interactive Supabase auth)
+    → data-only dump from PRODUCTION restored into the migrated local schema.
+      All 7 rental_payments rows returned with `amount` unchanged; sampled new
+      columns (statement_path, management_fees, net_received) present and NULL.
+      Incidental but valuable: production does not have 063/064, so a clean
+      restore of prod data into the migrated schema is evidence the migration
+      is additive-safe against real data, not only against a fixture.
+
+  Reconciliation identity on the real OWN10905 figures:
+    4400.00 − 1493.80 − 2146.00 = 760.20, ties within $1.00 → true
+    (acceptance criterion 2, at the schema level)
+
+DEPLOY NOTE
+Migrations 063 and 064 must be applied to production BEFORE the code that
+depends on them goes live. Recorded in docs/account-deletion.md.
+
+USER CONFIRMATION
+Confirmed 2026-07-30: "looks good. keep going".
