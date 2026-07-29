@@ -1,0 +1,41 @@
+Task: Portfolio summary (Phase 4, Tier 1)
+Track: fy_tax_pack_20260729
+
+FILES
+- lib/tax/portfolio.ts (new) - buildPortfolioSummary
+- tests/lib/tax/portfolio.test.ts (new) - 9 tests (153 total)
+
+THE INVARIANT THIS EXISTS TO PROTECT
+Portfolio totals are SUMMED from the per-property schedules, never
+recomputed from source data. The pack shows both views; if the portfolio
+figure were derived independently the two could disagree, and an
+accountant reconciling them would have no way to tell which was right.
+Tested directly: portfolio net == sum of property nets == gross rent less
+total deductions, and the summed deduction LINES also reconcile with the
+summed property totals.
+
+OTHER BEHAVIOUR
+- Excluded properties (primary residence) are carried through with their
+  reason rather than dropped, so every property the owner holds is
+  accounted for. They contribute to no total, including cost base.
+- Cost base is carried per property and totalled; it is not a rental
+  schedule figure and stays separate from the income/deduction identity.
+- propertiesAtLoss is reported separately from the portfolio result: a
+  portfolio can be net positive while individual properties are negatively
+  geared, and the accountant needs both.
+- Deduction lines are summed into COPIES. The first occurrence is spread
+  into a new object before accumulation, so aggregating a schedule does not
+  mutate it. A test aggregates the SAME schedule object twice and asserts
+  the source line is unchanged - without the copy this silently corrupts
+  the per-property view the pack also prints.
+
+VERIFICATION PERFORMED
+- CI=true npm test -> 10 files, 153 tests passed. Covers reconciliation,
+  line summing, exclusion handling, per-property and portfolio loss,
+  loss offsetting a profitable property, cost base totalling, empty
+  portfolio, and the mutation guard.
+- npm run build -> Compiled successfully.
+
+VERIFICATION DEBT
+Not yet consumed by a surface - the portfolio view is rendered in Phase 5
+when the pack is assembled. Nothing calls this in the running app yet.
