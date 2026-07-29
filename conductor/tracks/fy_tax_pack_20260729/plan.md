@@ -27,11 +27,11 @@ financial year.*
   - [x] Implement `fyBounds(fyEndYear, startMonth, startDay)` and `mostRecentCompletedFy(today, ...)` returning inclusive ISO date bounds and a `2025–26` display label
   - [x] Confirm tests pass
 
-- [ ] Task: Fix the `roi_calculator_inputs` query defect
-  - [ ] Correct `app/(dashboard)/properties/[propertyId]/tax-report/page.tsx` to filter by `property_id`
-  - [ ] Correct the `user_id` upsert in `components/roi-calculator.tsx`
-  - [ ] Hand-correct `lib/supabase/database.types.ts` to remove the stale `user_id` declaration so this cannot silently type-check again
-  - [ ] Verify against a local database that stamp duty and depreciation now appear in the CGT cost base
+- [x] Task: Fix the `roi_calculator_inputs` query defect `33637df`
+  - [x] Correct `app/(dashboard)/properties/[propertyId]/tax-report/page.tsx` to filter by `property_id`
+  - [x] Correct the `user_id` upsert in `components/roi-calculator.tsx`
+  - [x] Hand-correct `lib/supabase/database.types.ts` to remove the stale `user_id` declaration so this cannot silently type-check again
+  - [x] Verify against a local database that stamp duty and depreciation now appear in the CGT cost base
 
 - [ ] Task: Replace date-derived FY with explicit selection
   - [ ] Wire `lib/tax/fy.ts` into the tax report page, removing the `new Date()` derivation
