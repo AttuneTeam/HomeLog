@@ -129,6 +129,12 @@ financial year.*
   - [x] Show the computed rate-schedule estimate where no statement exists, labelled an estimate and excluded from claimed totals
   - [~] Verify with a real statement PDF and with a deliberately unreadable file *(deferred to the phase checkpoint — needs documents to test with)*
 
+- [x] Task: Improve the interest estimate with loan start date and offset *(inserted — user feedback at checkpoint)* `19da84b`
+  - [x] Add `start_date` to `property_loans` (migration 060) so a loan taken out mid-year is not estimated as running all year
+  - [x] Write failing tests for a pure estimator that prorates from the loan start, segments by rate changes, and nets off the offset balance
+  - [x] Capture the start date in the loan section
+  - [x] Wire it into the report's estimate and state the assumptions it rests on
+
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ---
