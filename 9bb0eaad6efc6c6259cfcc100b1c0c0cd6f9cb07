@@ -1,0 +1,68 @@
+Task: Migration 064 — redefine the storage-object functions (Phase 1, Tier 1)
+
+WHAT CHANGED
+CREATE OR REPLACE on both user_storage_objects(uuid) and
+property_storage_objects(uuid), adding a UNION ALL branch for
+rental_payments.statement_path in the `property-files` bucket. Grants
+re-asserted (REVOKE from PUBLIC/anon/authenticated, EXECUTE to service_role).
+Updated the file-bearing table registry and deploy note in
+docs/account-deletion.md.
+
+Files:
+  supabase/migrations/064_deletion_fns_rental_statements.sql (new)
+  docs/account-deletion.md (modified)
+
+THE CORE WHY
+Storage has no DB cascade, so a storage column absent from these two functions
+leaks its objects silently on account or property deletion. Migration 063 made
+rental_payments file-bearing; this closes that.
+
+Ownership resolves through properties.user_id, never the uploader path prefix.
+A statement can legitimately be uploaded by an active co-owner guest, in which
+case the object sits under the GUEST's id while the rental_payments row belongs
+to the OWNER's property. A prefix scan would let the guest's account deletion
+wipe the owner's evidence.
+
+No SELECT DISTINCT on this branch, unlike depreciation_reports: one statement
+maps to one payment row, so a path cannot repeat. The migration comment records
+that this must change if a statement is ever allowed to span several rows.
+
+DEVIATION FROM PLAN
+docs/account-deletion.md was scheduled for Phase 6. Moved here because that
+file carries the maintenance rule requiring its own table to be updated
+whenever a file-bearing column is added; leaving it stale across five phases
+would undercut the rule it states.
+
+VERIFICATION PERFORMED
+  npm run db:migrate
+    → "Applying migration 064_deletion_fns_rental_statements.sql... Local
+       database is up to date."
+
+  Targeted SQL proof, in a transaction rolled back afterwards
+  (scratchpad/verify-064.sql). Fixture: owner + co-owner guest, one property
+  owned by the owner, one rental_payments row whose statement_path is prefixed
+  with the GUEST's id, and a second payment row with a NULL statement_path.
+
+    user_storage_objects(OWNER)     → 1 row, property-files, the guest-prefixed
+                                      path. Ownership correctly resolved
+                                      through properties.user_id.
+    user_storage_objects(GUEST)     → 0 rows. The guest does NOT claim a file
+                                      belonging to the owner's property. This
+                                      is the cross-owner data-loss guard.
+    property_storage_objects(PROP)  → 1 row, the same path.
+    NULL statement_path             → 0 rows; the IS NOT NULL filter holds.
+
+  npm run verify:deletion
+    → ✓ All checks passed (15 checks, requirements 1b and 2).
+
+VERIFICATION DEBT — REPORTED, NOT SKIPPED
+verify:deletion passed but provides NO coverage of statement_path: the harness
+stages only `invoices` files and never inserts a rental_payments row (grep for
+statement_path in scripts/verify-account-deletion.ts returns nothing). Its pass
+here is a regression check that migration 064 did not break the existing
+branches — not evidence that the new branch works. The evidence for the new
+branch is the SQL proof above.
+
+Extending the harness to stage a real rental statement is deferred to Phase 1
+task 4, because inserting a statement_path row through the typed Supabase
+client requires the database.types.ts update that is task 3.
