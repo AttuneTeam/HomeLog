@@ -1,0 +1,67 @@
+Task: Verify schema and access (Phase 1, Tier 1)
+
+WHAT CHANGED
+Extended scripts/verify-account-deletion.ts to stage a rental statement
+(file D) in the `property-files` bucket, uploaded by the co-owner GUEST into
+the OWNER's property, backed by a real rental_payments row. Added five checks
+covering it. Added scripts/verify-rental-payment-rls.sql, a reusable RLS proof
+for the new columns.
+
+Files:
+  scripts/verify-account-deletion.ts (modified)
+  scripts/verify-rental-payment-rls.sql (new)
+
+THE CORE WHY
+The harness passed before this change while providing ZERO coverage of
+statement_path — it staged only `invoices` files and never touched
+rental_payments. A green harness that does not exercise the new column is
+worse than no coverage, because it reads as proof. File D deliberately uses a
+different bucket AND a different table from the existing fixtures, so it
+exercises a genuinely separate branch of both functions.
+
+RLS applies per ROW, not per column, so migration 062's policies should cover
+063's columns automatically. "Should" is not evidence, and workflow.md requires
+proving a non-owner is DENIED rather than only that the owner is allowed. The
+SQL proof runs as the `authenticated` role with a JWT claim, which is how
+PostgREST reaches these policies — as superuser RLS is bypassed and every check
+would pass vacuously.
+
+VERIFICATION PERFORMED
+  npm run verify:deletion  → ✓ All checks passed (20 checks, up from 15)
+    New checks:
+      ✓ user_storage_objects(guest) EXCLUDES rental statement in owner's property (D)
+      ✓ user_storage_objects(owner) INCLUDES guest-uploaded rental statement (D)
+      ✓ guest-uploaded rental statement (D) PRESERVED after guest account deletion
+      ✓ property_storage_objects includes rental statement (D)
+      ✓ rental statement (D) removed from storage on property deletion
+    The guest-uploaded statement being attributed to the OWNER, and surviving
+    the GUEST's account deletion, is the cross-owner data-loss guard holding.
+
+  scripts/verify-rental-payment-rls.sql (as `authenticated`, rolled back):
+      STRANGER select                 → 0 rows (DENIED)
+      STRANGER select of fee columns  → 0 rows (DENIED)
+      STRANGER update of fees         → UPDATE 0 (DENIED)
+      STRANGER insert                 → rejected: "new row violates row-level
+                                        security policy for table
+                                        rental_payments"
+      OWNER select                    → 1 row, all ten new columns readable
+      OWNER update of a fee column    → UPDATE 1
+    Migration 062's policies confirmed to cover the new columns.
+
+  Reconciliation identity, with the real OWN10905 figures:
+      4400.00 − 1493.80 − 2146.00 = 760.20, ties within $1.00 → true
+    This is acceptance criterion 2 proven at the schema level. The pure helper
+    that enforces it in application code is Phase 2.
+
+  npm run build   → ✓ Compiled successfully
+  CI=true npm test → 186 tests passed
+
+  Runtime proof for task 3: the harness insert wrote statement_path,
+  management_fees, other_outgoings and net_received through the TYPED Supabase
+  client and succeeded, closing the "a type that compiles is not proof the
+  column exists" gap recorded in that task's note.
+
+VERIFICATION DEBT
+None outstanding for Phase 1. The reconciliation identity is proven in SQL but
+not yet in application code; that is Phase 2, task "Implement the
+reconciliation helper".
