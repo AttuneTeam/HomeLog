@@ -1,0 +1,108 @@
+Task: Save the forwarded agent statement against the rent payment, and read its
+      figures with the schema-validated extractor (Tier 2)
+
+WHAT CHANGED
+  app/api/inbound-email/handler.ts
+    - pickStatementAttachment() — exported, pure, tested
+    - the rental_payment branch uploads the statement to property-files and sets
+      statement_path
+    - figures come from extractRentalStatementFields when a PDF is attached,
+      with the email parser as fallback
+    - restructured so the guard tests the RESOLVED amount and date, letting the
+      structured extractor rescue a statement the email parser misreads
+  lib/supabase/database.types.ts — added email_ingestion_log
+  tests/app/inbound-email/pick-statement-attachment.test.ts — 6 tests
+  scripts/verify-inbound-statement.ts + npm run verify:inbound-statement
+
+WHY THE ATTACHMENT
+Statements arrive by email far more often than they get uploaded by hand, and
+the ingestion path was extracting the figures and discarding the document. The
+tax pack then shipped a rent line with nothing supporting it — the exact gap this
+area of the product exists to close. Deliberately left out of the previous track
+as out of scope; requested directly here.
+
+Same bucket and path shape as app/api/rental-statements/extract/route.ts, so
+both paths produce interchangeable rows. No migration needed: 064 already
+enumerates rental_payments.statement_path in both storage-object functions.
+
+WHY THE EXTRACTOR CHANGED — the substance of this commit
+Measured, not assumed. Three runs of the email path over the SAME statement,
+same code:
+
+  run 1: other_outgoings absent            (want 2146)
+  run 2: other_outgoings 2146 ✓, other_income 760.20 ✗
+  run 3: other_outgoings 3148 ✗, other_income 760.20 ✗, confidence 1.0
+
+The manual upload route, on the same PDFs, was exact on every field across both
+statements. The difference is mechanism: the email parser OCRs the attachment to
+text and asks for freeform JSON with no schema; extractRentalStatementFields
+sends the native PDF through generateObject with a Zod schema, per-field
+descriptions and no coercion.
+
+Two things made this worse than ordinary flakiness. Confidence 1.0 while wrong
+means confidence cannot be used to filter it. And other_income repeatedly
+received the amount DISBURSED to the owner, which feeds the ATO "Other
+rental-related income" line — reporting $760.20 of income that does not exist,
+on top of the rent.
+
+other_income and other_income_note are therefore taken ONLY from the structured
+extraction when one ran — `fields ? fields.other_income : parsed.otherIncome`,
+not `??` — because the email parser's value there is actively wrong rather than
+merely absent, and `??` would let a null structured answer fall back to it.
+
+The email parser still decides rental-vs-expense and matches the property. It
+just no longer supplies the money.
+
+`extracted` records `figures_from: "statement_pdf" | "email_text"` and the full
+structured result, so a confirmed figure can always be traced to its origin.
+
+A TYPES GAP FOUND
+email_ingestion_log has existed since migration 045 but was never added to the
+hand-maintained database.types.ts, so any typed query against it failed to
+compile. The handler uses an untyped SupabaseClient, which is why nobody noticed.
+Added rather than cast around, per the style guide.
+
+VERIFICATION PERFORMED
+  npm run build    → ✓ Compiled successfully, TypeScript clean
+  CI=true npm test → ✓ 17 files, 260 tests (was 254; 6 added)
+
+  npm run verify:inbound-statement → ✓ All checks passed (25 checks), run THREE
+  consecutive times with identical results. Calls handleInboundEmail directly
+  with the real Statement #1 PDF; creates and cleans up its own user, property
+  and storage.
+
+    Happy path — a photo attached alongside the statement, so selection is
+    exercised rather than assumed:
+      the PDF was chosen over the image
+      statement_path under {userId}/{propertyId}/rental-statements/
+      amount 4400.00 GROSS, not the 760.20 disbursed
+      management 242.00 / letting 1210.00 / lease 33.00 / sundry 8.80
+      other_outgoings 2146.00
+      other_income NULL — the email parser's wrong 760.20 did NOT reach the column
+      figures reconcile: computed 760.20 vs stated 760.20
+      fees_confirmed_at NULL
+      object retrievable, byte-identical to the source PDF, and returned by
+        property_storage_objects so deletion covers it
+
+    Failure path — same email forwarded twice:
+      reported duplicate, no second row, no orphan object (dedup returns before
+      anything is uploaded)
+
+    Failure path — statement in the body, nothing attached:
+      still parsed, statement_path null, figures still extracted from the body
+
+  Notable evidence in the output: the `extracted` jsonb still shows the email
+  parser's incorrect otherIncome of 760.2 while the COLUMN reads null. That is
+  the fallback ordering working — the bad figure is retained for provenance and
+  kept out of the data.
+
+VERIFICATION DEBT
+Only Rich & Oliva statements have been tested; another agency's layout is
+unproven, which is what the fees_confirmed_at gate exists for.
+
+The webhook wrapper around handleInboundEmail (Svix signature verification,
+attachment decoding, property matching) is still uncovered — this verification
+calls the handler directly.
+
+extractRentalStatementFields is a live provider call and has no unit test; its
+schema has 11.
