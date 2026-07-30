@@ -1,0 +1,75 @@
+Task: Verify responsive layout and both themes (Phase 4, Tier 3)
+
+WHAT CHANGED
+  components/rental-payments-section.tsx — action group no longer wraps.
+    Removed flex-wrap from the row's action container, added whitespace-nowrap to
+    the cell, and shrink-0 to all five buttons.
+
+THE DEFECT AND ITS CAUSE
+Reported by the user on visual inspection: the row action buttons stacked
+vertically instead of sitting horizontally. Cause was flex-wrap on the action
+group — once the "Confirm fees" text button widened the group beyond the
+zero-width action column, the flex container wrapped each button onto its own
+line. Static review had not caught it because the markup is individually
+reasonable; only rendering shows the interaction between a w-0 column and a
+wrapping flex child.
+
+Wrapping was the wrong overflow strategy here regardless. The table is already
+inside overflow-x-auto, so the narrow case should scroll within the container —
+which is what workflow.md's responsive rule asks for — rather than reflow the
+controls.
+
+════════════════════════════════════════════════════════════════════
+PHASE 4 VERIFICATION REPORT — Rent tab UI
+════════════════════════════════════════════════════════════════════
+
+SCOPE
+git diff --name-only 79f1614 HEAD (Phase 3 checkpoint).
+Code files:
+  components/rental-payments-section.tsx                          (rewritten)
+  app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx    (modified)
+
+Tasks: 4 of 4 complete — c67ec7f, b32ce80.
+
+AUTOMATED CHECKS
+  npm run build    → ✓ Compiled successfully, TypeScript clean
+  CI=true npm test → ✓ 16 files, 254 tests passed
+
+MANUAL VERIFICATION
+Performed by the USER, not by the assistant — no browser tooling was available
+this session, so the assistant could only review the markup statically. The user
+was given a five-step checklist covering both themes, the amber/emerald status
+markers, the flagged-row badges, a live statement upload, and the confirm action.
+
+  First pass  → the user reported the stacked action buttons, fixed in b32ce80.
+  Second pass → the user confirmed "looks good".
+
+Recording the division of labour deliberately: the Tier 3 theme and layout gate
+was satisfied by the user's inspection. The assistant's static review had missed
+the one real defect, which is the honest argument for why Tier 3 requires eyes on
+the rendered page.
+
+REMOVED A TYPE ASSERTION
+The rent page carried `(supabase as any)` with an eslint-disable on the
+rental_payments query, plus `as unknown as RentalPayment[]` on the prop. Both are
+gone. Per the style guide a cast around a Supabase query usually means
+database.types.ts is stale rather than that the cast is correct — and here that
+was literally the case, since the table's types were incomplete before this
+track. The component's RentalPayment type now re-exports from database.types
+instead of being hand-declared, so it cannot drift from the row shape again.
+
+VERIFICATION DEBT
+The three Server Actions (confirmRentalStatement, removeRentalStatement,
+rentalStatementUrl) still have no AUTOMATED coverage. They were exercised
+manually via the UI in the pass above, which is the Tier 3 standard, but a
+regression in them would not be caught by CI.
+
+CARRIED FORWARD (unchanged)
+  - db:reset clean replay still not run for migration 065.
+  - Statements #2–#6 outstanding; FY2026 income understated by $2,377.32.
+  - The data correction is local only; production run still required.
+  - The $2,146 blinds expense is classified "Repair" while acceptance criterion 5
+    assumes Division 40 — must be resolved in Phase 5.
+
+USER CONFIRMATION
+Confirmed 2026-07-30: "looks good".
