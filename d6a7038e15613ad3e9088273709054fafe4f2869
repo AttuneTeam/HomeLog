@@ -1,0 +1,72 @@
+Tasks: Phase 5 — route the pack through resolveAgentFees, disclose the source,
+       add omissions, add statement evidence, align the financial view
+       (Phase 5, Tier 2)
+
+WHAT CHANGED
+  app/(dashboard)/properties/[propertyId]/tax-pack/page.tsx
+  app/(dashboard)/financial/page.tsx
+  components/financial-tabs.tsx
+  components/financial-position-view.tsx
+  components/tax-report.tsx
+  components/tax-report-pdf.tsx
+  components/tax-pack-document.tsx
+
+  - Replaced the inline weeks x weekly_rent x management_fee_pct calculation at
+    tax-pack/page.tsx with resolveAgentFees.
+  - Commission feeds agent_fees; agent sundries feed the sundry line; both are
+    apportioned and both reduce the net result.
+  - Other rental-related income is totalled for the year, apportioned as INCOME
+    (not as a deduction), and shown as its own line in the pack PDF.
+  - TaxReportData gains an `agentFees` disclosure block; the on-screen report and
+    the PDF both label the figure as from statements, from statements but
+    incomplete, or estimated from the percentage.
+  - Three new pack omissions: fees awaiting confirmation, a partial actual, and
+    a fully estimated figure — each naming the consequence.
+  - Each statement in the year becomes an EvidenceItem (kind "Rental statement",
+    feedsLine "Gross rent / Property agent fees").
+  - financial-position-view.tsx now calls the same resolver, threaded through
+    financial/page.tsx and financial-tabs.tsx.
+
+DECISIONS
+- The evidence item's amount is the GROSS rent the statement evidences, not the
+  amount disbursed, so the manifest agrees with the income line it supports.
+- A SECOND percentage calculation in financial-position-view (the monthly
+  cash-flow projection, ~line 505) was deliberately LEFT on the percentage
+  model, with a comment explaining why: it is forward-looking, so a percentage
+  of projected rent is the correct basis, and resolveAgentFees is
+  financial-year scoped with no meaning for a single month. Without that comment
+  the next reader would "fix" it and break the projection.
+- The useMemo dependency array gained rentalPaymentsByPropertyId,
+  financialYearEnd, financialYearStartMonth and financialYearStartDay. Omitting
+  them would have left the view showing stale fees after a statement was
+  confirmed — a silent wrong number, which is the failure mode this whole track
+  is about.
+
+VERIFICATION PERFORMED
+  npm run build    → ✓ Compiled successfully, TypeScript clean
+  CI=true npm test → ✓ 16 files, 254 tests passed
+
+  Two type errors were surfaced and fixed during the build rather than guessed:
+  the financial page renders FinancialTabs rather than the view directly, so the
+  prop needed threading through it, and the view's destructure needed the new
+  prop added.
+
+VERIFICATION DEBT
+The pack has NOT been generated end to end against the real property yet, and
+the acceptance criteria have not been walked. That is the next task in this
+phase and requires the browser.
+
+A SPEC CONFLICT FOUND, NOT YET RESOLVED — acceptance criterion 5
+Criterion 5 says the blinds should appear "classified as capital/Div 40". That
+is NOT achievable in the current model. The expense classification vocabulary is
+Repair | Capital Works | Immediate Repair (lib/tax/classification.ts); Division
+40 reaches the schedule only via depreciation_reports.div40_annual, a quantity
+surveyor's figure, and there is no way to mark an individual expense as a Div 40
+depreciating asset. The $2,146 blinds expense is currently classified "Repair",
+so the whole amount is deducted in FY2026.
+
+Criterion 5's real purpose — that the blinds appear exactly ONCE and are not
+double-counted via other_outgoings — is achievable and is what should be
+asserted. The Division 40 half was over-specified from the tax treatment without
+checking the model supported it. To be raised with the user before the phase
+closes.
