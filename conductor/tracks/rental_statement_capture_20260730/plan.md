@@ -136,15 +136,17 @@ is where the parser's figure belongs.
 
 ## Phase 4: Rent tab UI  (Tier 3)
 
-- [ ] Task: Statement upload in `components/rental-payments-section.tsx`
+- [x] Task: Statement upload in `components/rental-payments-section.tsx` `c67ec7f`
   - [ ] Upload control in the add/edit dialog; existing rows unaffected
   - [ ] View link via signed URL
-- [ ] Task: Fee breakdown fields and display
+- [x] Task: Fee breakdown fields and display `c67ec7f`
   - [ ] Four fee inputs plus other outgoings and net received
   - [ ] Manual entry confirms on save; extracted figures show a Confirm action
   - [ ] Edited-from-extracted visibly distinguished, as `loan-statements-panel.tsx` does
-- [ ] Task: Reconciliation indicator — ties / doesn't tie, advisory tone, never blocking
-- [ ] Task: Verify responsive layout, and legibility in BOTH light and dark themes
+- [x] Task: Reconciliation indicator — ties / doesn't tie, advisory tone, never blocking `c67ec7f`
+- [~] Task: Verify responsive layout, and legibility in BOTH light and dark themes
+  - [ ] **BLOCKED on the user:** no browser tooling this session; static review done but Tier 3
+        requires actual visual confirmation in both themes
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 5: Tax pack & consistency  (Tier 2)
