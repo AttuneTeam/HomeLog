@@ -1,0 +1,72 @@
+Tasks: Phase 4 UI — statement upload, fee breakdown, reconciliation indicator
+       (Phase 4, Tier 3)
+
+WHAT CHANGED
+  components/rental-payments-section.tsx (substantially rewritten)
+  app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx
+
+  - Per-row statement upload (hidden file input, driven by an upload button),
+    a "Statement" link that fetches a signed URL on demand, and a remove action.
+  - Fee breakdown as a secondary line under each payment: total fees, third
+    party, other income, received, reconciliation status, confirmation status.
+  - "Confirm fees" button, shown only when fees exist and are unconfirmed.
+  - Dialog gains the four fee inputs, third-party outgoings, other income + note,
+    and received — with a LIVE reconciliation readout as you type.
+  - Section-level banners: how many statements await confirmation, and how many
+    payments are flagged as possibly holding net rather than gross.
+  - "Unverified" badge on rows carrying the NEEDS VERIFICATION marker written by
+    scripts/fix-rental-payment-gross-net.ts.
+
+COPY DECISIONS, which are the substance of this phase
+  - The amount field is labelled "Gross rent", not "Amount", with help text
+    saying it is the Money In total and NOT what reached the bank. The old label
+    is how the wrong figure got entered in the first place.
+  - Third-party outgoings says explicitly it is "not deducted here, because
+    those costs are claimed from their own invoices" — the double-count guard
+    stated where someone might otherwise assume the opposite.
+  - The unconfirmed banner says what the consequence is: fees are not claimed and
+    the pack falls back to the percentage estimate. A warning that does not say
+    what it costs you gets ignored.
+  - A failed reconciliation says "a balance brought forward can cause this. You
+    can still save." Advisory, per FR5 — it never blocks.
+  - Delete confirmation now warns that removing a payment "reduces the rental
+    income reported for the year", and mentions the statement goes too.
+
+REMOVED A TYPE ASSERTION
+The rent page had `(supabase as any)` with an eslint-disable on the
+rental_payments query. Per the style guide a cast around a Supabase query
+usually means database.types.ts is stale rather than that the cast is right —
+and that was the case: the table's types were incomplete before this track. Both
+the cast and the `as unknown as RentalPayment[]` on the prop are gone, so the
+query is now genuinely type-checked.
+
+The component's RentalPayment type is now re-exported from
+lib/supabase/database.types rather than hand-declared, so it cannot drift from
+the row shape again.
+
+VERIFICATION PERFORMED
+  npm run build    → ✓ Compiled successfully, TypeScript clean
+  CI=true npm test → 254 tests passed
+
+  Static review in place of the browser (no browser tooling available this
+  session):
+    - 17 `dark:` variants; every coloured callout has a dark pair, matching the
+      emerald/amber convention already used in rental-periods-section.tsx.
+    - Table wrapped in overflow-x-auto so it scrolls within its container rather
+      than the page; dialog is max-h-[85vh] overflow-y-auto for short viewports;
+      flex-wrap on the header, badge row, fee line and action group.
+    - toast.warning confirmed supported — components/ui/sonner.tsx explicitly
+      configures a warning icon, and the Toaster is theme-aware via next-themes.
+
+  Fixed before commit: the remove-statement button reused the FileText icon
+  already used by the open-statement link, so two different actions looked
+  identical. Now FileX.
+
+VERIFICATION DEBT — the Tier 3 requirement is NOT met yet
+Tier 3 requires visual confirmation in both light and dark themes. Browser
+tooling was unavailable this session, so this has NOT been done. Static review
+above is not a substitute. Handed to the user as the phase's manual
+verification, and this note should be read as provisional until they confirm.
+
+The three Server Actions are now called from the UI but still have no automated
+coverage — exercising them is part of the same manual pass.
