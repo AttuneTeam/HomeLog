@@ -134,7 +134,7 @@ is where the parser's figure belongs.
         (unreadable file, and a property the caller cannot write to)
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `79f1614`
 
-## Phase 4: Rent tab UI  (Tier 3)
+## Phase 4: Rent tab UI  (Tier 3)  [checkpoint: b32ce80]
 
 - [x] Task: Statement upload in `components/rental-payments-section.tsx` `c67ec7f`
   - [ ] Upload control in the add/edit dialog; existing rows unaffected
@@ -144,10 +144,10 @@ is where the parser's figure belongs.
   - [ ] Manual entry confirms on save; extracted figures show a Confirm action
   - [ ] Edited-from-extracted visibly distinguished, as `loan-statements-panel.tsx` does
 - [x] Task: Reconciliation indicator — ties / doesn't tie, advisory tone, never blocking `c67ec7f`
-- [~] Task: Verify responsive layout, and legibility in BOTH light and dark themes
-  - [ ] **BLOCKED on the user:** no browser tooling this session; static review done but Tier 3
-        requires actual visual confirmation in both themes
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Verify responsive layout, and legibility in BOTH light and dark themes `b32ce80`
+  - [x] Verified by the user (no browser tooling available to the assistant). First pass found
+        stacked action buttons — fixed; second pass confirmed.
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `b32ce80`
 
 ## Phase 5: Tax pack & consistency  (Tier 2)
 
