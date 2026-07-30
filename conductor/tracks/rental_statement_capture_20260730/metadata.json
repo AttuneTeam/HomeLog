@@ -21,7 +21,7 @@
       "063_rental_payment_statements",
       "064_deletion_fns_rental_statements"
     ],
-    "amended_during_implementation": "Phase 1.5 and FR12/FR13 were added after verifying FR1. lib/email-parser/parse-statement.ts:51 instructs the model to store the NET disbursed amount in rental_payments.amount, which lib/tax/rental-income.ts reports as gross rent — understating assessable income on every email-ingested payment. Found in code, not in data entry, so the original out-of-scope 'known risk' framing was wrong. Also recorded: statement fees are GST-inclusive while the management_fee_pct estimate is not.",
+    "amended_during_implementation": "Phase 1.5 and FR12/FR13 were added after verifying FR1. lib/email-parser/parse-statement.ts:51 instructs the model to store the NET disbursed amount in rental_payments.amount, which lib/tax/rental-income.ts reports as gross rent \u2014 understating assessable income on every email-ingested payment. Found in code, not in data entry, so the original out-of-scope 'known risk' framing was wrong. Also recorded: statement fees are GST-inclusive while the management_fee_pct estimate is not.",
     "new_modules": [
       "lib/tax/agent-fees.ts",
       "lib/ai/extract-rental-statement.ts",
@@ -56,11 +56,15 @@
     }
   ],
   "open_risks": [
-    "CONFIRMED AND NOW IN SCOPE (Phase 1.5): rental_payments.amount holds net received for every email-ingested row because parse-statement.ts:51 instructs it, while actualRentForFy reports it as gross rent. 6 of 7 local rows affected. Understates assessable income.",
-    "Correcting rows 2-7 requires the original statements; a row without its source document stays flagged rather than back-solved from an assumed fee percentage.",
-    "Once the parser is repointed, live ingestion writes different values into `amount`. Rows ingested between the parser fix and the historical correction must not be double-corrected.",
-    "Double-counting third-party costs is the primary failure mode; guarded by FR8 and acceptance criterion 5 but must be checked in review.",
-    "Financial position view and the tax pack must agree on the agent-fee figure; they are wired to a shared resolver but there is no automated coverage for either surface.",
-    "AI extraction of rental statements has not been run against any agent's format other than Rich & Oliva."
+    "An edit in the rent tab silently clears confirmed statement fees, other income, net received and fees_confirmed_at when the fee inputs are empty on save. Observed: statement #7's figures were lost this way. FY2026 agent fees now resolve to $1,493.80 instead of $1,619.20. Owner chose to record rather than fix (2026-07-30).",
+    "VERIFIED DOUBLE CLAIM, own track needed: the $2,146 blinds expense is classified Repair (full immediate deduction) AND is itemised in the DuoTax Division 40 schedule at $280/yr. FY2026 deductions overstated by $2,146. Division 43 has a guard for this overlap (div43_annual supersedes the internal register); Division 40 has none.",
+    "No Division 40 classification exists for an expense. The vocabulary is Repair | Capital Works | Immediate Repair, so an accountant's 'this is a depreciating asset' answer cannot be recorded at all.",
+    "Statements #2-#6 outstanding. FY2026 gross rent is $26,222.68 against DuoTax's $28,600.00 \u2014 assessable income understated by $2,377.32.",
+    "The gross/net data correction is LOCAL ONLY. Production holds the same defective rows; db:sync would discard the local fix. Migrations 063/064/065 must be applied to production first.",
+    "npm run db:reset clean replay not run for migration 065 \u2014 it would discard the local data correction, whose restore needs interactive db:sync.",
+    "scripts/sync-from-prod.sh writes storage objects under a doubled bucket prefix (property-files/property-files/...), so locally synced documents are unreachable at the path the app uses. Any local test of a stored document silently fails to download.",
+    "The three rental-statement Server Actions have no automated coverage; they are exercised only manually through the UI.",
+    "Only Rich & Oliva statement layouts have been extracted. Another agency's format is unproven.",
+    "The inbound webhook path (Svix signature, attachment extraction, property matching) remains uncovered, as before this track."
   ]
 }

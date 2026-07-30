@@ -354,6 +354,20 @@ a 10-year life, so the `Repair` classification contradicts a schedule already in
 
 - **Double-counting third-party costs.** Mitigated by FR8 and acceptance criterion 5, but this is
   the failure mode to guard in review.
+- **An edit can silently clear confirmed statement fees.** `onSubmit` in
+  `components/rental-payments-section.tsx` writes whatever the fee inputs currently hold, so a save
+  with those fields empty nulls the fees, the other-income and net-received figures, and
+  `fees_confirmed_at` — with no warning. Observed in practice: statement #7's transcribed figures
+  ($121.00 management, $4.40 sundry, $2,074.60 received) were lost this way during UI testing. The
+  corrected `amount` of $2,200.00 survived.
+
+  **Consequence:** FY2026 agent fees currently resolve to $1,493.80 instead of $1,619.20, and the
+  pack falls back further toward the estimate than the evidence on hand justifies.
+
+  **Decision (2026-07-30):** the owner chose to record this rather than fix it in this track. A
+  guard would require an explicit confirmation before a save clears previously-confirmed fees.
+  Restoring #7 is one command: `npx tsx scripts/fix-rental-payment-gross-net.ts --apply` after
+  clearing the idempotency guard, or re-entering the three figures by hand.
 - **Historical correction depends on source documents.** Statements #2–#7 are needed to restate
   those rows. Where a statement is unavailable the row stays flagged rather than being back-solved
   from an assumed fee percentage, which would fabricate a figure.
