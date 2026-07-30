@@ -268,8 +268,18 @@ surfaces disagreeing on the same number is the kind of inconsistency that costs 
    confirmation.
 4. After confirmation, the schedule shows **$1,485.00** agent fees (management + letting + lease)
    and **$8.80** sundry, both labelled actual — up from the $242 estimate.
-5. The blinds appear exactly once in deductions, via their own invoice, classified as
-   capital / Division 40 — never as a rental deduction.
+5. The blinds appear exactly once **from the rental-statement side**: `other_outgoings` records
+   the $2,146 so the statement reconciles, and never contributes a deduction. Their classification
+   is out of scope — see the finding below.
+
+   > **Amended during implementation.** This originally required the blinds to be "classified as
+   > capital / Division 40". That is not achievable: the expense vocabulary is
+   > `Repair | Capital Works | Immediate Repair` (`lib/tax/classification.ts`), and Division 40
+   > reaches the schedule only through `depreciation_reports.div40_annual`, a quantity surveyor's
+   > figure for the whole property. There is no way to mark an individual expense as a Division 40
+   > depreciating asset. The criterion was written from the tax treatment without checking the model
+   > supported it. What it was actually protecting — the double-count guard on `other_outgoings` —
+   > is what it now asserts.
 6. A property with no statement for the year still shows the percentage estimate, visibly
    labelled an estimate.
 7. The statement PDF is present in the generated ZIP with a manifest entry naming the lines it
@@ -298,6 +308,47 @@ into scope** as FR12 / Phase 1.5 — the cause was found in code, not in data en
     the fee buckets to their columns, and leaves `fees_confirmed_at` null.
 13. Every historical row whose `amount` came from the parser is either restated as gross or
     explicitly reported as uncorrectable without its source document.
+
+## Finding: Division 40 double claim (out of scope, needs its own track)
+
+Found while trying to satisfy the original acceptance criterion 5. **Verified against the source
+documents, not inferred.**
+
+The DuoTax schedule stored against 56 Forbes St itemises its Division 40 assets:
+
+| Client-owned item | Cost | Effective life | Rate | FY2026 |
+|---|---|---|---|---|
+| Air-conditioning — packaged | $7,750 | 15 yr | 13.33% | $275 |
+| **Blinds** | **$2,146** | 10 yr | 20% | **$280** |
+| | | | **Div 40 total** | **$555** |
+
+`depreciation_reports.div40_annual` is $555, which is exactly these two.
+
+**The blinds are claimed twice.** The expense carries `manual_classification = "Repair"`, so
+`buildRentalSchedule` adds the full $2,146 to the repairs deduction line, while the same asset is
+also depreciated at $280 in the Division 40 line. FY2026 deductions are overstated by $2,146.
+
+**The air conditioner is not**, and the reason is instructive: it is classified `Capital Works`, and
+the pack already guards that overlap — when a QS report exists,
+`depreciationReport.div43_annual` supersedes the internal `div43Register`
+(`tax-pack/page.tsx`), so the $7,755 expense cannot double up against DuoTax's Division 43 figure.
+
+**So the design solved this problem once, for Division 43, and the Division 40 path was never
+covered.** An expense classified `Repair` flows straight to the repairs line with no awareness of
+what the quantity surveyor already depreciated.
+
+Two things are needed, neither belonging to this track:
+
+1. A guard so a `Repair` expense the QS has already scheduled cannot also be deducted in full.
+   This needs a way to know which expenses the QS covered.
+2. A Division 40 classification for an expense, so the answer an accountant gives can be recorded
+   at all. Today the only options are wrong for a depreciating asset.
+
+The classification decision itself belongs to the investor and their accountant — `product.md` is
+explicit that classification is a recommendation for review, and no expense was reclassified here.
+What is *not* a judgement call is that the system currently emits a double-claimed total, which
+nobody chose. Notably DuoTax has already made the call: they treated the blinds as Division 40 with
+a 10-year life, so the `Repair` classification contradicts a schedule already in the account.
 
 ## Known risks
 
