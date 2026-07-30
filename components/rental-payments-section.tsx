@@ -607,12 +607,16 @@ export function RentalPaymentsSection({
                     <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap align-top">
                       {formatCurrency(Number(payment.amount))}
                     </td>
-                    <td className="px-2 py-1.5 align-top">
-                      <div className="flex gap-1 justify-end flex-wrap">
+                    {/* Actions stay on one row. The table scrolls horizontally
+                        when narrow, which is the wanted overflow behaviour —
+                        wrapping here stacked the buttons into a column. */}
+                    <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                      <div className="flex items-center gap-1 justify-end">
                         {feesPresent && !confirmed && (
                           <Button
                             variant="outline"
                             size="sm"
+                            className="shrink-0"
                             disabled={confirmingId === payment.id}
                             onClick={() => handleConfirm(payment)}
                           >
@@ -626,7 +630,7 @@ export function RentalPaymentsSection({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="text-muted-foreground"
+                          className="text-muted-foreground shrink-0"
                           disabled={uploadingId === payment.id}
                           title={
                             payment.statement_path
@@ -645,7 +649,7 @@ export function RentalPaymentsSection({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="text-muted-foreground hover:text-destructive"
+                            className="text-muted-foreground hover:text-destructive shrink-0"
                             title="Remove the statement (keeps the payment)"
                             onClick={() => handleRemoveStatement(payment)}
                           >
@@ -655,7 +659,7 @@ export function RentalPaymentsSection({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="text-muted-foreground"
+                          className="text-muted-foreground shrink-0"
                           onClick={() => openEdit(payment)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -663,7 +667,7 @@ export function RentalPaymentsSection({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="text-muted-foreground hover:text-destructive"
+                          className="text-muted-foreground hover:text-destructive shrink-0"
                           disabled={deletingId === payment.id}
                           onClick={() => setConfirmDelete(payment)}
                         >
