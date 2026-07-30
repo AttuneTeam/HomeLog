@@ -14,6 +14,7 @@ import { TaxReport } from "@/components/tax-report";
 import type { TaxExpense, TaxReportData } from "@/components/tax-report";
 import { resolveTaxClassification } from "@/lib/tax/classification";
 import { resolveRentalIncome } from "@/lib/tax/rental-income";
+import { resolveAgentFees } from "@/lib/tax/agent-fees";
 import { estimateInterestForFy } from "@/lib/tax/loan-interest";
 import { div43RegisterForFy } from "@/lib/tax/div43";
 import {
@@ -241,7 +242,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
       .order("expense_date", { ascending: true }),
     supabase
       .from("rental_payments")
-      .select("payment_date, amount")
+      .select("*")
       .eq("property_id", propertyId)
       .order("payment_date", { ascending: true }),
   ]);
@@ -278,12 +279,27 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   );
   const totalRentalIncome = income.amount;
 
-  const totalAgentFees =
-    rentalPeriods?.reduce((sum, period) => {
-      if (!period.management_fee_pct) return sum;
-      const weeks = fyClampedWeeks(period);
-      return sum + weeks * period.weekly_rent * (period.management_fee_pct / 100);
-    }, 0) ?? 0;
+  // Agent fees from confirmed statements where they exist, falling back to the
+  // management_fee_pct calculation and labelling it an estimate. The percentage
+  // can only reproduce a recurring charge: measured against a real annual
+  // statement it recovered the management fee and missed the letting fee, the
+  // lease preparation fee and the bank charges entirely.
+  const agentFees = resolveAgentFees(
+    rentalPayments ?? [],
+    rentalPeriods ?? [],
+    selectedFyEndYear,
+    fyStartMonth,
+    fyStartDay,
+  );
+  const totalAgentFees = agentFees.commission;
+  const totalAgentSundries = agentFees.sundries;
+
+  // Assessable income that is not rent — a tenant water recovery, for instance.
+  // Reported on its own ATO line, never folded into gross rent.
+  const totalOtherIncome = (rentalPayments ?? []).reduce((sum, p) => {
+    if (p.payment_date < fyStartStr || p.payment_date > fyEndStr) return sum;
+    return sum + Number(p.other_income ?? 0);
+  }, 0);
 
   const grossOperatingExpenses =
     rentalExpenses?.reduce((s, e) => s + Number(e.amount), 0) ?? 0;
@@ -299,7 +315,17 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     totalRentalIncome != null
       ? apportionIncome(totalRentalIncome, apportionment)
       : null;
+  const apportionedOtherIncome = apportionIncome(
+    totalOtherIncome,
+    apportionment,
+  );
   const apportionedAgentFees = apportionDeduction(totalAgentFees, apportionment);
+  // Agent bank charges are not commission and belong on the sundry line, but
+  // they are still a deduction and must reduce the net result.
+  const apportionedAgentSundries = apportionDeduction(
+    totalAgentSundries,
+    apportionment,
+  );
   const apportionedOperatingExpenses = apportionDeduction(
     grossOperatingExpenses,
     apportionment,
@@ -311,8 +337,10 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
 
   const netRentalIncome =
     apportionedIncome != null
-      ? apportionedIncome -
+      ? apportionedIncome +
+        apportionedOtherIncome -
         apportionedAgentFees -
+        apportionedAgentSundries -
         apportionedOperatingExpenses -
         apportionedInterest
       : null;
@@ -443,6 +471,15 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
       accrued: income.accrued,
       materialDivergence: income.materialDivergence,
     },
+    agentFees: {
+      source: agentFees.source,
+      actual: agentFees.actual
+        ? agentFees.actual.commission + agentFees.actual.sundries
+        : null,
+      estimated: agentFees.estimated,
+      partial: agentFees.partial,
+      unconfirmedCount: agentFees.unconfirmedCount,
+    },
     financialYear,
     totalRentalIncome: apportionedIncome,
     totalAgentFees: apportionedAgentFees,
@@ -475,7 +512,9 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   const schedule = buildRentalSchedule({
     propertyType: property.property_type,
     grossRent: income.amount,
+    otherIncome: totalOtherIncome,
     agentFees: totalAgentFees,
+    agentSundries: totalAgentSundries,
     operatingExpenses: (rentalExpenses ?? []).map((e) => ({
       category: e.category,
       amount: Number(e.amount),
@@ -517,6 +556,27 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
   if (div43Register.itemsMissingStartDate > 0) {
     packOmissions.push(
       `${div43Register.itemsMissingStartDate} capital works item(s) have no completion date, so no Division 43 deduction is claimed for them.`,
+    );
+  }
+  // An unconfirmed extraction is a proposal, so its fees are excluded and the
+  // percentage estimate is reported instead. Naming the count is the difference
+  // between a disclosed gap and a silently smaller deduction.
+  if (agentFees.unconfirmedCount > 0) {
+    packOmissions.push(
+      `${agentFees.unconfirmedCount} rental statement(s) have agent fees awaiting confirmation, so those fees are excluded and the percentage estimate is used instead.`,
+    );
+  }
+  // A partial actual is genuine but incomplete, and it can be SMALLER than the
+  // estimate it displaced — which would understate the deduction with nothing
+  // on the page to explain why.
+  if (agentFees.partial) {
+    packOmissions.push(
+      `Agent fees come from ${agentFees.paymentsWithConfirmedFees} of ${agentFees.paymentsInYear} rent payments recorded this year. The remaining statements have not been attached, so the fees claimed are likely understated.`,
+    );
+  }
+  if (agentFees.source === "estimated") {
+    packOmissions.push(
+      "No confirmed rental statement covers this year, so agent fees are estimated from the management fee percentage. A percentage cannot include one-off letting or lease fees, so the real figure is usually higher.",
     );
   }
 
@@ -590,6 +650,26 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
     });
   }
 
+  for (const payment of rentalPayments ?? []) {
+    if (!payment.statement_path) continue;
+    if (payment.payment_date < fyStartStr || payment.payment_date > fyEndStr)
+      continue;
+    evidence.push({
+      fileName: `${safeFileName(
+        `rental-statement-${payment.payment_date}-${payment.id.slice(0, 8)}`,
+      )}.${payment.statement_path.split(".").pop() ?? "pdf"}`,
+      signedUrl: await signedFor("property-files", payment.statement_path),
+      propertyAddress: property.address,
+      kind: "Rental statement",
+      description: payment.raw_subject ?? "Managing agent statement",
+      date: payment.payment_date,
+      // The gross rent it evidences, not the amount disbursed — the manifest
+      // has to agree with the income line it supports.
+      amount: Number(payment.amount),
+      feedsLine: "Gross rent / Property agent fees",
+    });
+  }
+
   if (depreciationReport?.storage_path) {
     evidence.push({
       fileName: "depreciation-schedule.pdf",
@@ -645,6 +725,7 @@ export default async function TaxReportPage({ params, searchParams }: Props) {
         address: property.address,
         excludedReason: schedule.excludedReason,
         grossRent: schedule.grossRent,
+        otherIncome: schedule.otherIncome,
         incomeSource: income.source,
         incomeCrossCheck: { actual: income.actual, accrued: income.accrued },
         materialDivergence: income.materialDivergence,

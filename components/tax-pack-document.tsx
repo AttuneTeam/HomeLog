@@ -21,6 +21,12 @@ export interface PackProperty {
   address: string;
   excludedReason: string | null;
   grossRent: number;
+  /**
+   * Assessable income that is not rent — a tenant water recovery, for instance.
+   * Reported on its own line, as the ATO schedule does, so gross rent stays
+   * comparable to the tenancy accrual cross-check.
+   */
+  otherIncome: number;
   incomeSource: "actual" | "accrued" | null;
   incomeCrossCheck: { actual: number | null; accrued: number | null } | null;
   materialDivergence: boolean;
@@ -280,6 +286,13 @@ export function TaxPackDocument({ data }: { data: PackData }) {
             </Text>
             <Text style={S.value}>{fmt(property.grossRent)}</Text>
           </View>
+
+          {property.otherIncome > 0 && (
+            <View style={S.row}>
+              <Text style={S.label}>Other rental-related income</Text>
+              <Text style={S.value}>{fmt(property.otherIncome)}</Text>
+            </View>
+          )}
 
           {property.deductions.map((line) => (
             <View style={S.row} key={line.key}>

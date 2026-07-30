@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import { resolveAgentFees, type AgentFeePayment } from "@/lib/tax/agent-fees";
 import { calcAusTax } from "@/lib/tax-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -81,6 +82,12 @@ interface FinancialPositionViewProps {
   financialYearStartDay: number;
   roiInputsByPropertyId: Record<string, RoiInputs>;
   rentalPeriodsByPropertyId: Record<string, RentalPeriodRow[]>;
+  /**
+   * Rent payments carrying the agency fees their statements evidence. Routed
+   * through resolveAgentFees so this view cannot report a different agent-fee
+   * figure from the tax pack for the same property and year.
+   */
+  rentalPaymentsByPropertyId: Record<string, AgentFeePayment[]>;
   rentalExpensesByPropertyId: Record<string, RentalExpenseRow[]>;
   loanRatesByPropertyId: Record<string, LoanRateRow[]>;
   propertyLoanByPropertyId: Record<string, PropertyLoanRow>;
@@ -212,6 +219,7 @@ export function FinancialPositionView({
   financialYearStartDay,
   roiInputsByPropertyId,
   rentalPeriodsByPropertyId,
+  rentalPaymentsByPropertyId,
   rentalExpensesByPropertyId,
   loanRatesByPropertyId,
   propertyLoanByPropertyId,
@@ -254,11 +262,17 @@ export function FinancialPositionView({
         return sum + weeks * p.weekly_rent;
       }, 0);
 
-      const agentFees = periods.reduce((sum, p) => {
-        if (!p.management_fee_pct) return sum;
-        const weeks = fyClampedWeeks(p, fyStart, fyEnd);
-        return sum + weeks * p.weekly_rent * (p.management_fee_pct / 100);
-      }, 0);
+      // Confirmed statement fees where they exist, otherwise the management
+      // percentage. The percentage can only reproduce a recurring charge, so it
+      // misses one-off letting and lease fees entirely.
+      const fees = resolveAgentFees(
+        rentalPaymentsByPropertyId[property.id] ?? [],
+        periods,
+        financialYearEnd,
+        financialYearStartMonth,
+        financialYearStartDay,
+      );
+      const agentFees = fees.commission + fees.sundries;
 
       const operatingExpenses = opex
         .filter(
@@ -378,12 +392,16 @@ export function FinancialPositionView({
   }, [
     investmentProperties,
     rentalPeriodsByPropertyId,
+    rentalPaymentsByPropertyId,
     rentalExpensesByPropertyId,
     roiInputsByPropertyId,
     loanRatesByPropertyId,
     offsetsByPropertyId,
     fyStart,
     fyEnd,
+    financialYearEnd,
+    financialYearStartMonth,
+    financialYearStartDay,
   ]);
 
   // Portfolio totals
@@ -488,6 +506,11 @@ export function FinancialPositionView({
           const weeks =
             (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
           grossRent += weeks * p.weekly_rent;
+          // Deliberately the percentage model, NOT resolveAgentFees. This is a
+          // forward-looking monthly cash-flow projection, so a percentage of
+          // projected rent is the right basis — and resolveAgentFees is
+          // financial-year scoped, with no meaning for a single month. The
+          // reported tax figure above is the one that must come from statements.
           if (p.management_fee_pct)
             fees += weeks * p.weekly_rent * (p.management_fee_pct / 100);
         }

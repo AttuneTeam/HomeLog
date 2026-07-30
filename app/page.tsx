@@ -201,12 +201,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Build your Base through Quality Management ── */}
+        {/* ── Build your Ledger ── */}
         <section className="py-20 bg-[#f0eeec]">
           <div className="max-w-[1280px] mx-auto px-16">
             <div data-observe className="opacity-0 text-center mb-16">
               <h2 className="font-caslon text-[40px] leading-[48px] tracking-[-0.02em] text-[#030813] mb-4">
-                Build your Base through Quality Management
+                Build your Ledger
               </h2>
               <p className="font-grotesk text-lg text-[#45474c] max-w-2xl mx-auto">
                 Managing an investment shouldn&apos;t be a second job. Home Base
