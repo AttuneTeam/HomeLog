@@ -294,6 +294,33 @@ export type DepreciationReport = {
  * statement via the inbound webhook. Distinct from rental_periods, which holds
  * the tenancy terms income can be accrued from.
  */
+export type EmailIngestionStatus =
+  | "parsed"
+  | "unmatched"
+  | "duplicate"
+  | "error";
+export type EmailIngestionExtractedType =
+  | "rental_payment"
+  | "expense"
+  | "unknown";
+
+/** One row per inbound email processed, keyed for dedup on (user, message id). */
+export type EmailIngestionLog = {
+  id: string;
+  user_id: string;
+  /** Provider message id. Unique per user — this is the dedup key. */
+  source_email_id: string;
+  received_at: string;
+  sender_address: string | null;
+  raw_subject: string | null;
+  status: EmailIngestionStatus;
+  extracted_type: EmailIngestionExtractedType | null;
+  /** Table the email produced a row in, when it produced one. */
+  target_table: string | null;
+  target_record_id: string | null;
+  parse_notes: string | null;
+};
+
 export type RentalPayment = {
   id: string;
   property_id: string;
@@ -1712,6 +1739,36 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      /**
+       * Added while wiring inbound statement attachments: the table has existed
+       * since migration 045 but was never added here, so any typed query
+       * against it failed to compile. The handler uses an untyped
+       * SupabaseClient, which is why the gap went unnoticed.
+       */
+      email_ingestion_log: {
+        Row: EmailIngestionLog;
+        Insert: {
+          id?: string;
+          user_id: string;
+          source_email_id: string;
+          received_at?: string;
+          sender_address?: string | null;
+          raw_subject?: string | null;
+          status: EmailIngestionStatus;
+          extracted_type?: EmailIngestionExtractedType | null;
+          target_table?: string | null;
+          target_record_id?: string | null;
+          parse_notes?: string | null;
+        };
+        Update: {
+          status?: EmailIngestionStatus;
+          extracted_type?: EmailIngestionExtractedType | null;
+          target_table?: string | null;
+          target_record_id?: string | null;
+          parse_notes?: string | null;
+        };
+        Relationships: [];
       };
       rental_payments: {
         Row: RentalPayment;
