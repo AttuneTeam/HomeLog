@@ -15,6 +15,7 @@
     "verify:rent-ingest": "tsx scripts/verify-rental-statement-ingest.ts",
     "verify:rent-extract": "tsx scripts/verify-rental-statement-extract.ts",
     "verify:rent-route": "tsx scripts/verify-rental-statement-route.ts",
+    "verify:rent-schedule": "tsx scripts/verify-rental-schedule.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
