@@ -158,12 +158,18 @@ async function main() {
   //  A — guest uploads INTO the owner's property  → stored under guestId, row belongs to owner
   //  B — owner's own file in the owner's property  → stored under ownerId
   //  C — guest's file in the guest's OWN property  → stored under guestId
+  //  D — guest uploads a rental STATEMENT into the owner's property (migration
+  //      063/064). Lives in `property-files`, not `invoices`, and is reached
+  //      through rental_payments rather than expenses — a second table and a
+  //      second bucket, so it exercises a genuinely different code path.
   const fileA = `${guestId}/${ownerRenoId}/guest-into-owner.pdf`;
   const fileB = `${ownerId}/${ownerRenoId}/owner-own.pdf`;
   const fileC = `${guestId}/${guestRenoId}/guest-own.pdf`;
+  const fileD = `${guestId}/${ownerPropertyId}/rental-statements/statement-1.pdf`;
   await putFile("invoices", fileA);
   await putFile("invoices", fileB);
   await putFile("invoices", fileC);
+  await putFile("property-files", fileD);
 
   const expenseRows: Database["public"]["Tables"]["expenses"]["Insert"][] = [
     { renovation_id: ownerRenoId, amount: 100, category: "materials", expense_date: "2026-01-01", invoice_path: fileA, context_notes: null },
@@ -172,7 +178,24 @@ async function main() {
   ];
   die("insert expenses", (await admin.from("expenses").insert(expenseRows)).error);
 
-  console.log("Setup complete: owner + co-owner guest, 3 files staged.\n");
+  // Rental statement row for file D. Amount is GROSS rent, per the invariant on
+  // the RentalPayment type; net_received is what the agent disbursed.
+  die(
+    "insert rental_payment with statement",
+    (
+      await admin.from("rental_payments").insert({
+        property_id: ownerPropertyId,
+        payment_date: "2026-01-04",
+        amount: 4400,
+        management_fees: 242,
+        other_outgoings: 2146,
+        net_received: 2012,
+        statement_path: fileD,
+      })
+    ).error,
+  );
+
+  console.log("Setup complete: owner + co-owner guest, 4 files staged.\n");
 
   // ----------------------------------------------------------------
   // Requirement 2 — guest deletes their account
@@ -185,6 +208,15 @@ async function main() {
   const guestPaths = (guestObjects ?? []).map((o) => o.path);
   check("user_storage_objects(guest) includes guest's own file (C)", guestPaths.includes(fileC));
   check("user_storage_objects(guest) EXCLUDES upload into owner's property (A)", !guestPaths.includes(fileA));
+  check("user_storage_objects(guest) EXCLUDES rental statement in owner's property (D)", !guestPaths.includes(fileD));
+
+  const { data: ownerObjects } = await admin.rpc("user_storage_objects", {
+    p_user_id: ownerId,
+  });
+  check(
+    "user_storage_objects(owner) INCLUDES guest-uploaded rental statement (D)",
+    (ownerObjects ?? []).some((o) => o.path === fileD && o.bucket === "property-files"),
+  );
 
   // Replicate the account-delete route:
   await removeObjects(guestObjects ?? []);
@@ -198,6 +230,10 @@ async function main() {
   check("guest's own file (C) removed from storage", !(await objectExists("invoices", fileC)));
   check("guest's upload into owner property (A) PRESERVED", await objectExists("invoices", fileA));
   check("owner's own file (B) untouched", await objectExists("invoices", fileB));
+  check(
+    "guest-uploaded rental statement (D) PRESERVED",
+    await objectExists("property-files", fileD),
+  );
 
   const { data: ownerStillThere } = await admin
     .from("properties")
@@ -238,6 +274,7 @@ async function main() {
   const propPaths = (propObjects ?? []).map((o) => o.path);
   check("property_storage_objects includes guest-uploaded file (A)", propPaths.includes(fileA));
   check("property_storage_objects includes owner's own file (B)", propPaths.includes(fileB));
+  check("property_storage_objects includes rental statement (D)", propPaths.includes(fileD));
 
   // Replicate the deleteProperty action:
   die("delete owner property", (await admin.from("properties").delete().eq("id", ownerPropertyId)).error);
@@ -245,6 +282,10 @@ async function main() {
 
   check("file A removed from storage", !(await objectExists("invoices", fileA)));
   check("file B removed from storage", !(await objectExists("invoices", fileB)));
+  check(
+    "rental statement (D) removed from storage",
+    !(await objectExists("property-files", fileD)),
+  );
 
   const { data: propGone } = await admin
     .from("properties")

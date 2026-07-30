@@ -57,7 +57,7 @@ two functions above. Current set (bucket → table.column):
 | Bucket | Table.column |
 |---|---|
 | `invoices` | `expenses.invoice_path`, `rental_operating_expenses.invoice_path`, `staged_receipts.storage_path` |
-| `property-files` | `property_files.storage_path`, `loan_statements.storage_path`, `depreciation_reports.storage_path` |
+| `property-files` | `property_files.storage_path`, `loan_statements.storage_path`, `depreciation_reports.storage_path`, `rental_payments.statement_path` |
 | `renovation-quotes` | `renovation_quotes.file_path` |
 
 ⚠️ `depreciation_reports.storage_path` is **not unique**: one quantity surveyor report normally
@@ -76,5 +76,6 @@ logic or adding a file-bearing table.
 
 ## Deploy note
 
-Migrations `051`–`053` define the functions above, and `058` redefines both to cover
-`loan_statements` and `depreciation_reports`; apply them to production on deploy.
+Migrations `051`–`053` define the functions above, `058` redefines both to cover
+`loan_statements` and `depreciation_reports`, and `064` redefines both again to cover
+`rental_payments.statement_path`; apply them to production on deploy.

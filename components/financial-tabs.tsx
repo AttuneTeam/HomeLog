@@ -1,6 +1,7 @@
 "use client";
 
 import { FinancialPositionView } from "@/components/financial-position-view";
+import type { AgentFeePayment } from "@/lib/tax/agent-fees";
 import {
   IncomeSourcesPanel,
   type IncomeSource,
@@ -71,6 +72,7 @@ interface Props {
   financialYearStartDay: number;
   roiInputsByPropertyId: Record<string, RoiInputs>;
   rentalPeriodsByPropertyId: Record<string, RentalPeriodRow[]>;
+  rentalPaymentsByPropertyId: Record<string, AgentFeePayment[]>;
   rentalExpensesByPropertyId: Record<string, RentalExpenseRow[]>;
   loanRatesByPropertyId: Record<string, LoanRateRow[]>;
   propertyLoanByPropertyId: Record<string, PropertyLoanRow>;
@@ -87,6 +89,7 @@ export function FinancialTabs({
   financialYearStartDay,
   roiInputsByPropertyId,
   rentalPeriodsByPropertyId,
+  rentalPaymentsByPropertyId,
   rentalExpensesByPropertyId,
   loanRatesByPropertyId,
   propertyLoanByPropertyId,
@@ -126,6 +129,7 @@ export function FinancialTabs({
         financialYearStartDay={financialYearStartDay}
         roiInputsByPropertyId={roiInputsByPropertyId}
         rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
+        rentalPaymentsByPropertyId={rentalPaymentsByPropertyId}
         rentalExpensesByPropertyId={rentalExpensesByPropertyId}
         loanRatesByPropertyId={loanRatesByPropertyId}
         propertyLoanByPropertyId={propertyLoanByPropertyId}

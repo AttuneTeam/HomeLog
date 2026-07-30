@@ -657,8 +657,15 @@ export function TaxReport({
               />
               {totalAgentFees > 0 && (
                 <SummaryRow
-                  label="Less: Agent management fees"
+                  label="Less: Agent fees"
                   value={`(${formatCurrency(totalAgentFees)})`}
+                  sub={
+                    data.agentFees.source === "estimated"
+                      ? "(estimated from the management fee percentage — excludes one-off letting and lease fees)"
+                      : data.agentFees.partial
+                        ? `(from ${data.agentFees.unconfirmedCount > 0 ? "confirmed " : ""}statements — some are missing, so this is likely low)`
+                        : "(from recorded statements)"
+                  }
                 />
               )}
               {data.totalLoanInterest > 0 && (

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { AgentFeePayment } from "@/lib/tax/agent-fees";
 import { FinancialTabs } from "@/components/financial-tabs";
 import type { RoiInputs } from "@/components/roi-calculator";
 
@@ -68,6 +69,7 @@ export default async function FinancialPage() {
     { data: taxPrepaymentRow },
     { data: offsetRows },
     { data: householdExpenseRows },
+    { data: rentalPaymentRows },
   ] = await Promise.all([
     investmentPropertyIds.length
       ? supabase
@@ -123,6 +125,17 @@ export default async function FinancialPage() {
       .eq("user_id", incomeOwnerId)
       .eq("financial_year_end", fyEndYear)
       .order("sort_order"),
+    // Needed so agent fees come from confirmed statements rather than the
+    // management-percentage estimate — and so this view cannot report a
+    // different figure from the tax pack for the same property and year.
+    investmentPropertyIds.length
+      ? supabase
+          .from("rental_payments")
+          .select(
+            "property_id, payment_date, management_fees, letting_fees, lease_fees, sundry_fees, fees_confirmed_at",
+          )
+          .in("property_id", investmentPropertyIds)
+      : Promise.resolve({ data: [] }),
   ]);
 
   // Auto-seed household expenses from the prior FY if this FY has no rows yet.
@@ -189,6 +202,12 @@ export default async function FinancialPage() {
     (rentalExpensesByPropertyId[row.property_id] ??= []).push(row);
   }
 
+  type RentalPaymentFeeRow = AgentFeePayment & { property_id: string };
+  const rentalPaymentsByPropertyId: Record<string, RentalPaymentFeeRow[]> = {};
+  for (const row of (rentalPaymentRows ?? []) as RentalPaymentFeeRow[]) {
+    (rentalPaymentsByPropertyId[row.property_id] ??= []).push(row);
+  }
+
   type LoanRateRow = { id: string; property_id: string; rate: number; effective_date: string };
   const loanRatesByPropertyId: Record<string, LoanRateRow[]> = {};
   for (const row of (loanRateRows ?? []) as LoanRateRow[]) {
@@ -215,6 +234,7 @@ export default async function FinancialPage() {
       financialYearStartDay={fyDay}
       roiInputsByPropertyId={roiInputsByPropertyId}
       rentalPeriodsByPropertyId={rentalPeriodsByPropertyId}
+      rentalPaymentsByPropertyId={rentalPaymentsByPropertyId}
       rentalExpensesByPropertyId={rentalExpensesByPropertyId}
       loanRatesByPropertyId={loanRatesByPropertyId}
       propertyLoanByPropertyId={propertyLoanByPropertyId}

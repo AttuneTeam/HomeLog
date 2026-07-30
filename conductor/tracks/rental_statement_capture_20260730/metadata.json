@@ -1,0 +1,70 @@
+{
+  "track_id": "rental_statement_capture_20260730",
+  "title": "Rental statement capture",
+  "description": "Attach the managing agent's rental statement to a rent payment and record the agency fees it charges, replacing an estimate derived from management_fee_pct with the actual figures and shipping the statement as tax-pack evidence.",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-30T00:00:00Z",
+  "updated_at": "2026-07-30T00:00:00Z",
+  "phases": 7,
+  "tasks": 33,
+  "artifacts": {
+    "spec": "./spec.md",
+    "plan": "./plan.md",
+    "index": "./index.md"
+  },
+  "context": {
+    "reference_document": "Statement #1 - OWN10905, Rich & Oliva, 28 Nov 2025, 56 Forbes St Croydon Park NSW 2133",
+    "defect_corrected": "Agent fees computed as weeks x weekly_rent x management_fee_pct at tax-pack/page.tsx:281-286 can only reproduce recurring percentage charges. On the reference statement it captures the $242 management fee and misses $1,251.80 of letting fee, lease fee and bank charges, and is presented with no estimate disclosure.",
+    "approach": "Extend rental_payments in place rather than introduce a statement table, because rows already exist in production. Additive nullable columns only.",
+    "new_migrations": [
+      "063_rental_payment_statements",
+      "064_deletion_fns_rental_statements"
+    ],
+    "amended_during_implementation": "Phase 1.5 and FR12/FR13 were added after verifying FR1. lib/email-parser/parse-statement.ts:51 instructs the model to store the NET disbursed amount in rental_payments.amount, which lib/tax/rental-income.ts reports as gross rent \u2014 understating assessable income on every email-ingested payment. Found in code, not in data entry, so the original out-of-scope 'known risk' framing was wrong. Also recorded: statement fees are GST-inclusive while the management_fee_pct estimate is not.",
+    "new_modules": [
+      "lib/tax/agent-fees.ts",
+      "lib/ai/extract-rental-statement.ts",
+      "app/api/rental-statements/extract/route.ts",
+      "app/actions/rental-statements.ts"
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "Extend rental_payments rather than add a rental_statements table",
+      "why": "Rows already exist in production and one statement maps to one payment row in current practice. Avoids a data migration entirely."
+    },
+    {
+      "decision": "Itemised fee columns rather than a single agent-fees total",
+      "why": "Management fee is a percentage and letting/lease fees are one-off. Itemising is what lets the recorded management fee be cross-checked against the percentage estimate specifically, rather than against a lumped total."
+    },
+    {
+      "decision": "sundry_fees feeds the ATO sundry line, not the commission line",
+      "why": "Bank and administrative charges are what the sundry line is for, and keeping them out of the commission line keeps the agent-fees figure directly comparable to the estimate it replaces."
+    },
+    {
+      "decision": "other_outgoings is recorded for reconciliation and never deducted",
+      "why": "Third-party costs the agent paid arrive via their own invoice, which is the only path that classifies them correctly as Division 40 rather than an immediate deduction. Deducting them from the statement as well would double-count."
+    },
+    {
+      "decision": "Confirmed statement fees are the actual; the percentage estimate is a labelled fallback, never summed",
+      "why": "The statement's $242 is exactly what the 5.5% calculation produces, so summing double-counts it. The fallback means nothing regresses for properties with no statement uploaded."
+    },
+    {
+      "decision": "lib/xero/mapper.ts:246 left on the percentage estimate",
+      "why": "It posts real journals. Changing what it writes needs its own track and verification against a real tenant."
+    }
+  ],
+  "open_risks": [
+    "An edit in the rent tab silently clears confirmed statement fees, other income, net received and fees_confirmed_at when the fee inputs are empty on save. Observed: statement #7's figures were lost this way. FY2026 agent fees now resolve to $1,493.80 instead of $1,619.20. Owner chose to record rather than fix (2026-07-30).",
+    "VERIFIED DOUBLE CLAIM, own track needed: the $2,146 blinds expense is classified Repair (full immediate deduction) AND is itemised in the DuoTax Division 40 schedule at $280/yr. FY2026 deductions overstated by $2,146. Division 43 has a guard for this overlap (div43_annual supersedes the internal register); Division 40 has none.",
+    "No Division 40 classification exists for an expense. The vocabulary is Repair | Capital Works | Immediate Repair, so an accountant's 'this is a depreciating asset' answer cannot be recorded at all.",
+    "Statements #2-#6 outstanding. FY2026 gross rent is $26,222.68 against DuoTax's $28,600.00 \u2014 assessable income understated by $2,377.32.",
+    "The gross/net data correction is LOCAL ONLY. Production holds the same defective rows; db:sync would discard the local fix. Migrations 063/064/065 must be applied to production first.",
+    "npm run db:reset clean replay not run for migration 065 \u2014 it would discard the local data correction, whose restore needs interactive db:sync.",
+    "scripts/sync-from-prod.sh writes storage objects under a doubled bucket prefix (property-files/property-files/...), so locally synced documents are unreachable at the path the app uses. Any local test of a stored document silently fails to download.",
+    "The three rental-statement Server Actions have no automated coverage; they are exercised only manually through the UI.",
+    "Only Rich & Oliva statement layouts have been extracted. Another agency's format is unproven.",
+    "The inbound webhook path (Svix signature, attachment extraction, property matching) remains uncovered, as before this track."
+  ]
+}

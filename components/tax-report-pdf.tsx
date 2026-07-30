@@ -76,6 +76,21 @@ export interface TaxReportData {
     materialDivergence: boolean;
   };
   /**
+   * Where the agent-fee figure came from. Recorded statement fees are a fact;
+   * the management-percentage calculation is an estimate that cannot include a
+   * one-off letting or lease fee, so it is usually LOW. `partial` means some
+   * statements are attached and others are not, which makes even the actual
+   * figure incomplete — and it can then be smaller than the estimate it
+   * displaced, so it must be disclosed rather than presented as complete.
+   */
+  agentFees: {
+    source: "actual" | "estimated" | null;
+    actual: number | null;
+    estimated: number | null;
+    partial: boolean;
+    unconfirmedCount: number;
+  };
+  /**
    * The basis on which the summary figures were apportioned to the taxpayer's
    * share. Stated in the report so an accountant can see whether a figure is
    * 100% of the property or a part share, and whether either was assumed.
@@ -535,7 +550,12 @@ export function TaxReportDocument({ data }: { data: TaxReportData }) {
               {totalAgentFees > 0 && (
                 <View style={S.summaryRow}>
                   <Text style={S.summaryLabel}>
-                    Less: Agent management fees
+                    Less: Agent fees
+                    {data.agentFees.source === "estimated"
+                      ? " (estimated from the management fee percentage)"
+                      : data.agentFees.partial
+                        ? " (from the statements attached — incomplete)"
+                        : " (from statements)"}
                   </Text>
                   <Text style={S.summaryValue}>({fmt(totalAgentFees)})</Text>
                 </View>

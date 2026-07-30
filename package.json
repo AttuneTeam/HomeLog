@@ -12,6 +12,10 @@
     "seed:ato": "tsx scripts/seed-ato-rulings.ts",
     "seed:demo": "tsx scripts/seed-demo-property.ts",
     "verify:deletion": "tsx scripts/verify-account-deletion.ts",
+    "verify:rent-ingest": "tsx scripts/verify-rental-statement-ingest.ts",
+    "verify:rent-extract": "tsx scripts/verify-rental-statement-extract.ts",
+    "verify:rent-route": "tsx scripts/verify-rental-statement-route.ts",
+    "verify:rent-schedule": "tsx scripts/verify-rental-schedule.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },

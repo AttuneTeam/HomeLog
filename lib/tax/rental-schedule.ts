@@ -85,7 +85,24 @@ export interface ScheduleRenovationExpense {
 export interface RentalScheduleInput {
   propertyType: string;
   grossRent: number | null;
+  /**
+   * Assessable income that is not rent — a tenant reimbursement for water
+   * usage, a retained letting fee, an insurance payout for lost rent.
+   *
+   * Reported on its own line rather than added to gross rent, because gross
+   * rent is cross-checked against the tenancy accrual in
+   * lib/tax/rental-income.ts (weekly_rent x weeks) and non-rent income would
+   * make that comparison diverge for a legitimate reason.
+   */
+  otherIncome?: number;
+  /** Commission-type agent charges: management, letting and lease fees. */
   agentFees: number;
+  /**
+   * Bank and administrative charges by the agent. Feeds the sundry line, NOT
+   * agent_fees — they are not commission, and keeping them separate leaves the
+   * commission figure comparable to the percentage estimate it replaces.
+   */
+  agentSundries?: number;
   operatingExpenses: ReadonlyArray<ScheduleOperatingExpense>;
   renovationExpenses: ReadonlyArray<ScheduleRenovationExpense>;
   /** Confirmed loan statements only. */
@@ -108,6 +125,10 @@ export interface RentalSchedule {
   /** Null when the property is excluded from rental reporting. */
   excludedReason: string | null;
   grossRent: number;
+  /** Already apportioned. Reported on the ATO's own separate income line. */
+  otherIncome: number;
+  /** grossRent + otherIncome — what the net result is measured against. */
+  totalIncome: number;
   deductions: ScheduleLine[];
   totalDeductions: number;
   netResult: number;
@@ -126,6 +147,8 @@ export function buildRentalSchedule(
     return {
       excludedReason: "Primary residence — not a rental property",
       grossRent: 0,
+      otherIncome: 0,
+      totalIncome: 0,
       deductions: [],
       totalDeductions: 0,
       netResult: 0,
@@ -158,6 +181,9 @@ export function buildRentalSchedule(
   }
 
   add("agent_fees", input.agentFees);
+  // The ATO reports one sundry line whatever the charges were for, so agent
+  // bank charges join any sundry operating expenses already totalled above.
+  add("sundry", input.agentSundries ?? 0);
   add("interest", input.interest);
   add("capital_works", input.capitalWorks);
   if (input.declineInValue != null) {
@@ -176,12 +202,21 @@ export function buildRentalSchedule(
     input.grossRent != null
       ? apportionIncome(input.grossRent, input.apportionment)
       : 0;
+  // Apportioned as income: ownership applies, but availability and private use
+  // reduce deductions only and must never reduce an assessable amount.
+  const otherIncome = apportionIncome(
+    input.otherIncome ?? 0,
+    input.apportionment,
+  );
+  const totalIncome = grossRent + otherIncome;
   const totalDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
-  const netResult = grossRent - totalDeductions;
+  const netResult = totalIncome - totalDeductions;
 
   return {
     excludedReason: null,
     grossRent,
+    otherIncome,
+    totalIncome,
     deductions,
     totalDeductions,
     netResult,

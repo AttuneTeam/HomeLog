@@ -89,11 +89,33 @@ export async function handleInboundEmail(
         property_id: propertyId,
         rental_period_id: rentalPeriodId,
         payment_date: parsed.paymentDate,
+        // GROSS rent — the assessable figure. The parser used to put the net
+        // disbursed amount here, which actualRentForFy then reported as gross
+        // rent, understating income by the agent's fees and outgoings.
         amount: parsed.amount,
         period_start: parsed.periodStart,
         period_end: parsed.periodEnd,
         source_email_id: messageId,
         raw_subject: subject,
+        management_fees: parsed.managementFees,
+        letting_fees: parsed.lettingFees,
+        lease_fees: parsed.leaseFees,
+        sundry_fees: parsed.sundryFees,
+        // Reconciliation only — never deducted. The supplier's own invoice is
+        // what makes these claimable, and classifies them correctly.
+        other_outgoings: parsed.otherOutgoings,
+        // Assessable, but NOT rent — kept out of `amount` so gross rent stays
+        // comparable to the tenancy accrual. Without it the reconciliation is
+        // off by exactly the reimbursement.
+        other_income: parsed.otherIncome,
+        other_income_note: parsed.otherIncomeNote,
+        net_received: parsed.netReceived,
+        extracted: { ...parsed, source: "inbound_email" },
+        confidence: parsed.confidence,
+        // Deliberately NOT confirmed. An extraction is a proposal, so these
+        // fees are not claimable until a human accepts them — the same gate
+        // loan_statements.confirmed_at applies to interest.
+        fees_confirmed_at: null,
       })
       .select("id")
       .single();

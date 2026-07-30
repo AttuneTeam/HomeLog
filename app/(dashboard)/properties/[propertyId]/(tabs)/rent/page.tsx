@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Home } from "lucide-react";
 import { RentalPeriodsSection } from "@/components/rental-periods-section";
 import { RentalExpensesSection } from "@/components/rental-expenses-section";
-import { RentalPaymentsSection, type RentalPayment } from "@/components/rental-payments-section";
+import { RentalPaymentsSection } from "@/components/rental-payments-section";
 
 interface Props {
   params: Promise<{ propertyId: string }>;
@@ -47,8 +47,7 @@ export default async function RentTab({ params }: Props) {
         .select("*")
         .eq("property_id", propertyId)
         .order("expense_date", { ascending: false }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
+      supabase
         .from("rental_payments")
         .select("*")
         .eq("property_id", propertyId)
@@ -64,7 +63,7 @@ export default async function RentTab({ params }: Props) {
       />
       <RentalPaymentsSection
         propertyId={propertyId}
-        initialPayments={(rentalPayments ?? []) as unknown as RentalPayment[]}
+        initialPayments={rentalPayments ?? []}
       />
       <RentalExpensesSection
         propertyId={propertyId}

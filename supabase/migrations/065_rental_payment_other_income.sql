@@ -1,0 +1,43 @@
+-- ============================================================
+-- rental_payments: other rental-related income
+--
+-- Amounts a tenant reimburses the owner for — most commonly water usage — are
+-- assessable rental income, and the ATO rental schedule carries them on a line
+-- SEPARATE from gross rent. Migration 063 gave this table a gross rent figure
+-- and a fee breakdown but no home for non-rent income, so it could not be
+-- recorded at all.
+--
+-- WHY THIS IS NOT COSMETIC: the statement reconciliation
+--   amount − fees − other_outgoings = net_received
+-- is WRONG without it. The December 2025 statement for account OWN10905 carries
+-- $6.80 of recovered water usage:
+--
+--   Money In   rent 4,400.00 + water 6.80 = 4,406.80
+--   Money Out                                 387.86
+--   Net                                     4,018.94
+--
+-- Without other_income the identity computes 4400 − 387.86 = 4012.14 against a
+-- stated net of 4018.94 and reports a CORRECT statement as broken, by exactly
+-- the reimbursement. Every period with a tenant recovery would trip it. The
+-- identity becomes:
+--
+--   (amount + other_income) − fees − other_outgoings = net_received
+--
+-- WHY A SEPARATE COLUMN RATHER THAN ADDING IT TO `amount`: gross rent is
+-- cross-checked against the tenancy accrual in lib/tax/rental-income.ts, which
+-- computes weekly_rent x weeks. Folding a water recovery into `amount` would
+-- make that comparison diverge for a legitimate reason and turn a useful
+-- warning into noise. It would also erase the ATO's own distinction between
+-- gross rent and other rental-related income.
+--
+-- Nullable and additive, like 063 — existing rows stay valid.
+-- ============================================================
+
+alter table public.rental_payments
+  -- Assessable income that is NOT rent: tenant reimbursements (water usage),
+  -- retained letting fees, insurance payouts for lost rent.
+  add column other_income      numeric(10,2) check (other_income >= 0),
+  -- What the amount was for. Free text because the categories an agent uses
+  -- are not a closed set, and the ATO reports them on one combined line
+  -- regardless.
+  add column other_income_note text;

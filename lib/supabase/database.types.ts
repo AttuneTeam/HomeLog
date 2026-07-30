@@ -299,6 +299,11 @@ export type RentalPayment = {
   property_id: string;
   rental_period_id: string | null;
   payment_date: string;
+  /**
+   * GROSS rent for the period — the assessable figure. The agent's fees and
+   * outgoings do NOT reduce it; they are deductions in their own right. What
+   * the agent actually disbursed belongs in `net_received`.
+   */
   amount: number;
   period_start: string | null;
   period_end: string | null;
@@ -307,6 +312,59 @@ export type RentalPayment = {
   raw_subject: string | null;
   notes: string | null;
   created_at: string;
+
+  // ── The managing agent's statement, added in migration 063 ────────────────
+  /** The statement PDF in the `property-files` bucket. */
+  statement_path: string | null;
+  /**
+   * Fees itemised rather than lumped: the management fee is a percentage of
+   * rent while letting and lease fees are one-off, so keeping them apart is
+   * what lets a recorded management fee be compared against the
+   * `rental_periods.management_fee_pct` estimate.
+   *
+   * Amounts are GST-INCLUSIVE, as they appear on the statement. Residential
+   * rent is input-taxed, so the owner claims no GST credit and the
+   * GST-inclusive figure is the deductible one.
+   */
+  management_fees: number | null;
+  letting_fees: number | null;
+  lease_fees: number | null;
+  /**
+   * Bank and administrative charges. Feeds the ATO "Sundry rental expenses"
+   * line, NOT "Property agent fees and commission" — they are not commission.
+   */
+  sundry_fees: number | null;
+  /**
+   * Costs the agent paid to a third party, recorded ONLY so the statement
+   * reconciles to the bank. NEVER a deduction: those costs deduct via their
+   * own invoice, the only path that classifies them correctly (blinds are a
+   * Division 40 depreciating asset, not an immediate deduction). Deducting
+   * from this column would double-count every such cost.
+   */
+  other_outgoings: number | null;
+  /**
+   * Assessable income that is NOT rent — tenant reimbursements (water usage),
+   * retained letting fees, insurance payouts for lost rent. Reported on the
+   * ATO's "Other rental-related income" line, separate from gross rent.
+   *
+   * Kept out of `amount` deliberately: gross rent is cross-checked against the
+   * tenancy accrual (`weekly_rent × weeks`) in lib/tax/rental-income.ts, and
+   * folding non-rent income in would make that comparison diverge for a
+   * legitimate reason.
+   */
+  other_income: number | null;
+  other_income_note: string | null;
+  /** What the agent disbursed: (amount + other_income) − fees − other_outgoings. */
+  net_received: number | null;
+  /** Raw AI extraction, kept so a confirmed figure can be compared to it. */
+  extracted: Record<string, unknown> | null;
+  confidence: number | null;
+  /**
+   * Set when a human accepts the extracted fees. Until then they are a
+   * model's proposal and are NOT claimable. Fees typed by hand are confirmed
+   * on save, because a human entered them.
+   */
+  fees_confirmed_at: string | null;
 };
 
 export interface Database {
@@ -1662,6 +1720,7 @@ export interface Database {
           property_id: string;
           rental_period_id?: string | null;
           payment_date: string;
+          /** GROSS rent. See the RentalPayment row type. */
           amount: number;
           period_start?: string | null;
           period_end?: string | null;
@@ -1669,6 +1728,20 @@ export interface Database {
           raw_subject?: string | null;
           notes?: string | null;
           created_at?: string;
+          statement_path?: string | null;
+          management_fees?: number | null;
+          letting_fees?: number | null;
+          lease_fees?: number | null;
+          sundry_fees?: number | null;
+          /** Reconciliation only — never a deduction. */
+          other_outgoings?: number | null;
+          /** Assessable but NOT rent — kept out of `amount`. */
+          other_income?: number | null;
+          other_income_note?: string | null;
+          net_received?: number | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          fees_confirmed_at?: string | null;
         };
         Update: {
           rental_period_id?: string | null;
@@ -1677,6 +1750,18 @@ export interface Database {
           period_start?: string | null;
           period_end?: string | null;
           notes?: string | null;
+          statement_path?: string | null;
+          management_fees?: number | null;
+          letting_fees?: number | null;
+          lease_fees?: number | null;
+          sundry_fees?: number | null;
+          other_outgoings?: number | null;
+          other_income?: number | null;
+          other_income_note?: string | null;
+          net_received?: number | null;
+          extracted?: Record<string, unknown> | null;
+          confidence?: number | null;
+          fees_confirmed_at?: string | null;
         };
         Relationships: [
           {
