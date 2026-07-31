@@ -49,6 +49,10 @@ Local Supabase runs via the `supabase` CLI (`supabase start`); local DB is at
   ownership, not by upload path prefix; auth-user deletion uses an RPC, not the GoTrue admin
   API). See `docs/account-deletion.md` before changing any deletion logic or adding a
   file-bearing table.
+- **Rental income and agent fees** carry invariants that span the email parser, the tax
+  resolvers and the UI — chiefly that `rental_payments.amount` is GROSS rent, and that
+  `other_outgoings` is recorded for reconciliation but is never a deduction. See
+  `docs/rental-statements.md` before touching anything that writes a rent figure.
 
 ### Mutations vs. reads
 - **Server Actions** live in `app/actions/*.ts` (`"use server"`) — used for form submissions and

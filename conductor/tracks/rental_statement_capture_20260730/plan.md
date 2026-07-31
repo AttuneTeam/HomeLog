@@ -149,31 +149,35 @@ is where the parser's figure belongs.
         stacked action buttons — fixed; second pass confirmed.
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) `b32ce80`
 
-## Phase 5: Tax pack & consistency  (Tier 2)
+## Phase 5: Tax pack & consistency  (Tier 2)  [checkpoint: d6a7038]
 
-- [ ] Task: Route the tax pack through `resolveAgentFees`
+- [x] Task: Route the tax pack through `resolveAgentFees` `d6a7038`
   - [ ] Replace the inline `management_fee_pct` calculation at `tax-pack/page.tsx:281-286`
   - [ ] Select the new columns in the `rental_payments` query
   - [ ] Pass `agentSundries` into `buildRentalSchedule`
-- [ ] Task: Disclose the fee source in the report and the pack, mirroring income's actual/accrued
-      labelling
-- [ ] Task: Add unconfirmed statement fees to `packOmissions`
-- [ ] Task: Statement evidence in the pack
+- [x] Task: Disclose the fee source in the report and the pack, mirroring income's actual/accrued
+      labelling `d6a7038`
+- [x] Task: Add unconfirmed statement fees to `packOmissions` `d6a7038` (three omissions: unconfirmed,
+      partial, fully estimated)
+- [x] Task: Statement evidence in the pack `d6a7038`
   - [ ] One `EvidenceItem` per statement, `kind: "Rental statement"`
   - [ ] Manifest entry names the lines it supports
-- [ ] Task: Route `components/financial-position-view.tsx:257` through the same resolver
+- [x] Task: Route `components/financial-position-view.tsx:257` through the same resolver `d6a7038`
   - [ ] Confirm it reports the SAME agent-fee figure as the tax pack for the same year
-- [ ] Task: Verify all ten acceptance criteria against the real statement
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Verify all ten acceptance criteria against the real statement `c487651`
+  - [x] 8 of 10 verified against the real documents via `npm run verify:rent-schedule`
+  - [ ] **Criterion 7 (ZIP + manifest) NOT verified** — needs a browser
+  - [x] Criterion 5 amended: Division 40 classification is not expressible; see the spec finding
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 6: Documentation
+## Phase 6: Documentation  [checkpoint: pending PR #37]
 
-- [ ] Task: Document the invariants this feature depends on
-  - [ ] Why `amount` is gross rent, and why `other_outgoings` is never deducted
-  - [ ] Why agent fees carry an actual/estimate split and must never be summed
-  - [ ] Add `rental_payments.statement_path` to the file-bearing table list in
-        `docs/account-deletion.md`
-- [ ] Task: Record the deferred work
-  - [ ] The `lib/xero/mapper.ts:246` agent-fee change and why it was deferred
-  - [ ] The historical gross-versus-net audit of existing `rental_payments` rows
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Document the invariants this feature depends on — `docs/rental-statements.md`
+  - [x] Why `amount` is gross rent, and why `other_outgoings` is never deducted
+  - [x] Why agent fees carry an actual/estimate split and must never be summed
+  - [x] Add `rental_payments.statement_path` to the file-bearing table list in
+        `docs/account-deletion.md` (done in Phase 1)
+- [x] Task: Record the deferred work
+  - [x] The `lib/xero/mapper.ts:246` agent-fee change and why it was deferred
+  - [x] The historical gross-versus-net audit of existing `rental_payments` rows
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
