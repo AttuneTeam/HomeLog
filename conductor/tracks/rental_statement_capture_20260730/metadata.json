@@ -3,9 +3,9 @@
   "title": "Rental statement capture",
   "description": "Attach the managing agent's rental statement to a rent payment and record the agency fees it charges, replacing an estimate derived from management_fee_pct with the actual figures and shipping the statement as tax-pack evidence.",
   "type": "feature",
-  "status": "new",
+  "status": "merged",
   "created_at": "2026-07-30T00:00:00Z",
-  "updated_at": "2026-07-30T00:00:00Z",
+  "updated_at": "2026-07-31T00:00:00Z",
   "phases": 7,
   "tasks": 33,
   "artifacts": {
@@ -19,7 +19,8 @@
     "approach": "Extend rental_payments in place rather than introduce a statement table, because rows already exist in production. Additive nullable columns only.",
     "new_migrations": [
       "063_rental_payment_statements",
-      "064_deletion_fns_rental_statements"
+      "064_deletion_fns_rental_statements",
+      "065_rental_payment_other_income"
     ],
     "amended_during_implementation": "Phase 1.5 and FR12/FR13 were added after verifying FR1. lib/email-parser/parse-statement.ts:51 instructs the model to store the NET disbursed amount in rental_payments.amount, which lib/tax/rental-income.ts reports as gross rent \u2014 understating assessable income on every email-ingested payment. Found in code, not in data entry, so the original out-of-scope 'known risk' framing was wrong. Also recorded: statement fees are GST-inclusive while the management_fee_pct estimate is not.",
     "new_modules": [
@@ -66,5 +67,29 @@
     "The three rental-statement Server Actions have no automated coverage; they are exercised only manually through the UI.",
     "Only Rich & Oliva statement layouts have been extracted. Another agency's format is unproven.",
     "The inbound webhook path (Svix signature, attachment extraction, property matching) remains uncovered, as before this track."
-  ]
+  ],
+  "completed_at": "2026-07-31T00:00:00Z",
+  "checkpoints": {
+    "phase_1": "a3584a4",
+    "phase_1_5": "d3b700f",
+    "phase_2": "a14a2e3",
+    "phase_3": "79f1614",
+    "phase_4": "b32ce80",
+    "phase_5": "d6a7038",
+    "phase_6": "pending PR #37"
+  },
+  "pull_requests": [
+    {
+      "number": 36,
+      "title": "Rental statement capture: actual agency fees, gross-rent correction, statement evidence",
+      "state": "merged"
+    },
+    {
+      "number": 37,
+      "title": "Save forwarded agent statements, and read their figures reliably",
+      "state": "open",
+      "note": "Follow-on requested after #36 merged. Also carries docs/rental-statements.md and this track's closure."
+    }
+  ],
+  "outcome": "Agent fees now come from confirmed statements rather than a management-percentage estimate, with the source disclosed. Two defects found while verifying were fixed: rental_payments.amount held the NET disbursed figure while the tax code reported it as gross rent, and tenant reimbursements had nowhere to live, which would have made the new reconciliation report correct statements as broken. Test count 186 -> 260."
 }
