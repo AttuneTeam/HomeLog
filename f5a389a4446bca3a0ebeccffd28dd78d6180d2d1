@@ -1,0 +1,42 @@
+────────────────────────────────────────────────────────────────────────
+TASK: Verify the acceptance criteria end to end
+Track: rent_fy_grouping_20260907 — Phase 3
+────────────────────────────────────────────────────────────────────────
+
+Verified by generating a temporary test over the live local rows of property
+400b830b (56 Forbes St), run and then deleted. Local data spans only two
+financial years, so a synthetic 2024-09-15 payment was added in-memory to
+exercise the three-year case, and a filtered subset to exercise deletion.
+All 9 passed:
+
+  ✓ AC1  three financial years produce three dividers, newest first
+           -> ['2026–27','2025–26','2024–25'] with [2, 7, 1] items
+  ✓ AC4  30 June 2025 -> 2024–25; 1 July 2025 -> 2025–26
+  ✓ AC5  a non-July FY start regroups the same rows differently
+           -> April start yields different per-year counts on identical input
+  ✓ AC6  subtotals sum to the lifetime total, across all three row sets
+  ✓ AC7  adding a payment in a previously absent FY inserts a divider in the
+           correct position
+  ✓ AC8  deleting the last row of a year removes that year's divider
+  ✓      a single financial year still renders its divider
+  ✓      an empty list renders no dividers
+  ✓      a broken date surfaces as Undated and still reconciles
+
+  ✓ AC9  git diff --stat main HEAD -- components/rental-periods-section.tsx
+           returned empty. Tenancies is untouched.
+
+  ✓ AC10 $ npm run build     -> ✓ Compiled successfully in 6.3s
+         $ CI=true npm test  -> 18 files, 275 tests passed
+
+OUTSTANDING — VISUAL, THE USER'S TO CLOSE
+  AC2  dividers render in the Operating expenses table
+  AC3  the divider pins while scrolling
+  AC11 legible in light and dark themes and at mobile width
+These three require a rendered, authenticated page. This session could not
+authenticate, so they are carried to the phase checkpoint rather than claimed.
+Expected figures were supplied to the user for comparison.
+
+NO PERMANENT COVERAGE GAP
+The behaviours exercised above are already covered generically by the 15 cases in
+tests/lib/tax/fy-grouping.test.ts. The temporary tests added confidence against
+real data shapes; they embedded live rows and so were not committed.
