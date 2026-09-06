@@ -102,7 +102,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
 
 ---
 
-## Phase 3 — Operating expenses grouping (Tier 3)
+## Phase 3 — Operating expenses grouping (Tier 3) [checkpoint: d4d9b4b]
 
 - [x] **Task: Group operating expenses by financial year with sticky dividers** `d4d9b4b`
   - [ ] Pass the FY start month/day from the Rent tab page to `RentalExpensesSection`.
@@ -126,4 +126,4 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Confirm Tenancies is visually unchanged.
   - [ ] Run `npm run build` and `CI=true npm test`.
 
-- [ ] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)**
+- [x] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)** `d4d9b4b`
