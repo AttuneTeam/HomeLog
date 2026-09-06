@@ -47,6 +47,19 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Landing surface — see the landing token block below for the rationale. */
+  --color-landing-paper: var(--landing-paper);
+  --color-landing-warm: var(--landing-warm);
+  --color-landing-slab: var(--landing-slab);
+  --color-landing-footer: var(--landing-footer);
+  --color-landing-brass: var(--landing-brass);
+  --color-landing-brass-text: var(--landing-brass-text);
+  --color-landing-muted: var(--landing-muted);
+  --color-landing-hairline: var(--landing-hairline);
+  --color-landing-fg: var(--landing-fg);
+  --color-landing-on-slab: var(--landing-on-slab);
+  --color-landing-on-brass: var(--landing-on-brass);
 }
 
 :root {
@@ -82,6 +95,31 @@
   --sidebar-accent-foreground: oklch(0.32 0.07 60);
   --sidebar-border: oklch(0.90 0.005 85);
   --sidebar-ring: oklch(0.55 0.04 85);
+
+  /* ── Landing surface ─────────────────────────────────────────────────────
+     Palette for the public landing page only, transcribed from the design
+     prototype. Nothing outside components/landing/ references these, so they
+     cannot alter dashboard surfaces: they add tokens rather than redefine any.
+
+     Light values are the prototype's own hex, converted to oklch to match this
+     file's convention:
+       paper #fbf9f9 · warm #eee9df · slab/footer #030813
+       brass #b89a5a · brass-text #775a19 · muted #45474c · hairline #c6c6cc
+
+     `slab` is the "Why it matters" band. It is named for its role rather than
+     its colour because in dark theme it is *lighter* than the page around it —
+     see the .dark block. */
+  --landing-paper: oklch(0.984 0.002 17.2);
+  --landing-warm: oklch(0.935 0.014 84.6);
+  --landing-slab: oklch(0.134 0.027 258.5);
+  --landing-footer: oklch(0.134 0.027 258.5);
+  --landing-brass: oklch(0.699 0.090 85.0);
+  --landing-brass-text: oklch(0.485 0.088 83.4);
+  --landing-muted: oklch(0.398 0.009 268.4);
+  --landing-hairline: oklch(0.828 0.008 286.2);
+  --landing-fg: oklch(0.134 0.027 258.5);
+  --landing-on-slab: oklch(0.984 0.002 17.2);
+  --landing-on-brass: oklch(0.134 0.027 258.5);
 }
 
 .dark {
@@ -116,6 +154,37 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.75 0.09 85);
+
+  /* ── Landing surface, dark ───────────────────────────────────────────────
+     Not an inversion of the light palette. The layout's rhythm comes from
+     alternating bands, and the "Why it matters" slab earns its drama in light
+     theme by dropping 0.85 in lightness below the paper around it. Inverting
+     the colours literally would sink an already-dark band into an already-dark
+     page and flatten the composition.
+
+     So the *relationship* inverts instead: the slab rises above its neighbours
+     rather than dropping below them, and the warm band rises with it.
+
+       band            light L   dark L
+       paper (base)      0.984    0.163
+       warm              0.935    0.212   (-0.049 -> +0.049 vs base)
+       slab              0.134    0.268   (-0.850 -> +0.105 vs base)
+       footer            0.134    0.121   stays below base, anchoring the page
+
+     Brass dims from 0.699 to 0.600 on the CTA so the band does not glare, and
+     brass-text lifts from 0.485 to 0.720 to hold contrast as an eyebrow colour
+     on dark ground. Text on the brass CTA stays ink in both themes. */
+  --landing-paper: oklch(0.163 0.014 264);
+  --landing-warm: oklch(0.212 0.016 70);
+  --landing-slab: oklch(0.268 0.018 72);
+  --landing-footer: oklch(0.121 0.014 264);
+  --landing-brass: oklch(0.600 0.088 80);
+  --landing-brass-text: oklch(0.720 0.082 80);
+  --landing-muted: oklch(0.660 0.012 264);
+  --landing-hairline: oklch(0.300 0.010 264);
+  --landing-fg: oklch(0.930 0.004 85);
+  --landing-on-slab: oklch(0.930 0.004 85);
+  --landing-on-brass: oklch(0.134 0.027 258.5);
 }
 
 @layer base {
