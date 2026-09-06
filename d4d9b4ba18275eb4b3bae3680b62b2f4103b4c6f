@@ -1,0 +1,52 @@
+Task: Group operating expenses by financial year with sticky dividers
+Track: rent_fy_grouping_20260907 — Phase 3
+Verification tier: 3 (presentational)
+
+WHAT CHANGED
+- components/rental-expenses-section.tsx: accepts fyStartMonth/fyStartDay; adds
+  an expenseGroups memo grouping by expense_date; the tbody now emits a
+  FinancialYearDividerRow before each year's rows, reusing the component built
+  in Phase 2 rather than duplicating the markup.
+- rent/page.tsx: passes the FY start props through.
+
+Review with 'git diff -w': 57 insertions, 4 deletions. The larger raw diff is
+re-indentation of the existing row block, which gained a nesting level.
+
+WHY
+Grouped on the already-sorted list rather than raw state, so the date-descending
+order the table displays carries straight through — groupByFinancialYear
+preserves caller order and does not re-sort.
+
+The 'sorted' array was changed to useMemo. It previously rebuilt on every render,
+which would have made it an unstable dependency and defeated the grouping memo.
+This is the only behavioural change to existing code in this commit.
+
+The subtotal is the gross 'amount', consistent with the lifetime Total row that
+remains in place. GST is deliberately not deducted from the displayed figure.
+
+colSpan is 4 here against the payments table's 5 — the expenses table has no
+Period column.
+
+VERIFICATION PERFORMED
+  $ npm run build
+    ✓ Compiled successfully in 6.1s — no type errors.
+  $ CI=true npm test
+    Test Files 18 passed (18) / Tests 275 passed (275)
+
+Verified against the real local database, not by inspection. A temporary test was
+generated embedding the 9 live rental_operating_expenses rows of property
+400b830b, run, then deleted:
+  ✓ produces the years computed independently from the rows
+      -> ['2026–27','2025–26'] with [1, 8] items
+  ✓ per-year totals match the independent computation
+      -> $3,299.13 and $2,642.98
+  ✓ subtotals reconcile with the lifetime Total row
+      -> sums to $5,942.11
+  ✓ keeps the date-descending order within each year
+All figures agree with the ground truth recorded in commit 4a52236, computed
+without this module.
+
+VERIFICATION DEBT — SETTLE AT THE PHASE CHECKPOINT
+Visual confirmation of pinning, light/dark legibility and sub-sm degradation is
+outstanding for the same reason as Phase 2: the tab is auth-gated and this
+session could not authenticate. The user verifies at the checkpoint.
