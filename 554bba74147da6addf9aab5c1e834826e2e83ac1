@@ -47,3 +47,40 @@ VERIFICATION PERFORMED
        Footer, light: body 18.15:1, muted 8.41:1, eyebrow 5.84:1, hairline 1.54:1
        Footer, dark:  body 15.28:1, muted 6.04:1, eyebrow 7.52:1, hairline 1.51:1
   npm run build -> Compiled successfully in 7.3s, no type errors.
+
+PHASE 1 CHECKPOINT — Design foundations
+
+AUTOMATED CHECKS
+  npm run build                              -> Compiled successfully in 7.2s, no type errors
+  CI=true npm test                           -> 17 files, 260 tests passed
+  node scripts/verify-landing-contrast.mjs   -> ALL PASS, 30 pairs, exit 0
+
+VERIFICATION DEBT: NONE
+No Tier 1 files changed in this phase — no lib/, no migrations, no RLS, no auth, no
+deletion logic. Files touched were app/globals.css (Tier 3), public/house-journal.jpg
+(asset) and scripts/verify-landing-contrast.mjs (tooling). The phase's actual risk is
+contrast, and that is covered by a committed, re-runnable script rather than a one-time
+measurement.
+
+MANUAL VERIFICATION
+Phase 1 produces no page-visible change — nothing consumes the tokens until Phase 2 — so
+every band was rendered from the committed tokens in both themes and reviewed side by
+side before building on them. Confirmed the dark slab reads as raised against its
+neighbours, which is the inversion NFR1 requires.
+
+USER CONFIRMATION
+Owner confirmed at the checkpoint: 'Yes looks good carry on but keep the footer the same
+as the existing instead of making it black.' The footer amendment was applied, re-verified
+and committed as 554bba7 before closing the phase.
+
+DEFECTS FOUND AND FIXED IN THIS PHASE
+Three, all by the contrast verifier, none by inspection:
+  1. Light muted text on the footer at 2.16:1 (needed 4.5:1)  -> --landing-muted-on-slab
+  2. Brass eyebrow on the slab at 3.11:1 (12px caps needs 4.5) -> --landing-brass-on-slab
+  3. Dark hairline on the amended footer at 1.38:1 (floor 1.4) -> hairline 0.300 -> 0.325
+
+COMMITS
+  a144613  hero journal photograph
+  2611964  light and dark landing colour tokens
+  5012678  dark-ground text tokens + contrast verifier
+  554bba7  footer keeps the existing colour (checkpoint target)
