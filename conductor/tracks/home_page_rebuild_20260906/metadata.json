@@ -33,7 +33,6 @@
       "components/landing/landing-hero.tsx",
       "components/landing/landing-why.tsx",
       "components/landing/landing-husbok.tsx",
-      "components/landing/landing-matters.tsx",
       "components/landing/landing-how.tsx",
       "components/landing/landing-principles.tsx (client)",
       "components/landing/landing-cta.tsx",
@@ -72,6 +71,10 @@
     {
       "decision": "The footer keeps the Privacy and Terms links, which the prototype does not have",
       "why": "Confirmed by the owner at the Phase 2 checkpoint. Both routes exist and are allowlisted as public, and this is the only public page that links to them, so the prototype's omission reads as a mockup gap rather than a decision."
+    },
+    {
+      "decision": "The whole 'Why it matters' band was cut, not just its statistics",
+      "why": "Requested by the owner after Phase 3, having seen it built. It leaves the page with no dark band at all: paper carries most of it, warm and footer sit just below paper, and the brass CTA becomes the only saturated moment. Consequence for NFR1: the dark theme's inversion now rests on the warm band and footer, which still invert by the same mechanism but far less dramatically. The four *-on-slab tokens were removed with the section rather than left as dead colour, and both verification scripts were updated — the copy script now asserts the band's strings are ABSENT."
     }
   ],
   "open_risks": [
@@ -81,7 +84,8 @@
   ],
   "checkpoints": {
     "phase_1": "554bba7",
-    "phase_2": "7bc31c7"
+    "phase_2": "7bc31c7",
+    "phase_3": "f70d094"
   },
   "pull_requests": []
 }

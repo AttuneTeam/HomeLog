@@ -5,9 +5,9 @@ import Image from "next/image";
  * Landing footer.
  *
  * Keeps the existing page's light ground and hairline top border rather than the
- * prototype's ink band (owner decision, Phase 1 checkpoint). Because it is light
- * in light theme and dark in dark theme — the same as paper — it uses the
- * paper-ground text tokens rather than the `*-on-slab` set.
+ * prototype's ink band (owner decision, Phase 1 checkpoint). It is light in light
+ * theme and dark in dark theme, the same as paper, so it uses the paper-ground
+ * text tokens.
  *
  * The Privacy and Terms links are not in the prototype but are carried over from
  * the page this replaces: both routes exist, and this is the only public page that

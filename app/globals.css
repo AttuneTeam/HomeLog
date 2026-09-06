@@ -51,16 +51,12 @@
   /* Landing surface — see the landing token block below for the rationale. */
   --color-landing-paper: var(--landing-paper);
   --color-landing-warm: var(--landing-warm);
-  --color-landing-slab: var(--landing-slab);
   --color-landing-footer: var(--landing-footer);
   --color-landing-brass: var(--landing-brass);
   --color-landing-brass-text: var(--landing-brass-text);
-  --color-landing-brass-on-slab: var(--landing-brass-on-slab);
   --color-landing-muted: var(--landing-muted);
-  --color-landing-muted-on-slab: var(--landing-muted-on-slab);
   --color-landing-hairline: var(--landing-hairline);
   --color-landing-fg: var(--landing-fg);
-  --color-landing-on-slab: var(--landing-on-slab);
   --color-landing-on-brass: var(--landing-on-brass);
 }
 
@@ -105,33 +101,23 @@
 
      Light values are the prototype's own hex, converted to oklch to match this
      file's convention:
-       paper #fbf9f9 · warm #eee9df · slab/footer #030813
-       brass #b89a5a · brass-text #775a19 · muted #45474c · hairline #c6c6cc
+       paper #fbf9f9 · warm #eee9df · brass #b89a5a
+       brass-text #775a19 · muted #45474c · hairline #c6c6cc
 
-     `slab` is the "Why it matters" band, and the only dark band on the page. It is
-     named for its role rather than its colour because in dark theme it is *lighter*
-     than the page around it — see the .dark block. The `*-on-slab` text tokens serve
-     that one band; the footer uses the paper-ground tokens. */
+     The prototype's dark "Why it matters" band was cut from the page, so there is
+     no dark band left: paper carries most of the page, warm and footer sit just
+     below it, and the brass CTA is the only saturated moment. */
   --landing-paper: oklch(0.984 0.002 17.2);
   --landing-warm: oklch(0.935 0.014 84.6);
-  --landing-slab: oklch(0.134 0.027 258.5);
   /* The footer keeps the existing page's #f5f3f3, not the prototype's ink. It sits
      0.018 below paper — the separation is carried by a hairline top border, not by
      the fill — so it takes the same text tokens as paper. */
   --landing-footer: oklch(0.966 0.002 17.2);
   --landing-brass: oklch(0.699 0.090 85.0);
   --landing-brass-text: oklch(0.485 0.088 83.4);
-  /* Brass text on the slab. `brass-text` is tuned for light grounds and manages
-     only 3.11:1 on ink, which fails a 12px uppercase eyebrow. The prototype uses
-     the lighter brass on its dark band; this is that value. */
-  --landing-brass-on-slab: oklch(0.699 0.090 85.0);
   --landing-muted: oklch(0.398 0.009 268.4);
-  /* Secondary text on the slab. `muted` is a dark grey sized for light grounds and
-     drops to 2.16:1 on ink, so the one dark band needs its own. */
-  --landing-muted-on-slab: oklch(0.750 0.008 85);
   --landing-hairline: oklch(0.828 0.008 286.2);
   --landing-fg: oklch(0.134 0.027 258.5);
-  --landing-on-slab: oklch(0.984 0.002 17.2);
   --landing-on-brass: oklch(0.134 0.027 258.5);
 }
 
@@ -169,19 +155,16 @@
   --sidebar-ring: oklch(0.75 0.09 85);
 
   /* ── Landing surface, dark ───────────────────────────────────────────────
-     Not an inversion of the light palette. The layout's rhythm comes from
-     alternating bands, and the "Why it matters" slab earns its drama in light
-     theme by dropping 0.85 in lightness below the paper around it. Inverting
-     the colours literally would sink an already-dark band into an already-dark
-     page and flatten the composition.
+     Not an inversion of the light palette. The layout's rhythm comes from bands
+     that sit a little BELOW paper. Inverting the colours literally would sink
+     those bands into an already-dark page and flatten the composition.
 
-     So the *relationship* inverts instead: the slab rises above its neighbours
-     rather than dropping below them, and the warm band rises with it.
+     So the *relationship* inverts instead: a band that sits below paper in light
+     theme rises above it in dark, by the same amount.
 
        band            light L   dark L
        paper (base)      0.984    0.163
        warm              0.935    0.212   (-0.049 -> +0.049 vs base)
-       slab              0.134    0.268   (-0.850 -> +0.105 vs base)
        footer            0.966    0.181   (-0.018 -> +0.018 vs base)
 
      Brass dims from 0.699 to 0.600 on the CTA so the band does not glare, and
@@ -189,30 +172,23 @@
      on dark ground. Text on the brass CTA stays ink in both themes. */
   --landing-paper: oklch(0.163 0.014 264);
   --landing-warm: oklch(0.212 0.016 70);
-  --landing-slab: oklch(0.268 0.018 72);
   /* Mirrors the light footer's 0.018 offset from paper, inverted like the other
      bands: below paper in light, above it in dark. */
   --landing-footer: oklch(0.181 0.014 264);
   --landing-brass: oklch(0.600 0.088 80);
   --landing-brass-text: oklch(0.720 0.082 80);
-  /* Lifted further than the light value: the dark slab is RAISED to 0.268, so
-     brass has to climb to keep an eyebrow legible against it. */
-  --landing-brass-on-slab: oklch(0.800 0.072 82);
   --landing-muted: oklch(0.660 0.012 264);
-  --landing-muted-on-slab: oklch(0.760 0.010 85);
   /* 0.325 rather than 0.300: the dark footer sits at 0.181, and a hairline at 0.300
      falls to 1.38:1 against it. This clears both footer and paper grounds. */
   --landing-hairline: oklch(0.325 0.010 264);
   --landing-fg: oklch(0.930 0.004 85);
-  --landing-on-slab: oklch(0.930 0.004 85);
   --landing-on-brass: oklch(0.134 0.027 258.5);
 }
 
 @layer components {
   /* The landing page's eyebrow: small uppercase Grotesk with wide tracking, used
      above every section heading. Replaces the `label-caps` class that used to live
-     in a <style> tag inside app/page.tsx. Colour is set per band by the caller,
-     since the correct brass differs between paper and slab grounds. */
+     in a <style> tag inside app/page.tsx. Colour is set by the caller. */
   .landing-eyebrow {
     font-family: var(--font-grotesk);
     font-size: 0.6875rem;

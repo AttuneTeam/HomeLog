@@ -21,13 +21,13 @@ piece of genuine design: a dark theme the prototype does not provide.
 | 2 | Hero                 | —        | paper                 |
 | 3 | Why we exist         | `#story` | warm paper `#eee9df`  |
 | 4 | The Nordic *húsbók*  | —        | paper                 |
-| 5 | Why it matters       | —        | ink `#030813`         |
-| 6 | How Home Base works  | `#how`   | paper                 |
-| 7 | Our principles       | —        | paper                 |
-| 8 | Closing CTA          | `#start` | brass `#b89a5a`       |
-| 9 | Footer               | —        | grey `#f5f3f3`        |
+| 5 | How Home Base works  | `#how`   | paper                 |
+| 6 | Our principles       | —        | paper                 |
+| 7 | Closing CTA          | `#start` | brass `#b89a5a`       |
+| 8 | Footer               | —        | grey `#f5f3f3`        |
 
-The prototype's `#team` section sits between 6 and 7 and is **excluded**.
+The prototype's `#team` section sits between 5 and 6 and is **excluded**, as is its
+"Why it matters" band, which sat between the húsbók and "How Home Base works".
 
 ## Functional requirements
 
@@ -77,15 +77,7 @@ Warm-paper band, `#story` anchor. Heading left, body right.
 - Paragraph: "We borrowed the idea, then made it useful for Australian homes. A digital house book
   that is as considered as the homes it records."
 
-### FR5 — Why it matters
-
-Ink band.
-
-- Eyebrow: `Why it matters`
-- Two-line statement: "The details are small." then "*The difference is lasting.*" in brass italic.
-- **The stats row is omitted.** See *Decisions* below.
-
-### FR6 — How Home Base works
+### FR5 — How Home Base works
 
 `#how` anchor. Four numbered columns separated by hairline rules, stacking on mobile.
 
@@ -96,7 +88,7 @@ Ink band.
 - `03 Build confidence` — "See what has been done, when, and by whom — at a glance."
 - `04 Pass it on` — "Share a complete, useful record at sale or settlement."
 
-### FR7 — Our principles
+### FR6 — Our principles
 
 Accordion, three items, single-open, first open by default.
 
@@ -112,7 +104,7 @@ Accordion, three items, single-open, first open by default.
 Requires a client component. Triggers carry `aria-expanded` and `aria-controls`; the open state is
 signalled by a `+` / `−` affordance, not colour alone.
 
-### FR8 — Closing CTA
+### FR7 — Closing CTA
 
 Brass band, `#start` anchor.
 
@@ -120,7 +112,7 @@ Brass band, `#start` anchor.
 - Heading: "Give your home a story worth passing on."
 - Button: "Start for free ↗" → `/signup`.
 
-### FR9 — Footer
+### FR8 — Footer
 
 **Retains the existing page's `#f5f3f3` with a hairline top border, rather than the
 prototype's ink band.** Logo, "A property's home passport. Made in Australia.",
@@ -129,7 +121,7 @@ prototype's ink band.** Logo, "A property's home passport. Made in Australia.",
 Because the footer is light in light theme and dark in dark theme — the same as paper —
 it uses the paper-ground text tokens. The `*-on-slab` tokens serve the slab alone.
 
-### FR10 — Hero asset
+### FR9 — Hero asset
 
 Extract `house-journal.jpg` from the prototype, commit it to `public/`, and serve it through
 `next/image`. The page must make **no external image request at runtime** — the current page's
@@ -142,14 +134,13 @@ Extract `house-journal.jpg` from the prototype, commit it to `public/`, and serv
 The page must be legible in both themes via `next-themes`.
 
 This is the one requirement the prototype gives no guidance on, and it is not a mechanical
-inversion. **The layout's rhythm depends on alternating light and dark bands.** Rendered naively
-on a dark ground, the "Why it matters" band collapses into the sections around it and the
-composition flattens.
+inversion. **The layout's rhythm depends on bands that sit slightly below paper.** Rendered
+naively on a dark ground those bands sink into an already-dark page and the composition flattens.
 
 The dark palette must therefore re-establish that rhythm by inverting the *relationship* rather
-than the colours: the band that is darker than its neighbours in light theme becomes a raised,
-warmer surface in dark theme. Brass `#b89a5a` needs a lightened variant to hold contrast on dark
-ground, and the brass CTA band needs a treatment that does not glare.
+than the colours: a band that sits below paper in light theme rises above it in dark, by the same
+amount. Brass `#b89a5a` needs a lightened variant to hold contrast on dark ground, and the brass
+CTA band needs a treatment that does not glare.
 
 ### NFR2 — Semantic tokens
 
@@ -182,7 +173,7 @@ must remain reachable unauthenticated.
 1. `npm run build` passes with no type errors.
 2. All nine sections render in the specified order, with copy matching the prototype exactly.
 3. No "The People" section and no "The people" nav link appear anywhere in the output.
-4. No numeric statistic appears anywhere on the page.
+4. No numeric statistic appears anywhere on the page, and no "Why it matters" band.
 5. Nav CTAs reach `/login` and `/signup`; in-page anchors scroll to their sections.
 6. The accordion is fully operable by keyboard, with correct ARIA state and a visible focus ring.
 7. The page is legible in light **and** dark themes, confirmed visually in both.
@@ -207,6 +198,14 @@ as a decision rather than an oversight: see *Known tension* below.
 owner at the Phase 1 checkpoint. This leaves the "Why it matters" slab as the page's only dark
 band, which sharpens rather than weakens it — the drama is no longer repeated at the bottom of
 the page. The footer's separation comes from its hairline top border, as it does today.
+
+**The "Why it matters" band is cut entirely.** Requested by the owner after Phase 3, having seen
+it built. The band had already lost its statistics row; removing the statement too leaves the page
+with no dark band at all, so paper carries most of it and the brass CTA becomes the only saturated
+moment — a calmer composition than the prototype's. The consequence for NFR1 is that the dark
+theme's inversion now rests on the warm band and footer alone, which still invert by the same
+mechanism, just less dramatically. The four `*-on-slab` tokens it needed were removed with it
+rather than left as dead colour.
 
 **Full replacement rather than a merge.** The existing product-screenshot hero, dashboard preview
 and logo band have no counterpart in the prototype and are not carried across. The prior page
@@ -235,7 +234,7 @@ copy track without reopening the layout.
 ## Out of scope
 
 - **"The People" section** and its two portraits — explicitly excluded by the request.
-- **The stats band** — dropped by decision above.
+- **The stats band and the whole "Why it matters" section** — dropped by decision above.
 - **Re-angling copy toward the investor and tax positioning** — see *Known tension*.
 - Any change to authenticated dashboard surfaces.
 - Any change to `/login`, `/signup`, the passport routes, or the `(story)` route group.

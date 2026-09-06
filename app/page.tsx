@@ -2,7 +2,6 @@ import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingWhy } from "@/components/landing/landing-why";
 import { LandingHusbok } from "@/components/landing/landing-husbok";
-import { LandingMatters } from "@/components/landing/landing-matters";
 import { LandingHow } from "@/components/landing/landing-how";
 import { LandingFooter } from "@/components/landing/landing-footer";
 
@@ -25,7 +24,6 @@ export default function LandingPage() {
         <LandingHero />
         <LandingWhy />
         <LandingHusbok />
-        <LandingMatters />
         <LandingHow />
       </main>
 

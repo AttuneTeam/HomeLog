@@ -84,10 +84,9 @@ renders on the server.
   - [x] Heading with italic *húsbók* on its own line and a short brass rule beneath
   - [x] Lead sentence plus two paragraphs per FR4
 
-- [x] Task: Build "Why it matters" (f70d094)
-  - [x] Create `components/landing/landing-matters.tsx`
-  - [x] Ink band, eyebrow, two-line statement with the brass italic second line
-  - [x] Confirm no stats row and no numeric content (AC4)
+- [x] ~~Task: Build "Why it matters"~~ — built in f70d094, then REMOVED at the owner's
+      request after Phase 3. The section, its component and the four `*-on-slab` tokens
+      are gone; see spec.md *Decisions*.
 
 - [x] Task: Build "How Home Base works" (f70d094)
   - [x] Create `components/landing/landing-how.tsx` with the `#how` anchor
@@ -114,7 +113,8 @@ renders on the server.
   - [ ] Gate the animation behind `prefers-reduced-motion` (NFR5)
 
 - [ ] Task: Dark-theme pass
-  - [ ] Walk every section in dark theme and confirm the band rhythm survives (NFR1)
+  - [ ] Walk every section in dark theme and confirm the band rhythm survives (NFR1),
+        now resting on the warm band and footer rather than the removed slab
   - [ ] Confirm no hardcoded colour literal remains in the landing components (AC10)
 
 - [ ] Task: Responsive pass

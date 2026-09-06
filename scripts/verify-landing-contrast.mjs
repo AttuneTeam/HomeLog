@@ -60,10 +60,6 @@ const PAIRS = [
   ["muted", "warm", "muted body on warm band", 4.5],
   ["brass-text", "paper", "eyebrow on paper", 4.5],
   ["brass-text", "warm", "eyebrow on warm band", 4.5],
-  // The slab is the page's only dark band and carries its own text tokens.
-  ["on-slab", "slab", "body on slab", 4.5],
-  ["brass-on-slab", "slab", "brass eyebrow on slab", 4.5],
-  ["muted-on-slab", "slab", "muted body on slab", 4.5],
   // The footer keeps the existing page's light grey, so it takes the paper-ground tokens.
   ["fg", "footer", "body on footer", 4.5],
   ["muted", "footer", "muted body on footer", 4.5],
@@ -92,7 +88,7 @@ for (const theme of ["light", "dark"]) {
     );
   }
   console.log(`  -- band lightness: ` +
-    ["paper", "warm", "slab", "brass", "footer"]
+    ["paper", "warm", "brass", "footer"]
       .map((k) => `${k} ${t[k][0].toFixed(3)}`).join("  "));
 }
 

@@ -42,10 +42,6 @@ const MUST_CONTAIN = [
   ["FR4", "In Scandinavia, a house book has long been part of the life of a well-kept home."],
   ["FR4", "It holds the practical knowledge that otherwise lives in one person’s head: when the roof was repaired, which paint is on the hallway walls, where the water shuts off. More than a ledger, it is an act of stewardship — a promise that the house will be understood and cared for."],
   ["FR4", "We borrowed the idea, then made it useful for Australian homes. A digital house book that is as considered as the homes it records."],
-  // FR5 slab
-  ["FR5", "Why it matters"],
-  ["FR5", "The details are small."],
-  ["FR5", "The difference is lasting."],
   // FR6 how it works
   ["FR6", "How Home Base works"],
   ["FR6", "One calm place for the life of your property."],
@@ -75,6 +71,10 @@ const MUST_NOT_CONTAIN = [
   ["AC4", "properties with a clearer story"],
   ["AC4", "suburbs across Australia"],
   ["AC4", "average handover confidence"],
+  // The "Why it matters" band was cut at the owner's request after Phase 3.
+  ["CUT", "Why it matters"],
+  ["CUT", "The details are small"],
+  ["CUT", "The difference is lasting"],
 ];
 
 let failures = 0;
