@@ -34,11 +34,11 @@ renders on the server.
   - [x] Add a lightened brass variant that holds contrast on dark ground
   - [x] Scope the tokens so they do not leak into dashboard surfaces
 
-- [ ] Task: Verify contrast in both themes
-  - [ ] Measure body text against every band; require ≥ 4.5:1
-  - [ ] Measure display type against every band; require ≥ 3:1
-  - [ ] Measure brass-on-paper and brass-on-ink in both themes
-  - [ ] Record the measured ratios in the task summary
+- [x] Task: Verify contrast in both themes (5012678)
+  - [x] Measure body text against every band; require ≥ 4.5:1
+  - [x] Measure display type against every band; require ≥ 3:1
+  - [x] Measure brass-on-paper and brass-on-ink in both themes
+  - [x] Record the measured ratios in the task summary
 
 - [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
 
