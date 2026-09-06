@@ -108,22 +108,26 @@
        paper #fbf9f9 · warm #eee9df · slab/footer #030813
        brass #b89a5a · brass-text #775a19 · muted #45474c · hairline #c6c6cc
 
-     `slab` is the "Why it matters" band. It is named for its role rather than
-     its colour because in dark theme it is *lighter* than the page around it —
-     see the .dark block. */
+     `slab` is the "Why it matters" band, and the only dark band on the page. It is
+     named for its role rather than its colour because in dark theme it is *lighter*
+     than the page around it — see the .dark block. The `*-on-slab` text tokens serve
+     that one band; the footer uses the paper-ground tokens. */
   --landing-paper: oklch(0.984 0.002 17.2);
   --landing-warm: oklch(0.935 0.014 84.6);
   --landing-slab: oklch(0.134 0.027 258.5);
-  --landing-footer: oklch(0.134 0.027 258.5);
+  /* The footer keeps the existing page's #f5f3f3, not the prototype's ink. It sits
+     0.018 below paper — the separation is carried by a hairline top border, not by
+     the fill — so it takes the same text tokens as paper. */
+  --landing-footer: oklch(0.966 0.002 17.2);
   --landing-brass: oklch(0.699 0.090 85.0);
   --landing-brass-text: oklch(0.485 0.088 83.4);
-  /* Brass text on the slab and footer. `brass-text` is tuned for light grounds
-     and manages only 3.11:1 on ink, which fails a 12px uppercase eyebrow. The
-     prototype uses the lighter brass on its dark band; this is that value. */
+  /* Brass text on the slab. `brass-text` is tuned for light grounds and manages
+     only 3.11:1 on ink, which fails a 12px uppercase eyebrow. The prototype uses
+     the lighter brass on its dark band; this is that value. */
   --landing-brass-on-slab: oklch(0.699 0.090 85.0);
   --landing-muted: oklch(0.398 0.009 268.4);
-  /* Secondary text on the slab and footer. `muted` is a dark grey sized for light
-     grounds and drops to 2.16:1 on the footer, so dark surfaces need their own. */
+  /* Secondary text on the slab. `muted` is a dark grey sized for light grounds and
+     drops to 2.16:1 on ink, so the one dark band needs its own. */
   --landing-muted-on-slab: oklch(0.750 0.008 85);
   --landing-hairline: oklch(0.828 0.008 286.2);
   --landing-fg: oklch(0.134 0.027 258.5);
@@ -178,7 +182,7 @@
        paper (base)      0.984    0.163
        warm              0.935    0.212   (-0.049 -> +0.049 vs base)
        slab              0.134    0.268   (-0.850 -> +0.105 vs base)
-       footer            0.134    0.121   stays below base, anchoring the page
+       footer            0.966    0.181   (-0.018 -> +0.018 vs base)
 
      Brass dims from 0.699 to 0.600 on the CTA so the band does not glare, and
      brass-text lifts from 0.485 to 0.720 to hold contrast as an eyebrow colour
@@ -186,7 +190,9 @@
   --landing-paper: oklch(0.163 0.014 264);
   --landing-warm: oklch(0.212 0.016 70);
   --landing-slab: oklch(0.268 0.018 72);
-  --landing-footer: oklch(0.121 0.014 264);
+  /* Mirrors the light footer's 0.018 offset from paper, inverted like the other
+     bands: below paper in light, above it in dark. */
+  --landing-footer: oklch(0.181 0.014 264);
   --landing-brass: oklch(0.600 0.088 80);
   --landing-brass-text: oklch(0.720 0.082 80);
   /* Lifted further than the light value: the dark slab is RAISED to 0.268, so
@@ -194,7 +200,9 @@
   --landing-brass-on-slab: oklch(0.800 0.072 82);
   --landing-muted: oklch(0.660 0.012 264);
   --landing-muted-on-slab: oklch(0.760 0.010 85);
-  --landing-hairline: oklch(0.300 0.010 264);
+  /* 0.325 rather than 0.300: the dark footer sits at 0.181, and a hairline at 0.300
+     falls to 1.38:1 against it. This clears both footer and paper grounds. */
+  --landing-hairline: oklch(0.325 0.010 264);
   --landing-fg: oklch(0.930 0.004 85);
   --landing-on-slab: oklch(0.930 0.004 85);
   --landing-on-brass: oklch(0.134 0.027 258.5);

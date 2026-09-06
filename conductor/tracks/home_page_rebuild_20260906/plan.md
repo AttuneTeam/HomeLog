@@ -60,6 +60,8 @@ renders on the server.
 
 - [ ] Task: Build the footer
   - [ ] Create `components/landing/landing-footer.tsx`
+  - [ ] Keep the existing `#f5f3f3` ground and hairline top border, not the prototype's ink
+  - [ ] Use the paper-ground text tokens (`fg`, `muted`, `brass-text`), not the `*-on-slab` set
   - [ ] Logo, "A property's home passport. Made in Australia.",
         "Founded 2021 / Sydney + Melbourne"
 

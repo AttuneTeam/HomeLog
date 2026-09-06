@@ -22,7 +22,8 @@
       "warm_paper": "#eee9df",
       "ink": "#030813",
       "brass": "#b89a5a",
-      "brass_text": "#775a19"
+      "brass_text": "#775a19",
+      "footer": "#f5f3f3 (kept from the existing page, not the prototype's ink)"
     },
     "assets": [
       "public/house-journal.jpg — extracted from the prototype, replaces the current page's images.unsplash.com references"
@@ -63,11 +64,15 @@
     {
       "decision": "Colours defined as CSS custom properties with light and dark values",
       "why": "The current page hardcodes hex literals throughout. Dark-theme support is not achievable without tokens, so this is a prerequisite rather than a cleanup."
+    },
+    {
+      "decision": "The footer keeps the existing page's #f5f3f3 rather than the prototype's ink band",
+      "why": "Requested by the owner at the Phase 1 checkpoint. It leaves the 'Why it matters' slab as the page's only dark band, which sharpens it — the drama is no longer repeated at the bottom of the page. Separation comes from the hairline top border, as it does today. Consequence for the tokens: the footer is light in light theme and dark in dark, same as paper, so it uses the paper-ground text tokens and the *-on-slab set narrows to the slab alone."
     }
   ],
   "open_risks": [
     "POSITIONING MISMATCH, recorded not fixed: the prototype's copy sells a house book for homeowners and never mentions tax, the ATO, deductions or accountants. product.md positions the product investor-first and names AI tax classification against ATO rulings as the differentiator, with the passport as retention rather than the headline. The public page will therefore lead with a different promise than the product's stated strategy. Raised during planning; the owner elected to ship the prototype copy as written. Revisitable as a copy track without reopening the layout.",
-    "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' band and the footer collapse into their neighbours and the composition flattens. The dark palette has to invert the band relationship rather than the colours.",
+    "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' slab collapses into its neighbours and the composition flattens. The dark palette inverts the band relationship rather than the colours: warm and slab sit below paper in light and above it in dark. Resolved in Phase 1 and verified by scripts/verify-landing-contrast.mjs.",
     "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279."
   ],
   "checkpoints": {},

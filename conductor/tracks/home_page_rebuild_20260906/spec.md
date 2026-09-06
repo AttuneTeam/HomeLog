@@ -25,7 +25,7 @@ piece of genuine design: a dark theme the prototype does not provide.
 | 6 | How Home Base works  | `#how`   | paper                 |
 | 7 | Our principles       | —        | paper                 |
 | 8 | Closing CTA          | `#start` | brass `#b89a5a`       |
-| 9 | Footer               | —        | ink                   |
+| 9 | Footer               | —        | grey `#f5f3f3`        |
 
 The prototype's `#team` section sits between 6 and 7 and is **excluded**.
 
@@ -122,8 +122,12 @@ Brass band, `#start` anchor.
 
 ### FR9 — Footer
 
-Ink band. Logo, "A property's home passport. Made in Australia.",
+**Retains the existing page's `#f5f3f3` with a hairline top border, rather than the
+prototype's ink band.** Logo, "A property's home passport. Made in Australia.",
 "Founded 2021 / Sydney + Melbourne".
+
+Because the footer is light in light theme and dark in dark theme — the same as paper —
+it uses the paper-ground text tokens. The `*-on-slab` tokens serve the slab alone.
 
 ### FR10 — Hero asset
 
@@ -139,8 +143,8 @@ The page must be legible in both themes via `next-themes`.
 
 This is the one requirement the prototype gives no guidance on, and it is not a mechanical
 inversion. **The layout's rhythm depends on alternating light and dark bands.** Rendered naively
-on a dark ground, the "Why it matters" band and the footer collapse into the sections around them
-and the composition flattens.
+on a dark ground, the "Why it matters" band collapses into the sections around it and the
+composition flattens.
 
 The dark palette must therefore re-establish that rhythm by inverting the *relationship* rather
 than the colours: the band that is darker than its neighbours in light theme becomes a raised,
@@ -198,6 +202,11 @@ statement copy ships without the numbers.
 **The prototype's copy ships verbatim, in its homeowner voice.** Chosen deliberately by the owner
 over the alternative of re-angling toward the investor and tax positioning. Recorded so it reads
 as a decision rather than an oversight: see *Known tension* below.
+
+**The footer keeps the existing page's `#f5f3f3`, not the prototype's ink.** Requested by the
+owner at the Phase 1 checkpoint. This leaves the "Why it matters" slab as the page's only dark
+band, which sharpens rather than weakens it — the drama is no longer repeated at the bottom of
+the page. The footer's separation comes from its hairline top border, as it does today.
 
 **Full replacement rather than a merge.** The existing product-screenshot hero, dashboard preview
 and logo band have no counterpart in the prototype and are not carried across. The prior page

@@ -60,12 +60,15 @@ const PAIRS = [
   ["muted", "warm", "muted body on warm band", 4.5],
   ["brass-text", "paper", "eyebrow on paper", 4.5],
   ["brass-text", "warm", "eyebrow on warm band", 4.5],
+  // The slab is the page's only dark band and carries its own text tokens.
   ["on-slab", "slab", "body on slab", 4.5],
   ["brass-on-slab", "slab", "brass eyebrow on slab", 4.5],
-  ["brass-on-slab", "footer", "brass text on footer", 4.5],
-  ["on-slab", "footer", "body on footer", 4.5],
-  ["muted-on-slab", "footer", "muted body on footer", 4.5],
   ["muted-on-slab", "slab", "muted body on slab", 4.5],
+  // The footer keeps the existing page's light grey, so it takes the paper-ground tokens.
+  ["fg", "footer", "body on footer", 4.5],
+  ["muted", "footer", "muted body on footer", 4.5],
+  ["brass-text", "footer", "eyebrow on footer", 4.5],
+  ["hairline", "footer", "hairline rule on footer", 1.4],
   ["on-brass", "brass", "body on brass CTA", 4.5],
   ["hairline", "paper", "hairline rule on paper", 1.4],
 ];
