@@ -50,3 +50,48 @@ VERIFICATION DEBT — SETTLE AT THE PHASE CHECKPOINT
 Visual confirmation of pinning, light/dark legibility and sub-sm degradation is
 outstanding for the same reason as Phase 2: the tab is auth-gated and this
 session could not authenticate. The user verifies at the checkpoint.
+
+────────────────────────────────────────────────────────────────────────
+PHASE 3 VERIFICATION REPORT — Operating expenses grouping
+Track: rent_fy_grouping_20260907
+────────────────────────────────────────────────────────────────────────
+
+PHASE SCOPE
+Previous checkpoint: b988490.
+  $ git diff --name-only b988490 HEAD
+Code files changed:
+  components/rental-expenses-section.tsx                        Tier 3
+  app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx  Tier 2 (prop pass-through only)
+
+AUTOMATED CHECKS
+  $ npm run build
+    ✓ Compiled successfully in 6.3s — no type errors.
+  $ CI=true npm test
+    Test Files  18 passed (18)
+    Tests       275 passed (275)
+
+VERIFICATION DEBT
+No automated-coverage debt. The only pure logic in this track,
+lib/tax/fy-grouping.ts, is fully covered by 15 cases. The components are Tier 3
+presentational and carry no unit tests, consistent with the current state of the
+suite described in workflow.md. Expense grouping was additionally verified
+against the 9 live rental_operating_expenses rows via a temporary generated test
+(since deleted), reproducing $3,299.13 / $2,642.98 and reconciling to $5,942.11.
+
+ACCEPTANCE CRITERIA
+8 of 11 verified mechanically — AC1, AC4, AC5, AC6, AC7, AC8, AC9, AC10. Detail
+recorded in the note on 569781b.
+
+VISUAL DEBT — CARRIED THROUGH THE TRACK AND CLOSED BY THE USER
+AC2 (dividers render in the expenses table), AC3 (pinning while scrolling) and
+AC11 (light/dark and mobile legibility) require a rendered, authenticated page.
+This session could not authenticate — entering credentials is out of scope for
+this agent — so these were never claimed as verified by the agent. The user was
+given the exact expected figures, computed from the database without the new
+code, and step-by-step instructions covering both tables, scrolling, dark mode,
+sub-sm degradation and the untouched Tenancies section.
+
+USER CONFIRMATION
+Confirmed with 'yes' on 2026-09-07 against the manual verification plan above.
+
+PHASE 3 COMPLETE.
