@@ -1,0 +1,26 @@
+{
+  "track_id": "rent_fy_grouping_20260907",
+  "title": "Rent tab financial-year grouping",
+  "description": "Group rental payments and operating expenses on a property's Rent tab into financial-year sections, using sticky subtotal dividers over one continuous list.",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-09-07T00:00:00Z",
+  "updated_at": "2026-09-07T00:00:00Z",
+  "phases": 3,
+  "tasks": 11,
+  "artifacts": {
+    "spec": "./spec.md",
+    "plan": "./plan.md",
+    "index": "./index.md"
+  },
+  "context": {
+    "layout_decision": "Sticky FY divider rows, no collapsing — whole history stays visible",
+    "fy_basis": "payment_date / expense_date, matching the ATO cash basis and the tax pack",
+    "new_modules": ["lib/tax/fy-grouping.ts"],
+    "new_tests": ["tests/lib/tax/fy-grouping.test.ts"],
+    "key_risk": "overflow-x-auto wrapper in rental-payments-section.tsx defeats position:sticky",
+    "new_migrations": [],
+    "schema_changes": false,
+    "rls_changes": false
+  }
+}
