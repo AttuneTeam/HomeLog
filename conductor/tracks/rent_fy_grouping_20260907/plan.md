@@ -49,7 +49,7 @@ implementation, per the Tier 1 rule.
 
 ---
 
-## Phase 2 — FY start plumbing and Rental payments grouping (Tier 2 + Tier 3)
+## Phase 2 — FY start plumbing and Rental payments grouping (Tier 2 + Tier 3) [checkpoint: b988490]
 
 The profile read is Tier 2 (data flow); the table changes are Tier 3.
 
@@ -98,13 +98,13 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Confirm per-year subtotals sum exactly to the lifetime header total.
   - [ ] `npm run build` must pass; visually confirm in light and dark themes and at mobile width.
 
-- [ ] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)**
+- [x] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)** `b988490`
 
 ---
 
 ## Phase 3 — Operating expenses grouping (Tier 3)
 
-- [ ] **Task: Group operating expenses by financial year with sticky dividers**
+- [~] **Task: Group operating expenses by financial year with sticky dividers**
   - [ ] Pass the FY start month/day from the Rent tab page to `RentalExpensesSection`.
   - [ ] Derive groups with `useMemo` over component state, grouping by `expense_date`, and keep
         the existing date-descending sort as the input order.
