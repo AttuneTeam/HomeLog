@@ -1,0 +1,56 @@
+Task: Define the landing colour tokens (Phase 1, home_page_rebuild_20260906)
+
+WHAT CHANGED
+Added a landing-surface palette to app/globals.css as CSS custom properties with
+light and dark values, registered in @theme inline so Tailwind emits bg-landing-*,
+text-landing-* and border-landing-* utilities.
+
+FILES
+  M app/globals.css  (+11 @theme entries, +11 tokens in :root, +11 in .dark)
+
+WHY
+NFR2. The page being replaced hardcodes hex literals throughout, which is why it is
+effectively light-only today. Dark-theme support (NFR1) is not reachable without
+tokens, so this is a prerequisite rather than a cleanup.
+
+Light values are the prototype's own hex, converted to oklch to match this file's
+existing convention (the rest of globals.css is oklch throughout):
+  paper #fbf9f9 · warm #eee9df · slab/footer #030813
+  brass #b89a5a · brass-text #775a19 · muted #45474c · hairline #c6c6cc
+
+THE DARK PALETTE IS NOT AN INVERSION
+The layout's rhythm comes from alternating bands. The 'Why it matters' slab earns its
+drama in light theme by sitting 0.850 in lightness BELOW the paper around it. Inverting
+the colours literally would sink an already-dark band into an already-dark page and
+flatten the composition. The relationship inverts instead — the slab rises above its
+neighbours rather than dropping below them:
+
+  band           light L   dark L   delta vs base
+  paper (base)     0.984    0.163   —
+  warm             0.935    0.212   -0.049 -> +0.049
+  slab             0.134    0.268   -0.850 -> +0.105
+  footer           0.134    0.121   stays below base, anchoring the page bottom
+
+Brass dims 0.699 -> 0.600 on the CTA so the band does not glare on a dark page.
+brass-text lifts 0.485 -> 0.720 to survive as an eyebrow colour on dark ground.
+Text on the brass CTA stays ink in both themes.
+
+NAMING DEVIATION FROM THE PLAN
+The plan called this token 'ink'. It ships as 'slab' because in dark theme the band is
+lighter than the page around it, so a colour-derived name would actively mislead. The
+token is named for its role. --landing-fg carries the text colour that 'ink' described.
+
+SCOPING
+These tokens add names rather than redefine existing ones, and nothing outside
+components/landing/ will reference them, so they cannot alter dashboard surfaces.
+
+VERIFICATION PERFORMED
+  npm run build
+    -> Compiled successfully in 7.4s; 39/39 static pages generated; no type errors.
+       (The 'inferred your workspace root' warning is pre-existing and unrelated.)
+  grep for the tokens in the compiled CSS under .next/
+    -> --landing-slab: oklch(0.134 0.027 258.5) and oklch(0.268 0.018 72) both present,
+       each with hex (#030813 / #2c251c) and lab() fallbacks emitted automatically.
+       Light value round-trips to the prototype's exact hex.
+  Contrast measured for all 20 foreground/background pairs across both themes —
+  see the following task's note for the full table. All pass.
