@@ -1,0 +1,47 @@
+Task: Resolve the sticky/overflow conflict in the payments table
+Track: rent_fy_grouping_20260907 — Phase 2
+Verification tier: 3 (presentational)
+
+WHAT CHANGED
+components/rental-payments-section.tsx: the table wrapper changed from
+'overflow-x-auto' to 'max-sm:overflow-x-auto', with a comment recording why.
+
+WHY — THE NON-OBVIOUS CONSTRAINT IN THIS TRACK
+Per the CSS Overflow module, when one axis is 'visible' and the other is not,
+the visible one computes to 'auto'. So a wrapper carrying only overflow-x:auto
+is a scroll container on BOTH axes. A position:sticky row inside it anchors to
+that wrapper rather than the viewport, and because the wrapper is only as tall
+as its content it never scrolls vertically — so the year divider would render
+perfectly and simply never pin. This fails silently, which is why the plan
+isolated it as its own task ahead of building the divider.
+
+Confirmed empirically in Chrome rather than assumed:
+  d1.style.overflowX = 'auto'  ->  computed { overflowX: 'auto', overflowY: 'auto' }
+  control div (no overflow)    ->  computed { overflowX: 'visible', overflowY: 'visible' }
+
+RESOLUTION TAKEN
+The scroll container is confined to widths below sm, which is the fallback the
+spec pre-approved (FR5). At sm and above there is no scroll container, so the
+divider pins to the page as intended. Below sm the wrapper still provides
+horizontal scrolling for this five-column table — satisfying the workflow rule
+that tables scroll within their container rather than the page — and the
+divider degrades to a plain, non-sticky row, which FR5 permits.
+
+Removing the wrapper outright was rejected: the payments table has five columns
+(Payment, Date, Period, Gross rent, actions) against the expenses table's four,
+so it genuinely needs horizontal scroll on a phone. Hiding the Period column on
+mobile was rejected as it removes data the user recorded.
+
+VERIFICATION PERFORMED
+  $ npm run build
+    ✓ Compiled successfully in 8.9s — no type errors.
+
+  Chrome, computed-style probe as above — confirms the mechanism.
+
+VERIFICATION DEBT — SETTLE AT THE PHASE CHECKPOINT
+Visual confirmation that the divider pins while scrolling the real Rent tab has
+NOT been performed. The tab is auth-gated and this session could not
+authenticate; the user elected to verify visually themselves at the phase
+checkpoint. Recorded here rather than skipped. Nothing yet renders a sticky row,
+so there is no visible regression in the meantime — this commit only changes
+where the scroll container applies.
