@@ -74,25 +74,25 @@ renders on the server.
 
 ## Phase 3: Narrative sections
 
-- [ ] Task: Build "Why we exist"
-  - [ ] Create `components/landing/landing-why.tsx` with the `#story` anchor
-  - [ ] Warm-paper band, heading left and three paragraphs right
-  - [ ] Transcribe all copy verbatim per FR3
+- [x] Task: Build "Why we exist" (f70d094)
+  - [x] Create `components/landing/landing-why.tsx` with the `#story` anchor
+  - [x] Warm-paper band, heading left and three paragraphs right
+  - [x] Transcribe all copy verbatim per FR3
 
-- [ ] Task: Build "The Nordic húsbók"
-  - [ ] Create `components/landing/landing-husbok.tsx`
-  - [ ] Heading with italic *húsbók* on its own line and a short brass rule beneath
-  - [ ] Lead sentence plus two paragraphs per FR4
+- [x] Task: Build "The Nordic húsbók" (f70d094)
+  - [x] Create `components/landing/landing-husbok.tsx`
+  - [x] Heading with italic *húsbók* on its own line and a short brass rule beneath
+  - [x] Lead sentence plus two paragraphs per FR4
 
-- [ ] Task: Build "Why it matters"
-  - [ ] Create `components/landing/landing-matters.tsx`
-  - [ ] Ink band, eyebrow, two-line statement with the brass italic second line
-  - [ ] Confirm no stats row and no numeric content (AC4)
+- [x] Task: Build "Why it matters" (f70d094)
+  - [x] Create `components/landing/landing-matters.tsx`
+  - [x] Ink band, eyebrow, two-line statement with the brass italic second line
+  - [x] Confirm no stats row and no numeric content (AC4)
 
-- [ ] Task: Build "How Home Base works"
-  - [ ] Create `components/landing/landing-how.tsx` with the `#how` anchor
-  - [ ] Four numbered columns separated by hairline rules
-  - [ ] Stack to a single column on mobile without losing the numbering
+- [x] Task: Build "How Home Base works" (f70d094)
+  - [x] Create `components/landing/landing-how.tsx` with the `#how` anchor
+  - [x] Four numbered columns separated by hairline rules
+  - [x] Stack to a single column on mobile without losing the numbering
 
 - [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
 
