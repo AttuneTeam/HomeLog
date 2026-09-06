@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ReactNode } from "react";
+import { Fragment, useMemo, useState, useRef, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,6 +11,8 @@ import {
   RentalExpenseCategory,
 } from "@/lib/supabase/database.types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { groupByFinancialYear } from "@/lib/tax/fy-grouping";
+import { FinancialYearDividerRow } from "@/components/financial-year-divider-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,12 +91,18 @@ interface RentalExpensesSectionProps {
   propertyId: string;
   userId: string;
   initialExpenses: RentalOperatingExpense[];
+  /** 1-based month the user's financial year starts in. */
+  fyStartMonth: number;
+  /** Day of that month the user's financial year starts on. */
+  fyStartDay: number;
 }
 
 export function RentalExpensesSection({
   propertyId,
   userId,
   initialExpenses,
+  fyStartMonth,
+  fyStartDay,
 }: RentalExpensesSectionProps) {
   const [expenses, setExpenses] =
     useState<RentalOperatingExpense[]>(initialExpenses);
@@ -122,12 +130,39 @@ export function RentalExpensesSection({
 
   const watchedCategory = watch("category");
 
-  const sorted = [...expenses].sort(
-    (a, b) =>
-      new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime(),
+  // Memoised so it is a stable dependency for the grouping below; a fresh array
+  // each render would defeat that memo.
+  const sorted = useMemo(
+    () =>
+      [...expenses].sort(
+        (a, b) =>
+          new Date(b.expense_date).getTime() -
+          new Date(a.expense_date).getTime(),
+      ),
+    [expenses],
   );
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+  // Grouped by the date the cost was INCURRED, matching the ATO cash basis and
+  // the year the tax pack assigns it to. Groups the already-sorted list so the
+  // date-descending order carries through, and is derived from state so add,
+  // edit and delete re-group immediately.
+  const expenseGroups = useMemo(
+    () =>
+      groupByFinancialYear(
+        sorted,
+        (e) => e.expense_date,
+        fyStartMonth,
+        fyStartDay,
+      ).map((group) => ({
+        ...group,
+        // Gross amount, consistent with the lifetime Total row. GST is not
+        // deducted from the displayed figure.
+        total: group.items.reduce((s, e) => s + e.amount, 0),
+      })),
+    [sorted, fyStartMonth, fyStartDay],
+  );
 
   function openAdd() {
     reset({
@@ -348,61 +383,77 @@ export function RentalExpensesSection({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sorted.map((expense) => (
-                <tr key={expense.id}>
-                  <td className="px-1 py-1.5">
-                    {expense.invoice_path ? (
-                      <InvoiceLink invoicePath={expense.invoice_path}>
-                        <span className="group-hover:underline">
-                          {expense.supplier ?? categoryLabel(expense.category)}
-                        </span>
-                        {expense.supplier && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {categoryLabel(expense.category)}
+              {expenseGroups.map((group) => (
+                <Fragment key={group.label}>
+                  <FinancialYearDividerRow
+                    label={group.label}
+                    count={`${group.items.length} expense${
+                      group.items.length === 1 ? "" : "s"
+                    }`}
+                    colSpan={4}
+                    figures={
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(group.total)}
+                      </span>
+                    }
+                  />
+                  {group.items.map((expense) => (
+                  <tr key={expense.id}>
+                    <td className="px-1 py-1.5">
+                      {expense.invoice_path ? (
+                        <InvoiceLink invoicePath={expense.invoice_path}>
+                          <span className="group-hover:underline">
+                            {expense.supplier ?? categoryLabel(expense.category)}
                           </span>
-                        )}
-                      </InvoiceLink>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {expense.supplier ?? categoryLabel(expense.category)}
-                        </span>
-                        {expense.supplier && (
-                          <span className="text-xs text-muted-foreground">
-                            {categoryLabel(expense.category)}
+                          {expense.supplier && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {categoryLabel(expense.category)}
+                            </span>
+                          )}
+                        </InvoiceLink>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>
+                            {expense.supplier ?? categoryLabel(expense.category)}
                           </span>
-                        )}
+                          {expense.supplier && (
+                            <span className="text-xs text-muted-foreground">
+                              {categoryLabel(expense.category)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
+                      {formatDate(expense.expense_date)}
+                    </td>
+                    <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap">
+                      {formatCurrency(expense.amount)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex gap-1 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground"
+                          onClick={() => openEdit(expense)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-muted-foreground hover:text-destructive"
+                          disabled={deletingId === expense.id}
+                          onClick={() => setConfirmDeleteId(expense.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                  </td>
-                  <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap">
-                    {formatDate(expense.expense_date)}
-                  </td>
-                  <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap">
-                    {formatCurrency(expense.amount)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex gap-1 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground"
-                        onClick={() => openEdit(expense)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground hover:text-destructive"
-                        disabled={deletingId === expense.id}
-                        onClick={() => setConfirmDeleteId(expense.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  ))}
+                </Fragment>
               ))}
               <tr>
                 <td>

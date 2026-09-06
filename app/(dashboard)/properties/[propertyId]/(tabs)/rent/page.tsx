@@ -88,6 +88,8 @@ export default async function RentTab({ params }: Props) {
         propertyId={propertyId}
         userId={user.id}
         initialExpenses={rentalExpenses ?? []}
+        fyStartMonth={fyStartMonth}
+        fyStartDay={fyStartDay}
       />
     </div>
   );
