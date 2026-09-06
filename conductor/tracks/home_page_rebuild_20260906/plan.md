@@ -44,31 +44,31 @@ renders on the server.
 
 ## Phase 2: Page shell
 
-- [ ] Task: Build the navigation
-  - [ ] Create `components/landing/landing-nav.tsx` as a client component (scroll listener)
-  - [ ] Links: "Our story" → `#story`, "How it works" → `#how`, "Log In" → `/login`,
+- [x] Task: Build the navigation (7bc31c7)
+  - [x] Create `components/landing/landing-nav.tsx` as a client component (scroll listener)
+  - [x] Links: "Our story" → `#story`, "How it works" → `#how`, "Log In" → `/login`,
         "Get Started" → `/signup`
-  - [ ] Sticky positioning with an 80px → 64px shrink past 20px of scroll
-  - [ ] Mobile disclosure below `md`, keyboard operable with a visible focus state
-  - [ ] Confirm no "The people" link is present (AC3)
+  - [x] Sticky positioning with an 80px → 64px shrink past 20px of scroll
+  - [x] Mobile disclosure below `md`, keyboard operable with a visible focus state
+  - [x] Confirm no "The people" link is present (AC3)
 
-- [ ] Task: Build the hero
-  - [ ] Create `components/landing/landing-hero.tsx` as a server component
-  - [ ] Eyebrow, H1 with brass italic *sum*, body copy, "Read our story ↓" per FR2
-  - [ ] Render the committed asset through `next/image` with the specified alt text
-  - [ ] Overlay the "The house book, reimagined" caption chip
+- [x] Task: Build the hero (7bc31c7)
+  - [x] Create `components/landing/landing-hero.tsx` as a server component
+  - [x] Eyebrow, H1 with brass italic *sum*, body copy, "Read our story ↓" per FR2
+  - [x] Render the committed asset through `next/image` with the specified alt text
+  - [x] Overlay the "The house book, reimagined" caption chip
 
-- [ ] Task: Build the footer
-  - [ ] Create `components/landing/landing-footer.tsx`
-  - [ ] Keep the existing `#f5f3f3` ground and hairline top border, not the prototype's ink
-  - [ ] Use the paper-ground text tokens (`fg`, `muted`, `brass-text`), not the `*-on-slab` set
-  - [ ] Logo, "A property's home passport. Made in Australia.",
+- [x] Task: Build the footer (7bc31c7)
+  - [x] Create `components/landing/landing-footer.tsx`
+  - [x] Keep the existing `#f5f3f3` ground and hairline top border, not the prototype's ink
+  - [x] Use the paper-ground text tokens (`fg`, `muted`, `brass-text`), not the `*-on-slab` set
+  - [x] Logo, "A property's home passport. Made in Australia.",
         "Founded 2021 / Sydney + Melbourne"
 
-- [ ] Task: Compose the new page shell
-  - [ ] Rewrite `app/page.tsx` as a server component holding font wiring and composition
-  - [ ] Remove the superseded sections and the `images.unsplash.com` references
-  - [ ] Confirm `/` remains allowlisted in `lib/supabase/middleware.ts` (NFR6)
+- [x] Task: Compose the new page shell (7bc31c7)
+  - [x] Rewrite `app/page.tsx` as a server component holding font wiring and composition
+  - [x] Remove the superseded sections and the `images.unsplash.com` references
+  - [x] Confirm `/` remains allowlisted in `lib/supabase/middleware.ts` (NFR6)
 
 - [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
 
