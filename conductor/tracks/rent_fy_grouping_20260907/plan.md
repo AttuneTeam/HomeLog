@@ -11,7 +11,7 @@ then the second consumer reuses what the first extracted.
 Pure domain logic with no I/O. Tests are written first and confirmed failing before any
 implementation, per the Tier 1 rule.
 
-- [ ] **Task: Write failing tests for `lib/tax/fy-grouping.ts`**
+- [x] **Task: Write failing tests for `lib/tax/fy-grouping.ts`** `476e929`
   - [ ] Create `tests/lib/tax/fy-grouping.test.ts`, mirroring the source path and matching the
         conventions in the neighbouring `tests/lib/tax/fy.test.ts`.
   - [ ] Empty input returns an empty array.
@@ -31,7 +31,7 @@ implementation, per the Tier 1 rule.
         `Australia/Sydney`, proving the UTC parsing requirement rather than assuming it.
   - [ ] Run `CI=true npm test` and confirm the new tests FAIL for the right reason.
 
-- [ ] **Task: Implement `lib/tax/fy-grouping.ts`**
+- [x] **Task: Implement `lib/tax/fy-grouping.ts`** `476e929`
   - [ ] Define the exported group type (`fyEndYear`, `label`, `items`) and the generic grouping
         function taking items, a date accessor and the FY start month/day.
   - [ ] Derive each item's financial year by reusing `currentFyEndYear` from `lib/tax/fy.ts`;
