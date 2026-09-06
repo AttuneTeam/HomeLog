@@ -64,7 +64,11 @@ function LoginForm() {
       {/* Left Side: Value Propositions */}
       <section
         className="hidden md:flex w-full md:w-1/2 lg:w-3/5 flex-col justify-center px-16 py-20"
-        style={{ backgroundColor: "#f5f3f3" }}
+        /* Warm paper, matching the landing page's "Why we exist" band. This is the light
+           value of --landing-warm, written as a literal rather than the token because
+           this page hardcodes every other colour and has no dark variants — a single
+           theme-aware column would invert on its own and break against the rest. */
+        style={{ backgroundColor: "#eee9df" }}
       >
         <div className="max-w-xl">
           <div className="mb-16">
