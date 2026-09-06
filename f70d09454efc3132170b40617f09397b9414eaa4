@@ -1,0 +1,49 @@
+Tasks: Why we exist, the Nordic husbok, Why it matters, How Home Base works
+(Phase 3, home_page_rebuild_20260906)
+
+WHAT CHANGED
+  A components/landing/landing-why.tsx      warm band, #story anchor
+  A components/landing/landing-husbok.tsx   paper
+  A components/landing/landing-matters.tsx  the slab
+  A components/landing/landing-how.tsx      paper, #how anchor
+  A scripts/verify-landing-copy.mjs
+  M app/page.tsx                            composes the four
+
+THE SLAB OMITS THE STATISTICS
+The prototype's band carries 2,400+ properties, 87 suburbs and 4.8/5 handover
+confidence. Those figures are invented. product-guidelines.md makes trust the central
+constraint and product.md makes accountants the acquisition channel, so unverifiable
+social proof is a poor trade for one row of visual interest. Only the statement ships.
+Absence is now asserted by a script rather than left to inspection.
+
+DIVIDER LOGIC IN 'HOW IT WORKS'
+First attempt put md:border-l on every column but removed it only from the first, which
+would have drawn a stray left rule on the item starting the second row at the two-up
+breakpoint. Rules now run horizontally when stacked or two-up and vertically only at
+four-up. The bottom rule is kept in all cases, matching the prototype.
+
+WHY A COPY VERIFICATION SCRIPT
+Transcription is the whole risk in this phase, and eyeballing paragraphs against a spec
+is exactly the check a person performs badly. scripts/verify-landing-copy.mjs asserts
+every verbatim string the spec requires against the LIVE page, not the source, so entity
+escaping and JSX whitespace collapsing are exercised too. It also asserts the absence of
+the excluded content. Requires the dev server running; invoke with node.
+
+VERIFICATION PERFORMED
+  npm run build -> exit 0, Compiled successfully in 8.5s, 39/39 static pages.
+  node scripts/verify-landing-copy.mjs -> ALL PASS, exit 0. 42 assertions:
+    31 required strings across FR2, FR3, FR4, FR5, FR6 and FR9, all present
+    11 forbidden strings, all absent:
+       AC3  'The people', 'Made by people who notice things', 'Elise Marangos',
+            'Tom Whelan', '#team'
+       AC4  '2,400', '87', '4.8', 'properties with a clearer story',
+            'suburbs across Australia', 'average handover confidence'
+  Anchor navigation, measured after clicking each nav link:
+       #story -> section top 80px, nav height 65px, not hidden under the nav
+       #how   -> section top 80px, nav height 65px, not hidden under the nav
+    scroll-mt-20 on the anchored sections is doing its job against the sticky nav.
+  Visual, light and dark. The dark theme confirms the NFR1 design end to end: the warm
+    band and the slab both read as RAISED surfaces against the near-black sections
+    around them, where in light theme the same two bands sit below paper. The band
+    rhythm survives the theme flip running in the opposite direction, which is what the
+    palette was designed to do and the first point in the track where it is visible.
