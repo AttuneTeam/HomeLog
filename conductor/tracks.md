@@ -14,3 +14,9 @@ index, which in turn links to its specification, plan and metadata.
 - [x] **Track: Rental statement capture — attach the agent's statement to a rent payment and record actual agency fees**
 
   *Link: [./tracks/rental_statement_capture_20260730/index.md](./tracks/rental_statement_capture_20260730/index.md)*
+
+---
+
+- [ ] **Track: Home page rebuild — rebuild the public landing page on the prototype's editorial design, excluding "The People"**
+
+  *Link: [./tracks/home_page_rebuild_20260906/index.md](./tracks/home_page_rebuild_20260906/index.md)*

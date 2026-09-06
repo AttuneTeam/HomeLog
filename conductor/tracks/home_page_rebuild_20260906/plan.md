@@ -1,0 +1,128 @@
+# Implementation Plan — Home page rebuild
+
+**Track:** `home_page_rebuild_20260906`
+**Spec:** [spec.md](./spec.md)
+
+## Verification approach
+
+This track is **Tier 3** under [`workflow.md`](../../workflow.md) — presentational components and
+copy. The gate is `npm run build` passing plus visual confirmation in both light and dark themes.
+
+No pure domain logic is added, so no unit tests are owed. `CI=true npm test` must still pass at
+each phase checkpoint to confirm nothing existing regressed.
+
+**Architectural note.** `app/page.tsx` is currently a single 697-line `"use client"` file, so the
+entire landing page ships to the browser as a client bundle. This plan splits the sections into
+`components/landing/`, leaving only the nav and the accordion as client components; everything else
+renders on the server.
+
+---
+
+## Phase 1: Design foundations
+
+- [ ] Task: Extract and commit the hero asset
+  - [ ] Download `house-journal.jpg` from the prototype host
+  - [ ] Optimise and commit to `public/house-journal.jpg`
+  - [ ] Confirm intrinsic dimensions and aspect ratio suit the hero's `next/image` sizing
+
+- [ ] Task: Define the landing colour tokens
+  - [ ] Add light-theme custom properties to `app/globals.css`: paper `#fbf9f9`,
+        warm paper `#eee9df`, ink `#030813`, brass `#b89a5a`, brass-text `#775a19`,
+        muted `#45474c`, hairline `#c6c6cc`
+  - [ ] Design the dark counterpart, inverting the band *relationship* so the "Why it matters"
+        band reads as raised rather than darker against its neighbours (NFR1)
+  - [ ] Add a lightened brass variant that holds contrast on dark ground
+  - [ ] Scope the tokens so they do not leak into dashboard surfaces
+
+- [ ] Task: Verify contrast in both themes
+  - [ ] Measure body text against every band; require ≥ 4.5:1
+  - [ ] Measure display type against every band; require ≥ 3:1
+  - [ ] Measure brass-on-paper and brass-on-ink in both themes
+  - [ ] Record the measured ratios in the task summary
+
+- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+
+## Phase 2: Page shell
+
+- [ ] Task: Build the navigation
+  - [ ] Create `components/landing/landing-nav.tsx` as a client component (scroll listener)
+  - [ ] Links: "Our story" → `#story`, "How it works" → `#how`, "Log In" → `/login`,
+        "Get Started" → `/signup`
+  - [ ] Sticky positioning with an 80px → 64px shrink past 20px of scroll
+  - [ ] Mobile disclosure below `md`, keyboard operable with a visible focus state
+  - [ ] Confirm no "The people" link is present (AC3)
+
+- [ ] Task: Build the hero
+  - [ ] Create `components/landing/landing-hero.tsx` as a server component
+  - [ ] Eyebrow, H1 with brass italic *sum*, body copy, "Read our story ↓" per FR2
+  - [ ] Render the committed asset through `next/image` with the specified alt text
+  - [ ] Overlay the "The house book, reimagined" caption chip
+
+- [ ] Task: Build the footer
+  - [ ] Create `components/landing/landing-footer.tsx`
+  - [ ] Logo, "A property's home passport. Made in Australia.",
+        "Founded 2021 / Sydney + Melbourne"
+
+- [ ] Task: Compose the new page shell
+  - [ ] Rewrite `app/page.tsx` as a server component holding font wiring and composition
+  - [ ] Remove the superseded sections and the `images.unsplash.com` references
+  - [ ] Confirm `/` remains allowlisted in `lib/supabase/middleware.ts` (NFR6)
+
+- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+
+## Phase 3: Narrative sections
+
+- [ ] Task: Build "Why we exist"
+  - [ ] Create `components/landing/landing-why.tsx` with the `#story` anchor
+  - [ ] Warm-paper band, heading left and three paragraphs right
+  - [ ] Transcribe all copy verbatim per FR3
+
+- [ ] Task: Build "The Nordic húsbók"
+  - [ ] Create `components/landing/landing-husbok.tsx`
+  - [ ] Heading with italic *húsbók* on its own line and a short brass rule beneath
+  - [ ] Lead sentence plus two paragraphs per FR4
+
+- [ ] Task: Build "Why it matters"
+  - [ ] Create `components/landing/landing-matters.tsx`
+  - [ ] Ink band, eyebrow, two-line statement with the brass italic second line
+  - [ ] Confirm no stats row and no numeric content (AC4)
+
+- [ ] Task: Build "How Home Base works"
+  - [ ] Create `components/landing/landing-how.tsx` with the `#how` anchor
+  - [ ] Four numbered columns separated by hairline rules
+  - [ ] Stack to a single column on mobile without losing the numbering
+
+- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+
+## Phase 4: Interaction, theming and polish
+
+- [ ] Task: Build the principles accordion
+  - [ ] Create `components/landing/landing-principles.tsx` as a client component
+  - [ ] Three items, single-open, first open by default
+  - [ ] `aria-expanded` on triggers and `aria-controls` pointing at each panel
+  - [ ] `+` / `−` affordance so open state is not signalled by colour alone
+  - [ ] Verify keyboard-only operation and a visible focus ring (AC6)
+
+- [ ] Task: Build the closing CTA
+  - [ ] Create `components/landing/landing-cta.tsx` with the `#start` anchor
+  - [ ] Brass band, "Start for free ↗" → `/signup`
+
+- [ ] Task: Preserve the scroll reveal
+  - [ ] Reinstate the `IntersectionObserver` fade-in across the new sections
+  - [ ] Gate the animation behind `prefers-reduced-motion` (NFR5)
+
+- [ ] Task: Dark-theme pass
+  - [ ] Walk every section in dark theme and confirm the band rhythm survives (NFR1)
+  - [ ] Confirm no hardcoded colour literal remains in the landing components (AC10)
+
+- [ ] Task: Responsive pass
+  - [ ] Verify 375px, 768px, 1024px and 1440px
+  - [ ] Confirm no horizontal page scroll and that display type scales (AC8)
+
+- [ ] Task: Remove dead code
+  - [ ] Delete superseded markup, unused imports and now-unreferenced helpers
+  - [ ] Remove the Material Symbols stylesheet link if nothing references it
+  - [ ] Remove `public/hero-screen.png` and `public/federation-house.jpg` only if unreferenced
+        elsewhere in the repository
+
+- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)

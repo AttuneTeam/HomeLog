@@ -1,0 +1,75 @@
+{
+  "track_id": "home_page_rebuild_20260906",
+  "title": "Home page rebuild",
+  "description": "Replace the public landing page at app/page.tsx with a rebuild based on the Replit prototype's editorial About-page design, adopting its copy verbatim, excluding \"The People\" section, and dropping the prototype's invented statistics.",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-09-06T00:00:00Z",
+  "updated_at": "2026-09-06T00:00:00Z",
+  "phases": 4,
+  "tasks": 18,
+  "artifacts": {
+    "spec": "./spec.md",
+    "plan": "./plan.md",
+    "index": "./index.md"
+  },
+  "context": {
+    "reference_prototype": "/__mockup/preview/homebase-about/AboutPage on Replit host 57a68b69-6eda-42c0-af0e-6287ad6aa794-00-290g9syyfdenm.spock.replit.dev",
+    "verification_tier": "Tier 3 — presentational components and copy. Gate is npm run build plus visual confirmation in light and dark themes. No pure domain logic added, so no unit tests owed.",
+    "shared_design_language": "The prototype already uses this repository's type system (Libre Caslon Text for display, Hanken Grotesk for body) and a palette in the same family as the current page. This is a structural and palette change, not a new design language.",
+    "extracted_palette": {
+      "paper": "#fbf9f9",
+      "warm_paper": "#eee9df",
+      "ink": "#030813",
+      "brass": "#b89a5a",
+      "brass_text": "#775a19"
+    },
+    "assets": [
+      "public/house-journal.jpg — extracted from the prototype, replaces the current page's images.unsplash.com references"
+    ],
+    "new_modules": [
+      "components/landing/landing-nav.tsx (client)",
+      "components/landing/landing-hero.tsx",
+      "components/landing/landing-why.tsx",
+      "components/landing/landing-husbok.tsx",
+      "components/landing/landing-matters.tsx",
+      "components/landing/landing-how.tsx",
+      "components/landing/landing-principles.tsx (client)",
+      "components/landing/landing-cta.tsx",
+      "components/landing/landing-footer.tsx"
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "The prototype's stats band is dropped entirely",
+      "why": "Its figures — 2,400+ properties, 87 suburbs, 4.8/5 handover confidence — are invented placeholder data. product-guidelines.md makes trust the central design constraint and product.md makes accountants the acquisition channel. Publishing unverifiable social proof on the page those professionals judge first is a poor trade for one band of visual interest. The band's statement copy ships without the numbers."
+    },
+    {
+      "decision": "The prototype's copy ships verbatim, in its homeowner voice",
+      "why": "Chosen by the owner over the alternative of re-angling toward the investor and tax positioning. Recorded as a decision rather than drift — see open_risks."
+    },
+    {
+      "decision": "Full replacement of app/page.tsx rather than merging prototype sections into it",
+      "why": "The existing product-screenshot hero, dashboard preview and logo band have no counterpart in the prototype. The prior page remains in git history if anything is wanted back."
+    },
+    {
+      "decision": "Full dark-theme support rather than a documented exemption from the theme gate",
+      "why": "Chosen by the owner over treating the landing page as a deliberately light-only marketing surface as the current page and the prototype both are. This is the largest single piece of work in the track and the only part the prototype does not specify."
+    },
+    {
+      "decision": "Sections split into components/landing/ rather than one file",
+      "why": "app/page.tsx is currently a single 697-line \"use client\" file, so the whole landing page ships as a client bundle. Splitting leaves only the nav and accordion as client components; everything else renders on the server."
+    },
+    {
+      "decision": "Colours defined as CSS custom properties with light and dark values",
+      "why": "The current page hardcodes hex literals throughout. Dark-theme support is not achievable without tokens, so this is a prerequisite rather than a cleanup."
+    }
+  ],
+  "open_risks": [
+    "POSITIONING MISMATCH, recorded not fixed: the prototype's copy sells a house book for homeowners and never mentions tax, the ATO, deductions or accountants. product.md positions the product investor-first and names AI tax classification against ATO rulings as the differentiator, with the passport as retention rather than the headline. The public page will therefore lead with a different promise than the product's stated strategy. Raised during planning; the owner elected to ship the prototype copy as written. Revisitable as a copy track without reopening the layout.",
+    "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' band and the footer collapse into their neighbours and the composition flattens. The dark palette has to invert the band relationship rather than the colours.",
+    "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279."
+  ],
+  "checkpoints": {},
+  "pull_requests": []
+}
