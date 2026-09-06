@@ -54,3 +54,50 @@ still followed in order, and the failing output is recorded above as evidence.
 
 COVERAGE NOTE
 No verification debt. This module is pure and fully covered.
+
+────────────────────────────────────────────────────────────────────────
+PHASE 1 VERIFICATION REPORT — Financial-year grouping module
+Track: rent_fy_grouping_20260907
+────────────────────────────────────────────────────────────────────────
+
+PHASE SCOPE
+No previous checkpoint exists, so scope is every change on the branch since main.
+Code files changed:
+  lib/tax/fy-grouping.ts
+  tests/lib/tax/fy-grouping.test.ts
+Non-code files excluded from tier assessment: conductor/tracks.md and the four
+track artifacts under conductor/tracks/rent_fy_grouping_20260907/.
+
+VERIFICATION DEBT
+None. lib/tax/fy-grouping.ts is Tier 1 pure logic and carries automated coverage
+in tests/lib/tax/fy-grouping.test.ts (15 cases). No database, RLS, migration or
+deletion logic was touched, so no manual database verification applies.
+
+AUTOMATED CHECKS
+  $ npm run build
+    ✓ Compiled successfully in 8.6s
+    ✓ Generating static pages using 7 workers (39/39) in 367.6ms
+    No type errors.
+
+  $ CI=true npm test
+    Test Files  18 passed (18)
+    Tests       275 passed (275)
+
+MANUAL VERIFICATION
+Phase 1 has no user-facing surface — the module is not yet wired to a component —
+so manual verification was a review of the behaviour the suite pins down, run with
+  $ CI=true npx vitest run tests/lib/tax/fy-grouping.test.ts --reporter=verbose
+All 15 cases enumerated and reviewed. The three encoding real decisions rather than
+mechanics were called out for confirmation:
+  - order within a group is the caller's, never re-sorted
+  - no row is ever dropped, so per-year subtotals reconcile with the lifetime total
+  - 1 July groups identically under Australia/Sydney and UTC
+The boundary convention was confirmed explicitly: 30 June 2025 → 2024–25, and
+1 July 2025 → 2025–26.
+
+USER CONFIRMATION
+Confirmed with 'yes' on 2026-09-07, including acknowledgement of the recorded
+deviation on commit granularity (Red and Green combined into this commit because
+tsconfig.json includes **/*.ts, so a lone failing test would have broken the build).
+
+PHASE 1 COMPLETE.
