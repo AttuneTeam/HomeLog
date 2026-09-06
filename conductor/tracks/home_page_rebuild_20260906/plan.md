@@ -18,7 +18,7 @@ renders on the server.
 
 ---
 
-## Phase 1: Design foundations
+## Phase 1: Design foundations [checkpoint: 554bba7]
 
 - [x] Task: Extract and commit the hero asset (a144613)
   - [x] Download `house-journal.jpg` from the prototype host
@@ -40,7 +40,7 @@ renders on the server.
   - [x] Measure brass-on-paper and brass-on-ink in both themes
   - [x] Record the measured ratios in the task summary
 
-- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+- [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (554bba7)
 
 ## Phase 2: Page shell
 

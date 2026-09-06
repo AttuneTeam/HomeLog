@@ -3,7 +3,7 @@
   "title": "Home page rebuild",
   "description": "Replace the public landing page at app/page.tsx with a rebuild based on the Replit prototype's editorial About-page design, adopting its copy verbatim, excluding \"The People\" section, and dropping the prototype's invented statistics.",
   "type": "feature",
-  "status": "new",
+  "status": "in_progress",
   "created_at": "2026-09-06T00:00:00Z",
   "updated_at": "2026-09-06T00:00:00Z",
   "phases": 4,
@@ -75,6 +75,8 @@
     "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' slab collapses into its neighbours and the composition flattens. The dark palette inverts the band relationship rather than the colours: warm and slab sit below paper in light and above it in dark. Resolved in Phase 1 and verified by scripts/verify-landing-contrast.mjs.",
     "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279."
   ],
-  "checkpoints": {},
+  "checkpoints": {
+    "phase_1": "554bba7"
+  },
   "pull_requests": []
 }
