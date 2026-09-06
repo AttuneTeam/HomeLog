@@ -32,7 +32,7 @@ export function LandingHero() {
 
           <a
             href="#story"
-            className="landing-eyebrow group mt-12 inline-flex items-center gap-3 border-b border-landing-fg pb-3 text-landing-fg"
+            className="landing-focus landing-eyebrow group mt-12 inline-flex items-center gap-3 border-b border-landing-fg pb-3 text-landing-fg"
           >
             Read our story
             <ArrowDown

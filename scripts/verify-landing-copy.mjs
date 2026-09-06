@@ -53,9 +53,22 @@ const MUST_CONTAIN = [
   ["FR6", "See what has been done, when, and by whom — at a glance."],
   ["FR6", "Pass it on"],
   ["FR6", "Share a complete, useful record at sale or settlement."],
-  // FR9 footer
-  ["FR9", "A property’s home passport. Made in Australia."],
-  ["FR9", "Founded 2021 / Sydney + Melbourne"],
+  // FR6 principles (all three bodies are in the DOM; closed panels use `hidden`)
+  ["FR6", "Our principles"],
+  ["FR6", "The way we choose to work."],
+  ["FR6", "Care over convenience"],
+  ["FR6", "A home is not a transaction. We make space for the small, important work of looking after one."],
+  ["FR6", "Clarity is kindness"],
+  ["FR6", "Good records remove doubt. They let the next owner begin with confidence, not detective work."],
+  ["FR6", "Built to be passed on"],
+  ["FR6", "The best things in a house outlast us. Home Base is made to travel, intact, through every chapter."],
+  // FR7 closing CTA
+  ["FR7", "A better record starts here"],
+  ["FR7", "Give your home a story worth passing on."],
+  ["FR7", "Start for free"],
+  // FR8 footer
+  ["FR8", "A property’s home passport. Made in Australia."],
+  ["FR8", "Founded 2021 / Sydney + Melbourne"],
 ];
 
 // AC3 (no team section) and AC4 (no statistics anywhere).

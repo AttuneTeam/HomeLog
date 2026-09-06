@@ -72,7 +72,7 @@ export function LandingNav() {
           "transition-[height] duration-300 motion-reduce:transition-none",
         )}
       >
-        <Link href="/" className="flex items-center" aria-label="Home Base — home">
+        <Link href="/" className="landing-focus flex items-center" aria-label="Home Base — home">
           <Image
             src="/logo.png"
             alt="Home Base"
@@ -91,7 +91,7 @@ export function LandingNav() {
             <a
               key={href}
               href={href}
-              className="landing-eyebrow text-landing-fg/80 transition-colors hover:text-landing-fg"
+              className="landing-focus landing-eyebrow text-landing-fg/80 transition-colors hover:text-landing-fg"
             >
               {label}
             </a>
@@ -99,14 +99,14 @@ export function LandingNav() {
 
           <Link
             href="/login"
-            className="font-grotesk text-sm text-landing-muted transition-colors hover:text-landing-fg"
+            className="landing-focus font-grotesk text-sm text-landing-muted transition-colors hover:text-landing-fg"
           >
             Log In
           </Link>
 
           <Link
             href="/signup"
-            className="landing-eyebrow bg-landing-fg px-6 py-3 text-landing-paper transition-opacity hover:opacity-90 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100"
+            className="landing-focus landing-eyebrow bg-landing-fg px-6 py-3 text-landing-paper transition-opacity hover:opacity-90 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             Get started
           </Link>
@@ -118,7 +118,7 @@ export function LandingNav() {
           aria-expanded={menuOpen}
           aria-controls="landing-mobile-menu"
           aria-label={menuOpen ? "Close navigation" : "Open navigation"}
-          className="-mr-2 p-2 text-landing-fg md:hidden"
+          className="landing-focus -mr-2 p-2 text-landing-fg md:hidden"
         >
           {menuOpen ? (
             <X className="size-6" aria-hidden />
@@ -139,7 +139,7 @@ export function LandingNav() {
               key={href}
               href={href}
               onClick={() => setMenuOpen(false)}
-              className="landing-eyebrow py-3 text-landing-fg/80"
+              className="landing-focus landing-eyebrow py-3 text-landing-fg/80"
             >
               {label}
             </a>
@@ -148,7 +148,7 @@ export function LandingNav() {
           <Link
             href="/login"
             onClick={() => setMenuOpen(false)}
-            className="border-t border-landing-hairline py-3 font-grotesk text-sm text-landing-muted"
+            className="landing-focus border-t border-landing-hairline py-3 font-grotesk text-sm text-landing-muted"
           >
             Log In
           </Link>
@@ -156,7 +156,7 @@ export function LandingNav() {
           <Link
             href="/signup"
             onClick={() => setMenuOpen(false)}
-            className="landing-eyebrow mt-2 bg-landing-fg px-6 py-4 text-center text-landing-paper"
+            className="landing-focus landing-eyebrow mt-2 bg-landing-fg px-6 py-4 text-center text-landing-paper"
           >
             Get started
           </Link>

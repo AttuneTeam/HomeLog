@@ -3,7 +3,10 @@ import { LandingHero } from "@/components/landing/landing-hero";
 import { LandingWhy } from "@/components/landing/landing-why";
 import { LandingHusbok } from "@/components/landing/landing-husbok";
 import { LandingHow } from "@/components/landing/landing-how";
+import { LandingPrinciples } from "@/components/landing/landing-principles";
+import { LandingCta } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import { LandingReveal } from "@/components/landing/landing-reveal";
 
 /**
  * Public landing page.
@@ -25,9 +28,13 @@ export default function LandingPage() {
         <LandingWhy />
         <LandingHusbok />
         <LandingHow />
+        <LandingPrinciples />
+        <LandingCta />
       </main>
 
       <LandingFooter />
+
+      <LandingReveal />
     </div>
   );
 }

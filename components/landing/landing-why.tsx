@@ -7,7 +7,7 @@
 export function LandingWhy() {
   return (
     <section id="story" className="scroll-mt-20 bg-landing-warm">
-      <div className="mx-auto grid max-w-[1280px] gap-10 px-6 py-20 md:px-10 md:py-28 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-16">
+      <div data-observe className="mx-auto grid max-w-[1280px] gap-10 px-6 py-20 md:px-10 md:py-28 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-16">
         <div>
           <p className="landing-eyebrow text-landing-brass-text">Why we exist</p>
 

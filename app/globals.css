@@ -186,6 +186,46 @@
 }
 
 @layer components {
+  /* Focus ring for every interactive element on the landing page.
+     The colour is `currentColor`, which on each band is the text colour already
+     measured against that band's background by scripts/verify-landing-contrast.mjs.
+     So the ring is guaranteed visible on paper, on warm, on the brass CTA and in
+     both themes, without needing a token per band or trusting the UA default. */
+  .landing-focus:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  /* Scroll reveal. Both classes are applied by components/landing/landing-reveal.tsx
+     at runtime — never in the server markup — so the page is fully readable without
+     JavaScript. The media query is a second guard: landing-reveal.tsx already bails
+     under reduced motion, but if it ever stops doing so, nothing here will move. */
+  .landing-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .landing-reveal-in {
+    animation: landing-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes landing-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .landing-reveal,
+    .landing-reveal-in {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
   /* The landing page's eyebrow: small uppercase Grotesk with wide tracking, used
      above every section heading. Replaces the `label-caps` class that used to live
      in a <style> tag inside app/page.tsx. Colour is set by the caller. */

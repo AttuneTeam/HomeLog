@@ -32,7 +32,7 @@ const STEPS = [
 export function LandingHow() {
   return (
     <section id="how" className="scroll-mt-20 bg-landing-paper">
-      <div className="mx-auto max-w-[1280px] px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <div data-observe className="mx-auto max-w-[1280px] px-6 py-20 md:px-10 md:py-28 lg:px-16">
         <p className="landing-eyebrow text-landing-brass-text">How Home Base works</p>
 
         <h2 className="mt-8 max-w-[18ch] font-caslon text-[clamp(2rem,4.2vw,3.5rem)] font-normal leading-[1.14] tracking-[-0.015em] text-landing-fg">

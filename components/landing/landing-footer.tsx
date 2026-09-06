@@ -23,7 +23,7 @@ export function LandingFooter() {
   return (
     <footer className="w-full border-t border-landing-hairline bg-landing-footer">
       <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-8 px-6 py-16 md:flex-row md:items-center md:justify-between md:px-10 md:py-20 lg:px-16">
-        <Link href="/" aria-label="Home Base — home">
+        <Link href="/" className="landing-focus" aria-label="Home Base — home">
           <Image
             src="/logo.png"
             alt="Home Base"
@@ -47,7 +47,7 @@ export function LandingFooter() {
               <Link
                 key={href}
                 href={href}
-                className="font-grotesk text-sm text-landing-muted transition-colors hover:text-landing-fg"
+                className="landing-focus font-grotesk text-sm text-landing-muted transition-colors hover:text-landing-fg"
               >
                 {label}
               </Link>
