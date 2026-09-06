@@ -1,0 +1,69 @@
+Tasks: Build nav, hero, footer, and compose the page shell (Phase 2, home_page_rebuild_20260906)
+
+WHAT CHANGED
+  A components/landing/landing-nav.tsx     167 lines, client
+  A components/landing/landing-hero.tsx     63 lines, server
+  A components/landing/landing-footer.tsx   60 lines, server
+  M app/page.tsx                           697 -> 27 lines, now a server component
+  M app/globals.css                        +.landing-eyebrow component class
+
+WHY ONE COMMIT FOR FOUR PLAN TASKS
+They are one indivisible unit. app/page.tsx cannot compose components that do not
+exist, and the components are unreachable dead code until it does. Splitting would
+produce intermediate commits that build but represent no real state. Recorded as a
+deliberate deviation from the per-task commit rule in workflow.md.
+
+THE SHELL IS NOW SERVER-RENDERED
+The page it replaces was a single 697-line "use client" file, so the entire landing
+page shipped as a client bundle. Only the nav opts into the client now, for its scroll
+shrink and mobile disclosure. Fonts come from app/layout.tsx, which already registers
+Libre Caslon Text and Hanken Grotesk, so the page no longer re-declares them. The
+label-caps class that lived in a <style> tag inside the page moved to globals.css as
+.landing-eyebrow.
+
+TWO FIXES MADE WHILE VERIFYING
+1. The headline wrapped to four lines where the prototype uses three. Two causes: the
+   prototype's text column is wider than its image column (~600px vs ~540px), and its
+   display type is nearer 80px than the 92px I had. Fixed by splitting the grid
+   1.15fr/1fr and lowering the clamp to clamp(2.5rem, 6.2vw, 5rem). Now breaks as
+   'A home is more / than the sum of / its rooms.', matching the prototype.
+2. The header carried a fixed h-20, which left the mobile panel rendered inside it no
+   room to occupy. Moved the scroll shrink onto the nav row via a group/header variant
+   so the header grows with its contents. Fragility, not yet a visible bug, but it
+   would have become one.
+
+THE LOGO NEEDED DARK-THEME HANDLING
+public/logo.png is dark ink on transparent and disappears on the dark theme's near-black
+ground. Applied dark:brightness-0 dark:invert to force it white, which is what the
+prototype does with the same file (its nav mark is dark, its footer mark white).
+
+VERIFICATION PERFORMED
+  npm run build -> exit 0, Compiled successfully in 7.3s, 39/39 static pages.
+    / is prerendered static. An earlier run showed next/font Module-not-found errors
+    for Google Fonts; those were transient network and did not recur.
+  CI=true npm test -> 17 files, 260 tests passed.
+  node scripts/verify-landing-contrast.mjs -> ALL PASS.
+  AC3  grep for 'The people' and '#team' in rendered HTML -> absent.
+  AC9  grep for external URLs in the landing subtree -> none. Hero served from public/.
+  AC10 grep for hex literals in app/page.tsx and components/landing/ -> none.
+  NFR6 lib/supabase/middleware.ts still has pathname === '/' in isPublic. /privacy and
+    /terms are also public, so the footer links work logged out.
+  Visual, light and dark, via the running dev server: nav, hero and footer all correct.
+    Dark theme confirmed by computed tokens, not by eye — paper L=98.1% / footer L=96.0%
+    in light, both inverting correctly in dark.
+  Responsive at 375px and 768px via a 375/768 iframe harness: hamburger appears below
+    md, full nav at 768, headline scales to three lines, image stacks, no horizontal
+    overflow (documentElement.scrollWidth <= innerWidth).
+  Mobile menu state machine, exercised directly:
+    initial            expanded=false  panel hidden   label 'Open navigation'
+    click              expanded=true   panel shown    label 'Close navigation'
+    click              expanded=false  panel hidden
+    click              expanded=true   panel shown
+    Escape             expanded=false  panel hidden
+
+KNOWN LIMITS OF THIS VERIFICATION
+Window resizing did not affect the rendering viewport in this environment — innerWidth
+stayed 1272 whatever the window size — so narrow widths were checked through iframes.
+Synthetic clicks do not cross into a cross-origin iframe, so the toggle was exercised by
+dispatching a real click on the button on the page itself rather than by pointer
+hit-testing at 375px. Button placement and size at 375px are confirmed by screenshot.
