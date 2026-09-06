@@ -1,0 +1,32 @@
+Task: Extract and commit the hero asset (Phase 1, home_page_rebuild_20260906)
+
+WHAT CHANGED
+Added public/house-journal.jpg — the hero photograph for the rebuilt landing page.
+
+FILES
+  A public/house-journal.jpg (187,821 bytes, JPEG 1024x1024)
+
+WHY
+FR10 requires the hero image be served from public/ with no external image request at
+runtime. The page being replaced pulls two images from images.unsplash.com at request
+time; those references do not survive the rebuild. Committing the asset removes a
+third-party runtime dependency from the public landing page.
+
+Source: /__mockup/images/house-journal.jpg on the prototype host
+(57a68b69-6eda-42c0-af0e-6287ad6aa794-00-290g9syyfdenm.spock.replit.dev), the exact
+asset the prototype uses. Alt text per FR2: 'A Home Base property journal on a timber desk'.
+
+VERIFICATION PERFORMED
+  curl -sSL ... -w 'HTTP %{http_code} %{size_download} bytes'
+    -> HTTP 200, 187821 bytes
+  file public/house-journal.jpg
+    -> JPEG image data, JFIF 1.01, baseline, precision 8, 1024x1024, components 3
+  Visual inspection: confirmed it is the intended photograph (open journal, brass keys,
+  rolled plans on a timber desk), not a placeholder or an error page rendered as an image.
+  npm run build
+    -> passed, no type errors, full route table emitted.
+
+NOTES
+Source is square (1024x1024); the prototype renders it at approximately 541x560, so the
+aspect ratio suits the hero slot without re-cropping. No manual optimisation applied —
+next/image re-encodes to WebP/AVIF on serve, so a 187 KB JPEG source is appropriate.
