@@ -34,6 +34,33 @@
 - `cn()` from `lib/utils.ts` merges classes (`clsx` + `tailwind-merge`).
 - **`lucide-react`** icons, **`next-themes`** for light/dark, **`sonner`** for toasts,
   **`recharts`** for charts, **`tw-animate-css`** for animation utilities.
+- **Landing-surface tokens.** The public landing page (`app/page.tsx` plus
+  `components/landing/`) takes its colour from a `--landing-*` set defined in
+  `app/globals.css` and registered in `@theme inline`, carrying both light and dark values.
+  Two shared classes sit alongside them: `.landing-eyebrow` for the small-caps label above
+  each section heading, and `.landing-focus` for the focus ring, whose outline is
+  `currentColor` so it stays legible on every band without needing a token per band.
+  **No hex literal belongs in that subtree** — the page this replaced hardcoded colour
+  throughout, which is exactly why it was light-only.
+  The dark palette inverts the *relationship* between bands rather than the colours: a band
+  sitting below paper in light theme rises above it in dark. Reasoning in
+  `conductor/tracks/home_page_rebuild_20260906/spec.md`.
+- **Gotcha:** `next dev` serves **stale CSS** for `app/globals.css`. A rule present in the
+  production bundle can be absent from the dev CSSOM even after touching the file, which
+  makes working CSS look broken. Verify landing styles against `next start`.
+
+### Landing-page verification
+
+Two standalone scripts, run with `node` — not `tsx`, and deliberately not wired into
+`package.json`:
+
+- `scripts/verify-landing-contrast.mjs` — parses the `--landing-*` tokens back out of the
+  committed `app/globals.css` and measures WCAG contrast for every foreground/background
+  pair on every band, in both themes. It reads what shipped rather than what was intended,
+  which is how it caught three contrast defects that inspection had passed.
+- `scripts/verify-landing-copy.mjs` — asserts every required string against the **live**
+  page, and asserts the absence of the excluded content (the team section, the invented
+  statistics, the cut band). Needs a server on `localhost:3000`.
 
 ## Database, auth & storage
 

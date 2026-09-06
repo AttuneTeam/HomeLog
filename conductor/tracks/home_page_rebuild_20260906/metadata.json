@@ -1,0 +1,115 @@
+{
+  "track_id": "home_page_rebuild_20260906",
+  "title": "Home page rebuild",
+  "description": "Replace the public landing page at app/page.tsx with a rebuild based on the Replit prototype's editorial About-page design, adopting its copy verbatim, excluding \"The People\" section, and dropping the prototype's invented statistics.",
+  "type": "feature",
+  "status": "complete",
+  "created_at": "2026-09-06T00:00:00Z",
+  "updated_at": "2026-09-07T00:00:00Z",
+  "phases": 4,
+  "tasks": 17,
+  "artifacts": {
+    "spec": "./spec.md",
+    "plan": "./plan.md",
+    "index": "./index.md"
+  },
+  "context": {
+    "reference_prototype": "/__mockup/preview/homebase-about/AboutPage on Replit host 57a68b69-6eda-42c0-af0e-6287ad6aa794-00-290g9syyfdenm.spock.replit.dev",
+    "verification_tier": "Tier 3 — presentational components and copy. Gate is npm run build plus visual confirmation in light and dark themes. No pure domain logic added, so no unit tests owed.",
+    "shared_design_language": "The prototype already uses this repository's type system (Libre Caslon Text for display, Hanken Grotesk for body) and a palette in the same family as the current page. This is a structural and palette change, not a new design language.",
+    "extracted_palette": {
+      "paper": "#fbf9f9",
+      "warm_paper": "#eee9df",
+      "ink": "#030813",
+      "brass": "#b89a5a",
+      "brass_text": "#775a19",
+      "footer": "#f5f3f3 (kept from the existing page, not the prototype's ink)"
+    },
+    "assets": [
+      "public/house-journal.jpg — extracted from the prototype, replaces the current page's images.unsplash.com references"
+    ],
+    "new_modules": [
+      "components/landing/landing-nav.tsx (client)",
+      "components/landing/landing-hero.tsx",
+      "components/landing/landing-why.tsx",
+      "components/landing/landing-husbok.tsx",
+      "components/landing/landing-how.tsx",
+      "components/landing/landing-principles.tsx (client)",
+      "components/landing/landing-cta.tsx",
+      "components/landing/landing-footer.tsx",
+      "components/landing/landing-reveal.tsx (client, renders null)",
+      "scripts/verify-landing-contrast.mjs",
+      "scripts/verify-landing-copy.mjs"
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "The prototype's stats band is dropped entirely",
+      "why": "Its figures — 2,400+ properties, 87 suburbs, 4.8/5 handover confidence — are invented placeholder data. product-guidelines.md makes trust the central design constraint and product.md makes accountants the acquisition channel. Publishing unverifiable social proof on the page those professionals judge first is a poor trade for one band of visual interest. The band's statement copy ships without the numbers."
+    },
+    {
+      "decision": "The prototype's copy ships verbatim, in its homeowner voice",
+      "why": "Chosen by the owner over the alternative of re-angling toward the investor and tax positioning. Recorded as a decision rather than drift — see open_risks."
+    },
+    {
+      "decision": "Full replacement of app/page.tsx rather than merging prototype sections into it",
+      "why": "The existing product-screenshot hero, dashboard preview and logo band have no counterpart in the prototype. The prior page remains in git history if anything is wanted back."
+    },
+    {
+      "decision": "Full dark-theme support rather than a documented exemption from the theme gate",
+      "why": "Chosen by the owner over treating the landing page as a deliberately light-only marketing surface as the current page and the prototype both are. This is the largest single piece of work in the track and the only part the prototype does not specify."
+    },
+    {
+      "decision": "Sections split into components/landing/ rather than one file",
+      "why": "app/page.tsx is currently a single 697-line \"use client\" file, so the whole landing page ships as a client bundle. Splitting leaves only the nav and accordion as client components; everything else renders on the server."
+    },
+    {
+      "decision": "Colours defined as CSS custom properties with light and dark values",
+      "why": "The current page hardcodes hex literals throughout. Dark-theme support is not achievable without tokens, so this is a prerequisite rather than a cleanup."
+    },
+    {
+      "decision": "The footer keeps the existing page's #f5f3f3 rather than the prototype's ink band",
+      "why": "Requested by the owner at the Phase 1 checkpoint. It leaves the 'Why it matters' slab as the page's only dark band, which sharpens it — the drama is no longer repeated at the bottom of the page. Separation comes from the hairline top border, as it does today. Consequence for the tokens: the footer is light in light theme and dark in dark, same as paper, so it uses the paper-ground text tokens and the *-on-slab set narrows to the slab alone."
+    },
+    {
+      "decision": "The footer keeps the Privacy and Terms links, which the prototype does not have",
+      "why": "Confirmed by the owner at the Phase 2 checkpoint. Both routes exist and are allowlisted as public, and this is the only public page that links to them, so the prototype's omission reads as a mockup gap rather than a decision."
+    },
+    {
+      "decision": "The whole 'Why it matters' band was cut, not just its statistics",
+      "why": "Requested by the owner after Phase 3, having seen it built. It leaves the page with no dark band at all: paper carries most of it, warm and footer sit just below paper, and the brass CTA becomes the only saturated moment. Consequence for NFR1: the dark theme's inversion now rests on the warm band and footer, which still invert by the same mechanism but far less dramatically. The four *-on-slab tokens were removed with the section rather than left as dead colour, and both verification scripts were updated — the copy script now asserts the band's strings are ABSENT."
+    },
+    {
+      "decision": "An explicit .landing-focus ring rather than the UA default",
+      "why": "AC6 requires a visible focus state, and the project's global rule sets only an outline colour, not a style or width. The ring uses currentColor, which on every band is the text colour already measured against that band's background by verify-landing-contrast.mjs — so it is guaranteed visible on paper, warm and brass, in both themes, without a token per band."
+    }
+  ],
+  "open_risks": [
+    "POSITIONING MISMATCH, recorded not fixed: the prototype's copy sells a house book for homeowners and never mentions tax, the ATO, deductions or accountants. product.md positions the product investor-first and names AI tax classification against ATO rulings as the differentiator, with the passport as retention rather than the headline. The public page will therefore lead with a different promise than the product's stated strategy. Raised during planning; the owner elected to ship the prototype copy as written. Revisitable as a copy track without reopening the layout.",
+    "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' slab collapses into its neighbours and the composition flattens. The dark palette inverts the band relationship rather than the colours: warm and slab sit below paper in light and above it in dark. Resolved in Phase 1 and verified by scripts/verify-landing-contrast.mjs.",
+    "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279.",
+    "The dev server serves STALE CSS for app/globals.css. A focus-visible rule that was present in the production bundle was entirely absent from the dev CSSOM, even after touching the file, which made a working rule look broken. Verify landing styles against `next start`, not `next dev`.",
+    "The accordion, CTA and footer were verified visually at desktop width only. Their narrow behaviour uses the grid-to-single-column pattern already confirmed elsewhere on the page, but iframe scrolling stopped responding and window resizing never affected the rendering viewport in this environment, so no scrollWidth measurement at 375px exists for those three sections."
+  ],
+  "checkpoints": {
+    "phase_1": "554bba7",
+    "phase_2": "7bc31c7",
+    "phase_3": "a4b0849",
+    "phase_4": "d0a3c88",
+    "amendments": {
+      "footer_kept_existing_colour": "554bba7",
+      "why_it_matters_band_removed": "a4b0849",
+      "husbok_how_divider_added": "9851291"
+    }
+  },
+  "pull_requests": [
+    {
+      "number": 39,
+      "title": "Rebuild the home page on the prototype's editorial design",
+      "state": "open",
+      "url": "https://github.com/AttuneTeam/HomeLog/pull/39"
+    }
+  ],
+  "completed_at": "2026-09-07T00:00:00Z",
+  "outcome": "The public landing page is rebuilt on the prototype's editorial design. app/page.tsx went from a single 697-line \"use client\" file to a 27-line server component composing nine components in components/landing/; only the nav and the principles accordion reach the client. Colour moved from hardcoded hex to landing-* tokens carrying both themes, which is what made dark-theme support possible at all. Three owner amendments landed during the build: the footer kept its existing colour, the 'Why it matters' band was cut entirely, and a divider was added where that band used to separate two paper sections. Two verification scripts ship with it — contrast across every band in both themes, and copy fidelity against the live page including the absence of the excluded content. Between them they caught four defects that inspection had passed: muted text at 2.16:1 on the footer, a brass eyebrow at 3.11:1 on the slab, a hairline at 1.38:1 after the footer amendment, and a stale slab reference after the band was cut."
+}
