@@ -459,7 +459,14 @@ export function RentalPaymentsSection({
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        // Horizontal scrolling is confined to widths where this five-column
+        // table cannot fit. It is not applied at sm and above because
+        // overflow-x:auto forces the computed overflow-y to auto as well,
+        // making the wrapper a scroll container — a position:sticky row inside
+        // it then anchors to the wrapper rather than the viewport, and the
+        // wrapper never scrolls vertically, so the year dividers would never
+        // pin. Below sm the divider degrades to a plain, non-sticky row.
+        <div className="max-sm:overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
