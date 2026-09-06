@@ -208,6 +208,21 @@
   --landing-on-brass: oklch(0.134 0.027 258.5);
 }
 
+@layer components {
+  /* The landing page's eyebrow: small uppercase Grotesk with wide tracking, used
+     above every section heading. Replaces the `label-caps` class that used to live
+     in a <style> tag inside app/page.tsx. Colour is set per band by the caller,
+     since the correct brass differs between paper and slab grounds. */
+  .landing-eyebrow {
+    font-family: var(--font-grotesk);
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
