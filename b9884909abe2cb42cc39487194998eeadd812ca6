@@ -59,3 +59,53 @@ Not yet done: visual confirmation that the divider pins while scrolling, that it
 is legible in light and dark themes, and that it degrades correctly below sm.
 The Rent tab is auth-gated and this session could not authenticate; the user
 elected to verify visually at the phase checkpoint.
+
+────────────────────────────────────────────────────────────────────────
+PHASE 2 VERIFICATION REPORT — FY plumbing and rental payments grouping
+Track: rent_fy_grouping_20260907
+────────────────────────────────────────────────────────────────────────
+
+PHASE SCOPE
+Previous checkpoint: 476e929. Command run:
+  $ git diff --name-only 476e929 HEAD
+Code files changed (non-code excluded):
+  app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx   Tier 2
+  components/financial-year-divider-row.tsx                      Tier 3
+  components/rental-payments-section.tsx                         Tier 3
+
+AUTOMATED CHECKS
+  $ npm run build
+    ✓ Compiled successfully in 7.0s — no type errors.
+  $ CI=true npm test
+    Test Files  18 passed (18)
+    Tests       275 passed (275)
+
+VERIFICATION PERFORMED WITHOUT A BROWSER
+- rent/page.tsx: both data paths exercised against local Supabase — profile
+  present returns 7/1; missing profile returns [] so maybeSingle gives null and
+  the AU default applies. Recorded on 4a52236.
+- rental-payments-section.tsx: the grouping was run against the 9 live
+  rental_payments rows of property 400b830b via a temporary generated test,
+  since deleted. It reproduced ['2026–27','2025–26'] with [2,7] items,
+  $13,728.53 / $28,644.80 gross and $794.20 / $2,851.20 fees, summing to the
+  lifetime $42,373.33. These match the ground truth computed straight from the
+  rows in 4a52236, without the new module. Recorded on b988490.
+- The overflow/sticky mechanism was confirmed empirically in Chrome rather than
+  assumed: a div with only overflow-x:auto computes overflow-y:auto. Recorded
+  on 10b7d15.
+
+VERIFICATION DEBT — VISUAL, CARRIED
+Three items could not be verified in this session because the Rent tab is
+auth-gated and the session could not authenticate (entering credentials is not
+something this agent does):
+  1. that the divider pins while scrolling the real tab;
+  2. light and dark theme legibility of the divider;
+  3. degradation below sm — plain row, table scrolling inside its card.
+The user was given exact expected figures and step-by-step instructions for all
+three and elected to verify visually themselves. This debt is recorded, not
+skipped, and is the user's to close.
+
+USER CONFIRMATION
+Confirmed with 'yes' on 2026-09-07 against the manual verification plan above.
+
+PHASE 2 COMPLETE.
