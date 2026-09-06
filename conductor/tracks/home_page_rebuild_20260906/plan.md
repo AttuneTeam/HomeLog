@@ -20,10 +20,10 @@ renders on the server.
 
 ## Phase 1: Design foundations
 
-- [ ] Task: Extract and commit the hero asset
-  - [ ] Download `house-journal.jpg` from the prototype host
-  - [ ] Optimise and commit to `public/house-journal.jpg`
-  - [ ] Confirm intrinsic dimensions and aspect ratio suit the hero's `next/image` sizing
+- [x] Task: Extract and commit the hero asset (a144613)
+  - [x] Download `house-journal.jpg` from the prototype host
+  - [x] Optimise and commit to `public/house-journal.jpg`
+  - [x] Confirm intrinsic dimensions and aspect ratio suit the hero's `next/image` sizing
 
 - [ ] Task: Define the landing colour tokens
   - [ ] Add light-theme custom properties to `app/globals.css`: paper `#fbf9f9`,
