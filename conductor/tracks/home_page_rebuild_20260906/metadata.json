@@ -3,11 +3,11 @@
   "title": "Home page rebuild",
   "description": "Replace the public landing page at app/page.tsx with a rebuild based on the Replit prototype's editorial About-page design, adopting its copy verbatim, excluding \"The People\" section, and dropping the prototype's invented statistics.",
   "type": "feature",
-  "status": "in_progress",
+  "status": "complete",
   "created_at": "2026-09-06T00:00:00Z",
-  "updated_at": "2026-09-06T00:00:00Z",
+  "updated_at": "2026-09-07T00:00:00Z",
   "phases": 4,
-  "tasks": 18,
+  "tasks": 17,
   "artifacts": {
     "spec": "./spec.md",
     "plan": "./plan.md",
@@ -95,7 +95,14 @@
     "phase_1": "554bba7",
     "phase_2": "7bc31c7",
     "phase_3": "a4b0849",
-    "phase_4": "d0a3c88"
+    "phase_4": "d0a3c88",
+    "amendments": {
+      "footer_kept_existing_colour": "554bba7",
+      "why_it_matters_band_removed": "a4b0849",
+      "husbok_how_divider_added": "9851291"
+    }
   },
-  "pull_requests": []
+  "pull_requests": [],
+  "completed_at": "2026-09-07T00:00:00Z",
+  "outcome": "The public landing page is rebuilt on the prototype's editorial design. app/page.tsx went from a single 697-line \"use client\" file to a 27-line server component composing nine components in components/landing/; only the nav and the principles accordion reach the client. Colour moved from hardcoded hex to landing-* tokens carrying both themes, which is what made dark-theme support possible at all. Three owner amendments landed during the build: the footer kept its existing colour, the 'Why it matters' band was cut entirely, and a divider was added where that band used to separate two paper sections. Two verification scripts ship with it — contrast across every band in both themes, and copy fidelity against the live page including the absence of the excluded content. Between them they caught four defects that inspection had passed: muted text at 2.16:1 on the footer, a brass eyebrow at 3.11:1 on the slab, a hairline at 1.38:1 after the footer amendment, and a stale slab reference after the band was cut."
 }
