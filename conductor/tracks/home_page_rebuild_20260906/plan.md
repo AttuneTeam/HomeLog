@@ -72,7 +72,7 @@ renders on the server.
 
 - [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (7bc31c7)
 
-## Phase 3: Narrative sections
+## Phase 3: Narrative sections [checkpoint: a4b0849]
 
 - [x] Task: Build "Why we exist" (f70d094)
   - [x] Create `components/landing/landing-why.tsx` with the `#story` anchor
@@ -93,7 +93,10 @@ renders on the server.
   - [x] Four numbered columns separated by hairline rules
   - [x] Stack to a single column on mobile without losing the numbering
 
-- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+- [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (a4b0849)
+      Checkpointed at the amendment commit rather than f70d094: the owner reviewed the
+      phase, then asked for the "Why it matters" band to be cut, so a4b0849 is the first
+      commit that reflects the reviewed state.
 
 ## Phase 4: Interaction, theming and polish [checkpoint: d0a3c88]
 
