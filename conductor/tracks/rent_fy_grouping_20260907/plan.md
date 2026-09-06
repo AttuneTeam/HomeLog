@@ -53,7 +53,7 @@ implementation, per the Tier 1 rule.
 
 The profile read is Tier 2 (data flow); the table changes are Tier 3.
 
-- [ ] **Task: Read the financial-year start from the user's profile on the Rent tab**
+- [x] **Task: Read the financial-year start from the user's profile on the Rent tab** `4a52236`
   - [ ] In `app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx`, add the `profiles`
         select for `financial_year_start_month` and `financial_year_start_day` to the existing
         `Promise.all`, not as a serial round trip.
@@ -64,7 +64,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
         apply, page still renders).
   - [ ] `npm run build` must pass.
 
-- [ ] **Task: Resolve the sticky/overflow conflict in the payments table**
+- [~] **Task: Resolve the sticky/overflow conflict in the payments table**
   - [ ] Restructure the `overflow-x-auto` wrapper at
         `components/rental-payments-section.tsx:456` so the sticky context is the page rather
         than the wrapper.
