@@ -96,11 +96,17 @@ function totalFees(payment: RentalPayment): number {
 interface RentalPaymentsSectionProps {
   propertyId: string;
   initialPayments: RentalPayment[];
+  /** 1-based month the user's financial year starts in. */
+  fyStartMonth: number;
+  /** Day of that month the user's financial year starts on. */
+  fyStartDay: number;
 }
 
 export function RentalPaymentsSection({
   propertyId,
   initialPayments,
+  fyStartMonth,
+  fyStartDay,
 }: RentalPaymentsSectionProps) {
   const [payments, setPayments] = useState<RentalPayment[]>(initialPayments);
   const [dialogOpen, setDialogOpen] = useState(false);
