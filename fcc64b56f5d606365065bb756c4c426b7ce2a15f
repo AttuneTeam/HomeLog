@@ -1,0 +1,43 @@
+Task: Build the shared sticky FY divider row
+Track: rent_fy_grouping_20260907 — Phase 2
+Verification tier: 3 (presentational)
+
+WHAT CHANGED
+Added components/financial-year-divider-row.tsx exporting FinancialYearDividerRow
+(label, count, figures, colSpan, className).
+
+WHY A SHARED COMPONENT
+Both the payments and expenses tables need the same heading, and Phase 3 reuses
+this rather than duplicating the markup. 'figures' is a ReactNode slot rather
+than a typed prop because payments carry agent fees alongside gross rent while
+expenses carry only a total — the shape differs, the chrome does not.
+
+TWO LOAD-BEARING DETAILS, BOTH EASY TO UNDO BY ACCIDENT
+1. position:sticky is on the th, not the tr. Sticky on a table ROW is not
+   reliably supported across browsers; on a cell it is. The first draft of this
+   component put it on the tr and was corrected before commit.
+2. The hairlines are a box-shadow, not border-y. Tailwind's preflight sets
+   border-collapse:collapse, and a collapsed border belongs to the table rather
+   than the cell, so it does not travel with the cell once stuck. The shadow
+   does. It draws from var(--border), which is defined for both themes in
+   app/globals.css, so the divider follows the theme with no dark-mode branch.
+
+ACCESSIBILITY
+th with scope="colgroup" spanning the full column set, so a screen reader
+announces the year as the heading for the rows beneath rather than reading a
+stray cell.
+
+THEMING
+bg-background and var(--border) are semantic tokens with light and dark values
+already defined (app/globals.css lines 64/79 light, 125/140 dark). No fixed
+colours. The background must stay opaque or rows show through while scrolling.
+
+VERIFICATION PERFORMED
+  $ npm run build
+    ✓ Compiled successfully in 7.1s — no type errors.
+
+VERIFICATION DEBT — SETTLE AT THE PHASE CHECKPOINT
+Nothing renders this component yet, so there is no visual verification to do in
+this commit. Light/dark and responsive confirmation happens once the payments
+table consumes it in the next task, and the user verifies pinning at the phase
+checkpoint per the previous commit's note.
