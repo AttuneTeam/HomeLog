@@ -1,0 +1,56 @@
+Task: Write failing tests for lib/tax/fy-grouping.ts + Implement lib/tax/fy-grouping.ts
+Track: rent_fy_grouping_20260907 — Phase 1
+Verification tier: 1 (pure domain logic, no I/O)
+
+WHAT CHANGED
+- Added lib/tax/fy-grouping.ts: groupByFinancialYear(items, getDate, startMonth, startDay)
+  returns FinancialYearGroup<T>[] ordered newest financial year first, plus the
+  UNDATED_LABEL export.
+- Added tests/lib/tax/fy-grouping.test.ts: 15 cases.
+
+WHY
+The Rent tab renders payments and expenses as flat lists. Grouping them by financial
+year is presentation, but deciding WHICH year a date belongs to is domain logic, so it
+lives in lib/ where it is testable rather than inside a component.
+
+Three decisions worth recording:
+1. The year is derived by reusing currentFyEndYear from ./fy rather than writing new
+   calendar arithmetic. There is exactly one definition of a financial-year boundary in
+   this codebase and this module does not become a second one.
+2. Dates parse as UTC via an explicit Z, per the rationale at the top of ./fy. Confirmed
+   empirically before writing the test: with TZ=Australia/Sydney,
+   new Date(2025,6,1).toISOString() is '2025-06-30T14:00:00.000Z', which would file
+   1 July under the previous financial year.
+3. Rows with a missing or unreadable date go to a trailing 'Undated' group instead of
+   being dropped. A dropped row would make the per-year subtotals disagree with the
+   lifetime total displayed in the same card.
+
+fyEndYearForDate also accepts a full ISO timestamp by taking the leading UTC calendar
+day, so a column that later gains a time component does not silently report every row
+as undated.
+
+VERIFICATION PERFORMED
+Red confirmed first, as required for Tier 1:
+  $ CI=true npx vitest run tests/lib/tax/fy-grouping.test.ts
+  FAIL — Error: Cannot find package '@/lib/tax/fy-grouping'
+  Test Files 1 failed (1) / Tests: no tests
+
+Green after implementation:
+  $ CI=true npx vitest run tests/lib/tax/fy-grouping.test.ts
+  Test Files 1 passed (1) / Tests 15 passed (15)
+
+  $ CI=true npm test
+  Test Files 18 passed (18) / Tests 275 passed (275)
+
+  $ npm run build
+  Passed — compiled with no type errors.
+
+DEVIATION FROM PLAN
+The plan lists Red and Green as two tasks, each taking its own commit. They are combined
+here. tsconfig.json includes '**/*.ts', so the test file is inside the build's typecheck
+scope: committing the failing test alone would have left npm run build broken on the
+branch, violating the Definition of Done in workflow.md. The Red/Green discipline was
+still followed in order, and the failing output is recorded above as evidence.
+
+COVERAGE NOTE
+No verification debt. This module is pure and fully covered.
