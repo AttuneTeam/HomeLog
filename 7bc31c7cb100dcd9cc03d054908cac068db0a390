@@ -67,3 +67,31 @@ stayed 1272 whatever the window size — so narrow widths were checked through i
 Synthetic clicks do not cross into a cross-origin iframe, so the toggle was exercised by
 dispatching a real click on the button on the page itself rather than by pointer
 hit-testing at 375px. Button placement and size at 375px are confirmed by screenshot.
+
+PHASE 2 CHECKPOINT — Page shell
+
+AUTOMATED CHECKS
+  npm run build                              -> exit 0, 7.3s, 39/39 static pages
+  CI=true npm test                           -> 17 files, 260 tests passed
+  node scripts/verify-landing-contrast.mjs   -> ALL PASS
+
+VERIFICATION DEBT: NONE. Tier 3 work only; no lib/, migrations, RLS or auth touched.
+
+ACCEPTANCE CRITERIA PROVEN AT THIS POINT
+  AC3   no 'The people' link and no #team in the rendered output
+  AC9   no external image request; hero served from public/
+  AC10  no hex literal anywhere in app/page.tsx or components/landing/
+  NFR6  pathname === '/' still in isPublic; /privacy and /terms also public
+
+USER CONFIRMATION
+Owner confirmed at the checkpoint: 'yes keep the privacy and terms links, carry on.'
+The Privacy and Terms links are therefore a settled decision, not a carry-over to
+revisit: the prototype omits them, but both routes exist and this is the only public
+page linking to them.
+
+RESIDUAL RISK
+Narrow-viewport behaviour was verified through iframes because window resizing did not
+affect the rendering viewport in this environment, and the mobile menu was exercised by
+dispatching a real click on the button rather than by pointer hit-testing at 375px.
+Layout, breakpoint switching and the full open/close/Escape state machine all pass; a
+real touch device remains untested.
