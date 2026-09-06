@@ -1,0 +1,43 @@
+Amendment: remove the 'Why it matters' band (Phase 3, home_page_rebuild_20260906)
+
+REQUESTED
+Owner, after seeing Phase 3 built: 'Lets remove the "The details are small. The
+difference is lasting." section.'
+
+WHAT CHANGED
+  D components/landing/landing-matters.tsx
+  M app/page.tsx                            composition
+  M app/globals.css                         -4 tokens per theme, comments rewritten
+  M components/landing/landing-footer.tsx   comment referenced the *-on-slab set
+  M scripts/verify-landing-contrast.mjs     slab pairs dropped
+  M scripts/verify-landing-copy.mjs         FR5 strings moved to MUST-BE-ABSENT
+  M spec.md, plan.md, metadata.json
+
+THE TOKENS WENT WITH IT
+--landing-slab, --landing-on-slab, --landing-brass-on-slab and --landing-muted-on-slab
+existed only for this band; grep confirmed no other reference. Two of them were added in
+Phase 1 specifically to fix contrast failures on it. Leaving them would have left dead
+colour behind elaborate comments describing a band that no longer exists, so they were
+removed in both themes along with the comments justifying them.
+
+CONSEQUENCE FOR THE DARK THEME
+This was the page's only dark band, and NFR1 was written around it inverting — sitting
+0.850 below paper in light and 0.105 above it in dark. That inversion still holds for the
+warm band (-0.049 -> +0.049) and the footer (-0.018 -> +0.018), so the mechanism is
+unchanged, but the drama is gone. The page now runs paper, warm, paper, paper, brass CTA,
+light footer, which makes the brass CTA the only saturated moment. Calmer than the
+prototype, and consistent with product-guidelines.md's 'calm, precise, never breathless'.
+NFR1 and the token comments were rewritten to describe what the page actually does rather
+than leaving a rationale that pointed at a deleted section.
+
+VERIFICATION PERFORMED
+  npm run build -> exit 0, Compiled successfully in 7.9s, 39/39 static pages.
+  CI=true npm test -> 17 files, 260 tests passed.
+  node scripts/verify-landing-contrast.mjs -> ALL PASS. 24 pairs, 12 per theme, slab
+    pairs removed. The script crashed on first run after the edit because its band
+    summary still listed 'slab'; fixed, and that crash is the reason the summary line is
+    worth keeping — it fails loudly on a token that no longer exists.
+  node scripts/verify-landing-copy.mjs -> ALL PASS. The three FR5 strings moved from
+    required to forbidden and are confirmed absent from the rendered page:
+      'Why it matters', 'The details are small', 'The difference is lasting'
+  grep for 'slab' across the landing code and scripts -> none.
