@@ -31,7 +31,13 @@ const STEPS = [
 
 export function LandingHow() {
   return (
-    <section id="how" className="scroll-mt-20 bg-landing-paper">
+    // The hairline separates this from the húsbók section above it. Both sit on
+    // paper, so without it the two run together — the prototype relied on its dark
+    // "Why it matters" band to divide them, and that band was cut.
+    <section
+      id="how"
+      className="scroll-mt-20 border-t border-landing-hairline bg-landing-paper"
+    >
       <div data-observe className="mx-auto max-w-[1280px] px-6 py-20 md:px-10 md:py-28 lg:px-16">
         <p className="landing-eyebrow text-landing-brass-text">How Home Base works</p>
 

@@ -27,7 +27,9 @@ piece of genuine design: a dark theme the prototype does not provide.
 | 8 | Footer               | —        | grey `#f5f3f3`        |
 
 The prototype's `#team` section sits between 5 and 6 and is **excluded**, as is its
-"Why it matters" band, which sat between the húsbók and "How Home Base works".
+"Why it matters" band, which sat between the húsbók and "How Home Base works". Because
+that band was the only thing dividing sections 4 and 5 — both of which sit on paper —
+section 5 carries a hairline top border in its place.
 
 ## Functional requirements
 
@@ -79,7 +81,8 @@ Warm-paper band, `#story` anchor. Heading left, body right.
 
 ### FR5 — How Home Base works
 
-`#how` anchor. Four numbered columns separated by hairline rules, stacking on mobile.
+`#how` anchor, with a hairline top border separating it from the húsbók section above,
+which shares the same paper ground. Four numbered columns separated by hairline rules, stacking on mobile.
 
 - Eyebrow: `How Home Base works`
 - Heading: "One calm place for the life of your property."
