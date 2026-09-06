@@ -1,0 +1,54 @@
+Task: Read the financial-year start from the user's profile on the Rent tab
+Track: rent_fy_grouping_20260907 — Phase 2
+Verification tier: 2 (data flow)
+
+WHAT CHANGED
+- app/(dashboard)/properties/[propertyId]/(tabs)/rent/page.tsx: added a profiles
+  select for financial_year_start_month/_day to the existing Promise.all, and
+  derived fyStartMonth/fyStartDay with a fallback to AU_FY_START_MONTH/DAY.
+  Passed both to RentalPaymentsSection.
+- components/rental-payments-section.tsx: accepts fyStartMonth and fyStartDay.
+  Not yet consumed — the grouping task later in this phase uses them.
+
+WHY
+The financial-year boundary is the user's, not a constant. Hardcoding 1 July would
+make this tab and the tax pack disagree about which year a payment belongs to for
+any user on a different year start. The tax-pack page already reads the profile;
+this makes the Rent tab consistent with it rather than inventing a second rule.
+
+The select joins the existing Promise.all rather than being awaited separately, so
+no serial round trip is added to the page. maybeSingle() is used so a missing
+profile row yields null instead of raising.
+
+VERIFICATION PERFORMED
+  $ npm run build
+    ✓ Compiled successfully in 9.0s — no type errors.
+
+Both data paths exercised against local Supabase (127.0.0.1:54321), owner
+2412f514-b3b8-4dfc-baf6-3d90b6ce050e of property 400b830b (56 Forbes St):
+
+  Happy path — profile row present:
+    GET /rest/v1/profiles?id=eq.<owner>&select=financial_year_start_month,financial_year_start_day
+    -> [{"financial_year_start_month":7,"financial_year_start_day":1}]
+    Page uses 7/1.
+
+  Failure path — no profile row:
+    GET /rest/v1/profiles?id=eq.00000000-0000-0000-0000-000000000000&select=...
+    -> []
+    maybeSingle() yields data:null, so the ?? fallback applies and the page uses
+    AU_FY_START_MONTH/AU_FY_START_DAY (7/1). Page still renders.
+
+GROUND TRUTH RECORDED FOR LATER UI VERIFICATION
+Computed independently of lib/tax/fy-grouping.ts, straight from the rows, for
+property 400b830b:
+  Payments  2026–27: 2 payments, $794.20 fees, $13,728.53 gross
+            2025–26: 7 payments, $2,851.20 fees, $28,644.80 gross
+            lifetime $42,373.33 (subtotals reconcile)
+  Expenses  2026–27: 1 expense, $3,299.13
+            2025–26: 8 expenses, $2,642.98
+            lifetime $5,942.11 (subtotals reconcile)
+Local data spans only two financial years, so acceptance criterion 1 (three years)
+needs a temporary older row at the phase checkpoint to verify a third divider.
+
+NO VERIFICATION DEBT
+No pure logic added. No schema, RLS or migration change.
