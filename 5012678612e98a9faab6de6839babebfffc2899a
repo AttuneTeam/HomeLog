@@ -1,0 +1,65 @@
+Task: Verify contrast in both themes (Phase 1, home_page_rebuild_20260906)
+
+WHAT CHANGED
+Added scripts/verify-landing-contrast.mjs and two colour tokens the verification
+proved were missing.
+
+FILES
+  A scripts/verify-landing-contrast.mjs
+  M app/globals.css  (+--landing-muted-on-slab, +--landing-brass-on-slab, both themes)
+
+WHY THE VERIFIER PARSES globals.css
+It reads the --landing-* tokens back out of the committed stylesheet rather than
+taking values from a hardcoded copy, so it measures what shipped instead of what was
+intended. That is what caught both defects below; a design-time check against my own
+numbers had passed.
+
+TWO DEFECTS FOUND AND FIXED
+1. Light-theme muted text on the footer measured 2.16:1 against a 4.5:1 requirement.
+   --landing-muted is #45474c, a dark grey sized for light grounds, and the footer is
+   ink. The footer carries secondary text ('Founded 2021 / Sydney + Melbourne'), so
+   this would have shipped illegible. Added --landing-muted-on-slab: 0.750 light /
+   0.760 dark, now 9.01:1 and 9.45:1.
+
+2. Brass eyebrow on the slab. --landing-brass-text (#775a19) gives only 3.11:1 on ink.
+   It clears a 3:1 large-text threshold but the eyebrow is 12px uppercase, which needs
+   4.5:1 — and the prototype uses the LIGHTER brass on its dark band anyway. Added
+   --landing-brass-on-slab. The right value differs by theme, which is precisely what a
+   token should absorb: 0.699 in light (the prototype's own brass, 7.44:1 on ink) but
+   0.800 in dark, because the dark slab is RAISED to 0.268 and brass has to climb to
+   stay legible against it. Now 7.44:1 light and 8.10:1 dark.
+
+There are therefore three brass tokens, role-named rather than colour-named:
+  --landing-brass          the CTA band surface
+  --landing-brass-text     brass text on paper and warm grounds
+  --landing-brass-on-slab  brass text on slab and footer grounds
+
+VERIFICATION PERFORMED
+  node scripts/verify-landing-contrast.mjs
+    -> ALL PASS, exit 0. 28 pairs measured, 14 per theme.
+
+    LIGHT                          DARK
+      body on paper      19.13:1     body on paper      15.73:1
+      body on warm       16.56:1     body on warm       14.37:1
+      muted on paper      8.87:1     muted on paper      6.21:1
+      muted on warm       7.68:1     muted on warm       5.68:1
+      eyebrow on paper    6.16:1     eyebrow on paper    7.74:1
+      eyebrow on warm     5.33:1     eyebrow on warm     7.07:1
+      body on slab       19.13:1     body on slab       12.36:1
+      brass eyebrow/slab  7.44:1     brass eyebrow/slab  8.10:1
+      brass on footer     7.44:1     brass on footer    10.82:1
+      body on footer     19.13:1     body on footer     16.51:1
+      muted on footer     9.01:1     muted on footer     9.45:1
+      muted on slab       9.01:1     muted on slab       7.07:1
+      body on brass CTA   7.44:1     body on brass CTA   5.03:1
+      hairline on paper    1.62:1    hairline on paper    1.42:1
+
+    Minimums: 4.5:1 body and eyebrow text, 3:1 large display, 1.4:1 hairline rules.
+  npm run build   -> Compiled successfully in 6.4s, no type errors.
+  CI=true npm test -> 17 files, 260 tests passed. No existing coverage regressed.
+
+DEVIATION FROM THE PLAN
+The plan did not call for a committed script; it asked only that ratios be recorded in
+the task summary. The script ships because Phase 4's dark-theme pass re-checks the same
+property, and because it turns AC7 into something re-runnable rather than a one-time
+claim. package.json was not modified — invoke it directly with node.
