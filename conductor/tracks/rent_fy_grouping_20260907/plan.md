@@ -6,7 +6,7 @@ then the second consumer reuses what the first extracted.
 
 ---
 
-## Phase 1 — Financial-year grouping module (Tier 1)
+## Phase 1 — Financial-year grouping module (Tier 1) [checkpoint: 476e929]
 
 Pure domain logic with no I/O. Tests are written first and confirmed failing before any
 implementation, per the Tier 1 rule.
@@ -45,7 +45,7 @@ implementation, per the Tier 1 rule.
   - [ ] Run `CI=true npm test` — all tests green.
   - [ ] Run `npm run build` — must pass.
 
-- [ ] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)**
+- [x] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)** `476e929`
 
 ---
 
