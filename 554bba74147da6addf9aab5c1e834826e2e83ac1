@@ -1,0 +1,49 @@
+Amendment: footer keeps the existing page's colour (Phase 1, home_page_rebuild_20260906)
+
+REQUESTED
+Owner, at the Phase 1 checkpoint: 'keep the footer the same as the existing instead of
+making it black.'
+
+WHAT CHANGED
+  M app/globals.css                      --landing-footer both themes; --landing-hairline dark
+  M scripts/verify-landing-contrast.mjs  footer now measured against paper-ground tokens
+  M spec.md                              section table, FR9, NFR1, new Decisions entry
+  M plan.md                              Phase 2 footer task carries the constraint
+  M metadata.json                        decision recorded, open_risks and palette updated
+
+THE VALUES
+The existing footer is bg-[#f5f3f3] with border-t border-[#c6c6cc]/20 (app/page.tsx:660).
+#f5f3f3 converts to oklch(0.966 0.002 17.2) — only 0.018 below paper, because the
+separation is carried by the hairline top border rather than by the fill.
+
+Dark follows the same rule the other bands do, mirroring the offset rather than the
+colour: 0.018 BELOW paper in light becomes 0.018 ABOVE it in dark, so 0.181.
+
+  band            light L   dark L   delta vs base
+  paper (base)      0.984    0.163   —
+  warm              0.935    0.212   -0.049 -> +0.049
+  slab              0.134    0.268   -0.850 -> +0.105
+  footer            0.966    0.181   -0.018 -> +0.018
+
+CONSEQUENCE FOR THE TOKENS
+The footer is now light in light theme and dark in dark theme, exactly like paper, so it
+takes the paper-ground text tokens (fg, muted, brass-text). The *-on-slab set narrows to
+serving the slab alone, which is better-named than it was: those tokens now describe
+precisely one band.
+
+A SECOND DEFECT THIS SURFACED
+Raising the dark footer to 0.181 pushed the hairline rule against it to 1.38:1, under the
+1.4:1 floor this project uses for decorative rules. --landing-hairline lifts 0.300 -> 0.325
+in dark, which clears the footer at 1.51:1 and improves the rule on paper from 1.42:1 to
+1.55:1. Light theme unaffected.
+
+DESIGN NOTE
+This leaves the 'Why it matters' slab as the page's only dark band. That sharpens it rather
+than weakening the composition — the drama is no longer repeated at the bottom of the page.
+
+VERIFICATION PERFORMED
+  node scripts/verify-landing-contrast.mjs
+    -> ALL PASS, exit 0. 30 pairs, 15 per theme.
+       Footer, light: body 18.15:1, muted 8.41:1, eyebrow 5.84:1, hairline 1.54:1
+       Footer, dark:  body 15.28:1, muted 6.04:1, eyebrow 7.52:1, hairline 1.51:1
+  npm run build -> Compiled successfully in 7.3s, no type errors.
