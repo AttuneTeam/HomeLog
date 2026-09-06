@@ -17,6 +17,6 @@ index, which in turn links to its specification, plan and metadata.
 
 ---
 
-- [ ] **Track: Home page rebuild — rebuild the public landing page on the prototype's editorial design, excluding "The People"**
+- [~] **Track: Home page rebuild — rebuild the public landing page on the prototype's editorial design, excluding "The People"**
 
   *Link: [./tracks/home_page_rebuild_20260906/index.md](./tracks/home_page_rebuild_20260906/index.md)*
