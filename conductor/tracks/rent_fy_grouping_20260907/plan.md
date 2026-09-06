@@ -64,7 +64,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
         apply, page still renders).
   - [ ] `npm run build` must pass.
 
-- [~] **Task: Resolve the sticky/overflow conflict in the payments table**
+- [x] **Task: Resolve the sticky/overflow conflict in the payments table** `10b7d15`
   - [ ] Restructure the `overflow-x-auto` wrapper at
         `components/rental-payments-section.tsx:456` so the sticky context is the page rather
         than the wrapper.
@@ -76,7 +76,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Record which resolution was taken and why in the task's git note — this is the one
         non-obvious constraint in the track.
 
-- [ ] **Task: Build the shared sticky FY divider row**
+- [~] **Task: Build the shared sticky FY divider row**
   - [ ] Extract a presentational divider component rendering a full-width table row, so Phase 3
         reuses it rather than duplicating the markup.
   - [ ] Mark it up as `<th scope="colgroup">` spanning the column set, so a screen reader
