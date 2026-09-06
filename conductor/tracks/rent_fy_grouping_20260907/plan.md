@@ -76,7 +76,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Record which resolution was taken and why in the task's git note — this is the one
         non-obvious constraint in the track.
 
-- [~] **Task: Build the shared sticky FY divider row**
+- [x] **Task: Build the shared sticky FY divider row** `fcc64b5`
   - [ ] Extract a presentational divider component rendering a full-width table row, so Phase 3
         reuses it rather than duplicating the markup.
   - [ ] Mark it up as `<th scope="colgroup">` spanning the column set, so a screen reader
@@ -86,7 +86,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Accept the label plus a slot for section-specific figures, since payments carry fees and
         expenses do not.
 
-- [ ] **Task: Group rental payments by financial year with sticky dividers**
+- [~] **Task: Group rental payments by financial year with sticky dividers**
   - [ ] Derive groups with `useMemo` over component state, so add, edit and delete re-group
         without a reload — including when a change moves a row into another financial year.
   - [ ] Group by `payment_date`.
