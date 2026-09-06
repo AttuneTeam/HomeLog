@@ -68,6 +68,10 @@
     {
       "decision": "The footer keeps the existing page's #f5f3f3 rather than the prototype's ink band",
       "why": "Requested by the owner at the Phase 1 checkpoint. It leaves the 'Why it matters' slab as the page's only dark band, which sharpens it — the drama is no longer repeated at the bottom of the page. Separation comes from the hairline top border, as it does today. Consequence for the tokens: the footer is light in light theme and dark in dark, same as paper, so it uses the paper-ground text tokens and the *-on-slab set narrows to the slab alone."
+    },
+    {
+      "decision": "The footer keeps the Privacy and Terms links, which the prototype does not have",
+      "why": "Confirmed by the owner at the Phase 2 checkpoint. Both routes exist and are allowlisted as public, and this is the only public page that links to them, so the prototype's omission reads as a mockup gap rather than a decision."
     }
   ],
   "open_risks": [
@@ -76,7 +80,8 @@
     "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279."
   ],
   "checkpoints": {
-    "phase_1": "554bba7"
+    "phase_1": "554bba7",
+    "phase_2": "7bc31c7"
   },
   "pull_requests": []
 }

@@ -42,7 +42,7 @@ renders on the server.
 
 - [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (554bba7)
 
-## Phase 2: Page shell
+## Phase 2: Page shell [checkpoint: 7bc31c7]
 
 - [x] Task: Build the navigation (7bc31c7)
   - [x] Create `components/landing/landing-nav.tsx` as a client component (scroll listener)
@@ -70,7 +70,7 @@ renders on the server.
   - [x] Remove the superseded sections and the `images.unsplash.com` references
   - [x] Confirm `/` remains allowlisted in `lib/supabase/middleware.ts` (NFR6)
 
-- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+- [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (7bc31c7)
 
 ## Phase 3: Narrative sections
 
