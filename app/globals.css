@@ -55,7 +55,9 @@
   --color-landing-footer: var(--landing-footer);
   --color-landing-brass: var(--landing-brass);
   --color-landing-brass-text: var(--landing-brass-text);
+  --color-landing-brass-on-slab: var(--landing-brass-on-slab);
   --color-landing-muted: var(--landing-muted);
+  --color-landing-muted-on-slab: var(--landing-muted-on-slab);
   --color-landing-hairline: var(--landing-hairline);
   --color-landing-fg: var(--landing-fg);
   --color-landing-on-slab: var(--landing-on-slab);
@@ -115,7 +117,14 @@
   --landing-footer: oklch(0.134 0.027 258.5);
   --landing-brass: oklch(0.699 0.090 85.0);
   --landing-brass-text: oklch(0.485 0.088 83.4);
+  /* Brass text on the slab and footer. `brass-text` is tuned for light grounds
+     and manages only 3.11:1 on ink, which fails a 12px uppercase eyebrow. The
+     prototype uses the lighter brass on its dark band; this is that value. */
+  --landing-brass-on-slab: oklch(0.699 0.090 85.0);
   --landing-muted: oklch(0.398 0.009 268.4);
+  /* Secondary text on the slab and footer. `muted` is a dark grey sized for light
+     grounds and drops to 2.16:1 on the footer, so dark surfaces need their own. */
+  --landing-muted-on-slab: oklch(0.750 0.008 85);
   --landing-hairline: oklch(0.828 0.008 286.2);
   --landing-fg: oklch(0.134 0.027 258.5);
   --landing-on-slab: oklch(0.984 0.002 17.2);
@@ -180,7 +189,11 @@
   --landing-footer: oklch(0.121 0.014 264);
   --landing-brass: oklch(0.600 0.088 80);
   --landing-brass-text: oklch(0.720 0.082 80);
+  /* Lifted further than the light value: the dark slab is RAISED to 0.268, so
+     brass has to climb to keep an eyebrow legible against it. */
+  --landing-brass-on-slab: oklch(0.800 0.072 82);
   --landing-muted: oklch(0.660 0.012 264);
+  --landing-muted-on-slab: oklch(0.760 0.010 85);
   --landing-hairline: oklch(0.300 0.010 264);
   --landing-fg: oklch(0.930 0.004 85);
   --landing-on-slab: oklch(0.930 0.004 85);
