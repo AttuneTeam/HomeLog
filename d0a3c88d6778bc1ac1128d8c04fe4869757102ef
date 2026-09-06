@@ -1,0 +1,78 @@
+Tasks: principles accordion, closing CTA, scroll reveal, dark and responsive
+passes, dead-code removal (Phase 4, home_page_rebuild_20260906)
+
+WHAT CHANGED
+  A components/landing/landing-principles.tsx  client, single-open accordion
+  A components/landing/landing-cta.tsx         brass band, #start
+  A components/landing/landing-reveal.tsx      client, renders null
+  M app/globals.css                            .landing-focus, .landing-reveal, keyframes
+  M app/page.tsx                               composes them
+  M 5 landing components                       data-observe + .landing-focus
+  M scripts/verify-landing-copy.mjs            FR6 and FR7 assertions
+  D public/federation-house.jpg                1.5 MB, orphaned
+  D public/hero-screen.png                     1.4 MB, orphaned
+
+SCROLL REVEAL IS OPT-OUT, NOT OPT-IN
+The hidden state is applied by JavaScript at runtime, never in the server markup, so a
+reader without JavaScript gets the whole page rather than a blank one. That is the
+failure mode of doing it the other way round, and it is why .landing-reveal is added in
+an effect rather than rendered. The component also bails entirely under
+prefers-reduced-motion, and globals.css neutralises both classes under the same query as
+a second guard in case that check is ever removed.
+
+AC6 NEEDED AN EXPLICIT FOCUS RING
+Relying on the UA default was not good enough to claim "a visible focus state", and the
+project's global rule on every element sets only an outline COLOUR, not a style or width.
+Added .landing-focus, whose outline is currentColor — on every band that is the text
+colour already measured against that band's background by verify-landing-contrast.mjs, so
+the ring is guaranteed visible on paper, on warm, on the brass CTA, in both themes,
+without needing a token per band. Applied to all 13 interactive elements in the subtree,
+23 rendered instances.
+
+MATERIAL SYMBOLS STAYS
+The plan said to remove the stylesheet link "if nothing references it". Something does:
+material-symbols-outlined is used by app/signup/page.tsx and
+app/auth/update-password/page.tsx. Left in place. The two public/ images were genuinely
+orphaned — checked repo-wide, not just in the landing subtree — and are recoverable from
+history.
+
+A DEV-SERVER TRAP WORTH RECORDING
+The focus ring appeared not to work: :focus-visible matched, the class was present, but
+the computed outline was Chrome's default "auto 1px". The rule was absent from the CSSOM
+entirely. It WAS in the production CSS. The dev server on :3000 was serving stale CSS and
+did not pick up globals.css changes even after touching the file. All remaining
+verification was done against next start on :3100. Anyone debugging landing styles should
+confirm they are not looking at stale dev CSS before believing a rule does not apply.
+
+VERIFICATION PERFORMED
+  npm run build    -> exit 0, 7.6s, 39/39 static pages
+  CI=true npm test -> 17 files, 260 tests passed
+  node scripts/verify-landing-contrast.mjs -> ALL PASS
+  node scripts/verify-landing-copy.mjs     -> ALL PASS, now 53 assertions
+    FR6's three principle bodies are all present in the DOM; closed panels use hidden.
+
+  Accordion state machine, exercised directly:
+    initial      01 open,   02 closed, 03 closed
+    open 02      01 CLOSED, 02 open,   03 closed   <- single-open enforced
+    close 02     all closed
+    open 03      01 closed, 02 closed, 03 open
+    Enter on a trigger toggles it. Every aria-controls and aria-labelledby resolves to a
+    real element. All three triggers are wrapped in h3.
+
+  Focus ring, on the production build, with keyboard focus:
+    :focus-visible matched and the computed outline was "solid 2px @4px offset" —
+    the rule, not the UA default.
+
+  Responsive at 375 and 768 via iframes against the production server: hamburger below
+    md, full nav at 768, headline scales to 3 lines at 375 and 2 at 768, image stacks
+    below the text, no horizontal overflow.
+
+  Dark theme: the CTA verified in both. Brass band with ink heading in both themes; the
+    button inverts — dark-on-light in light, light-on-dark in dark.
+
+RESIDUAL RISK
+The accordion, CTA and footer were verified visually at desktop width only. Their narrow
+behaviour uses the same grid-to-single-column pattern already confirmed on the other
+sections, but was not screenshotted, because iframe scrolling stopped responding. Window
+resizing never affected the rendering viewport in this environment, so no measurement of
+scrollWidth at 375 exists for those three sections.
