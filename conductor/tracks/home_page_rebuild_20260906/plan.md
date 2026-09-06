@@ -25,14 +25,14 @@ renders on the server.
   - [x] Optimise and commit to `public/house-journal.jpg`
   - [x] Confirm intrinsic dimensions and aspect ratio suit the hero's `next/image` sizing
 
-- [ ] Task: Define the landing colour tokens
-  - [ ] Add light-theme custom properties to `app/globals.css`: paper `#fbf9f9`,
+- [x] Task: Define the landing colour tokens (2611964)
+  - [x] Add light-theme custom properties to `app/globals.css`: paper `#fbf9f9`,
         warm paper `#eee9df`, ink `#030813`, brass `#b89a5a`, brass-text `#775a19`,
         muted `#45474c`, hairline `#c6c6cc`
-  - [ ] Design the dark counterpart, inverting the band *relationship* so the "Why it matters"
+  - [x] Design the dark counterpart, inverting the band *relationship* so the "Why it matters"
         band reads as raised rather than darker against its neighbours (NFR1)
-  - [ ] Add a lightened brass variant that holds contrast on dark ground
-  - [ ] Scope the tokens so they do not leak into dashboard surfaces
+  - [x] Add a lightened brass variant that holds contrast on dark ground
+  - [x] Scope the tokens so they do not leak into dashboard surfaces
 
 - [ ] Task: Verify contrast in both themes
   - [ ] Measure body text against every band; require ≥ 4.5:1
