@@ -116,7 +116,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Confirm a divider still renders when every expense falls in a single financial year.
   - [ ] `npm run build` must pass; visually confirm in light and dark themes and at mobile width.
 
-- [~] **Task: Verify the acceptance criteria end to end**
+- [x] **Task: Verify the acceptance criteria end to end** `f5a389a`
   - [ ] Walk every acceptance criterion in `spec.md` against a property with multi-year history,
         recording the observed result for each.
   - [ ] Confirm criterion 5 specifically by temporarily setting a non-July
