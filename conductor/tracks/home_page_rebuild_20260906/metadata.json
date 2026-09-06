@@ -36,7 +36,10 @@
       "components/landing/landing-how.tsx",
       "components/landing/landing-principles.tsx (client)",
       "components/landing/landing-cta.tsx",
-      "components/landing/landing-footer.tsx"
+      "components/landing/landing-footer.tsx",
+      "components/landing/landing-reveal.tsx (client, renders null)",
+      "scripts/verify-landing-contrast.mjs",
+      "scripts/verify-landing-copy.mjs"
     ]
   },
   "decisions": [
@@ -75,17 +78,24 @@
     {
       "decision": "The whole 'Why it matters' band was cut, not just its statistics",
       "why": "Requested by the owner after Phase 3, having seen it built. It leaves the page with no dark band at all: paper carries most of it, warm and footer sit just below paper, and the brass CTA becomes the only saturated moment. Consequence for NFR1: the dark theme's inversion now rests on the warm band and footer, which still invert by the same mechanism but far less dramatically. The four *-on-slab tokens were removed with the section rather than left as dead colour, and both verification scripts were updated — the copy script now asserts the band's strings are ABSENT."
+    },
+    {
+      "decision": "An explicit .landing-focus ring rather than the UA default",
+      "why": "AC6 requires a visible focus state, and the project's global rule sets only an outline colour, not a style or width. The ring uses currentColor, which on every band is the text colour already measured against that band's background by verify-landing-contrast.mjs — so it is guaranteed visible on paper, warm and brass, in both themes, without a token per band."
     }
   ],
   "open_risks": [
     "POSITIONING MISMATCH, recorded not fixed: the prototype's copy sells a house book for homeowners and never mentions tax, the ATO, deductions or accountants. product.md positions the product investor-first and names AI tax classification against ATO rulings as the differentiator, with the passport as retention rather than the headline. The public page will therefore lead with a different promise than the product's stated strategy. Raised during planning; the owner elected to ship the prototype copy as written. Revisitable as a copy track without reopening the layout.",
     "The dark theme is unspecified by the prototype and is not a mechanical inversion. The layout's rhythm depends on alternating light and dark bands; rendered naively on a dark ground the 'Why it matters' slab collapses into its neighbours and the composition flattens. The dark palette inverts the band relationship rather than the colours: warm and slab sit below paper in light and above it in dark. Resolved in Phase 1 and verified by scripts/verify-landing-contrast.mjs.",
-    "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279."
+    "An uncommitted working-tree edit to app/page.tsx ('Build your Base through Quality Management' → 'Build your Ledger') predates this track and will be discarded by the full rewrite. Deliberately excluded from the docs/rental-statement-invariants branch in commit 9f39279.",
+    "The dev server serves STALE CSS for app/globals.css. A focus-visible rule that was present in the production bundle was entirely absent from the dev CSSOM, even after touching the file, which made a working rule look broken. Verify landing styles against `next start`, not `next dev`.",
+    "The accordion, CTA and footer were verified visually at desktop width only. Their narrow behaviour uses the grid-to-single-column pattern already confirmed elsewhere on the page, but iframe scrolling stopped responding and window resizing never affected the rendering viewport in this environment, so no scrollWidth measurement at 375px exists for those three sections."
   ],
   "checkpoints": {
     "phase_1": "554bba7",
     "phase_2": "7bc31c7",
-    "phase_3": "f70d094"
+    "phase_3": "f70d094",
+    "phase_4": "d0a3c88"
   },
   "pull_requests": []
 }

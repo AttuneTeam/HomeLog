@@ -95,36 +95,37 @@ renders on the server.
 
 - [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
 
-## Phase 4: Interaction, theming and polish
+## Phase 4: Interaction, theming and polish [checkpoint: d0a3c88]
 
-- [ ] Task: Build the principles accordion
-  - [ ] Create `components/landing/landing-principles.tsx` as a client component
-  - [ ] Three items, single-open, first open by default
-  - [ ] `aria-expanded` on triggers and `aria-controls` pointing at each panel
-  - [ ] `+` / `−` affordance so open state is not signalled by colour alone
-  - [ ] Verify keyboard-only operation and a visible focus ring (AC6)
+- [x] Task: Build the principles accordion (d0a3c88)
+  - [x] Create `components/landing/landing-principles.tsx` as a client component
+  - [x] Three items, single-open, first open by default
+  - [x] `aria-expanded` on triggers and `aria-controls` pointing at each panel
+  - [x] `+` / `−` affordance so open state is not signalled by colour alone
+  - [x] Verify keyboard-only operation and a visible focus ring (AC6)
 
-- [ ] Task: Build the closing CTA
-  - [ ] Create `components/landing/landing-cta.tsx` with the `#start` anchor
-  - [ ] Brass band, "Start for free ↗" → `/signup`
+- [x] Task: Build the closing CTA (d0a3c88)
+  - [x] Create `components/landing/landing-cta.tsx` with the `#start` anchor
+  - [x] Brass band, "Start for free ↗" → `/signup`
 
-- [ ] Task: Preserve the scroll reveal
-  - [ ] Reinstate the `IntersectionObserver` fade-in across the new sections
-  - [ ] Gate the animation behind `prefers-reduced-motion` (NFR5)
+- [x] Task: Preserve the scroll reveal (d0a3c88)
+  - [x] Reinstate the `IntersectionObserver` fade-in across the new sections
+  - [x] Gate the animation behind `prefers-reduced-motion` (NFR5)
 
-- [ ] Task: Dark-theme pass
-  - [ ] Walk every section in dark theme and confirm the band rhythm survives (NFR1),
+- [x] Task: Dark-theme pass (d0a3c88)
+  - [x] Walk every section in dark theme and confirm the band rhythm survives (NFR1),
         now resting on the warm band and footer rather than the removed slab
-  - [ ] Confirm no hardcoded colour literal remains in the landing components (AC10)
+  - [x] Confirm no hardcoded colour literal remains in the landing components (AC10)
 
-- [ ] Task: Responsive pass
-  - [ ] Verify 375px, 768px, 1024px and 1440px
-  - [ ] Confirm no horizontal page scroll and that display type scales (AC8)
+- [x] Task: Responsive pass (d0a3c88)
+  - [x] Verify 375px, 768px, 1024px and 1440px
+  - [x] Confirm no horizontal page scroll and that display type scales (AC8)
 
-- [ ] Task: Remove dead code
-  - [ ] Delete superseded markup, unused imports and now-unreferenced helpers
-  - [ ] Remove the Material Symbols stylesheet link if nothing references it
-  - [ ] Remove `public/hero-screen.png` and `public/federation-house.jpg` only if unreferenced
+- [x] Task: Remove dead code (d0a3c88)
+  - [x] Delete superseded markup, unused imports and now-unreferenced helpers
+  - [x] Material Symbols stylesheet link ASSESSED, kept — still used by
+        app/signup and app/auth/update-password
+  - [x] Remove `public/hero-screen.png` and `public/federation-house.jpg` only if unreferenced
         elsewhere in the repository
 
-- [ ] Task: Phase Verification & Checkpoint (refer to `workflow.md`)
+- [x] Task: Phase Verification & Checkpoint (refer to `workflow.md`) (d0a3c88)
