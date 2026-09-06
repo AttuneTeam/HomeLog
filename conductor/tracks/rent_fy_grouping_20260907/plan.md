@@ -86,7 +86,7 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Accept the label plus a slot for section-specific figures, since payments carry fees and
         expenses do not.
 
-- [~] **Task: Group rental payments by financial year with sticky dividers**
+- [x] **Task: Group rental payments by financial year with sticky dividers** `b988490`
   - [ ] Derive groups with `useMemo` over component state, so add, edit and delete re-group
         without a reload — including when a change moves a row into another financial year.
   - [ ] Group by `payment_date`.
