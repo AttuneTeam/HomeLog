@@ -1,0 +1,38 @@
+Amendment: warm paper on the login and signup left column
+(follow-on to home_page_rebuild_20260906, added to PR #39)
+
+REQUESTED
+Owner: 'Give the login and create account page left hand column the same background as
+the Why we exist section on the home page and add it to this pr.'
+
+WHAT CHANGED
+  M app/login/page.tsx    left column #f5f3f3 -> #eee9df
+  M app/signup/page.tsx   left column #f5f3f3 -> #eee9df
+
+WHY A HEX LITERAL AND NOT THE TOKEN
+Using bg-landing-warm would have been the better engineering choice on a themed page,
+and it is not one here. Both auth pages set every colour through inline style objects —
+16 on login, 17 on signup — and neither has a single dark: variant, so they render light
+regardless of the active theme. A theme-aware column dropped into that would invert on
+its own in dark mode while the sixteen colours around it stayed light. #eee9df is the
+light value of --landing-warm, verified identical below, and it matches the convention
+already in force in those two files.
+
+The duplication is real and worth removing later by converting both pages to the
+landing-* tokens wholesale. That is a behavioural change to the auth pages' dark
+rendering, so it belongs in its own change rather than smuggled into this one.
+
+VERIFICATION PERFORMED
+  npx tsc --noEmit -> exit 0. Confirms the /* */ comment between JSX attributes parses;
+    it is legal there, but worth checking rather than assuming.
+  npm run build    -> exit 0, Compiled successfully in 7.7s, 39/39 static pages.
+  CI=true npm test -> 17 files, 260 tests passed.
+  Colour equality, measured rather than eyeballed. The computed background of the auth
+    left column and the resolved value of --landing-warm serialise differently — the
+    literal as rgb(), the token as lab() — so they were converted to a common space:
+      --landing-warm  lab(92.5138 0.453621 5.34849)  -> rgb(238, 233, 223)
+      auth column     #eee9df                        -> rgb(238, 233, 223)
+    Identical.
+  Visual, both pages, against the production build on :3100. The warm column now reads
+    as a distinct panel against the #fbf9f9 form column; the previous #f5f3f3 was nearly
+    indistinguishable from it.
