@@ -1,0 +1,31 @@
+Amendment: divider between the husbok and "How Home Base works" sections
+(Phase 4, home_page_rebuild_20260906)
+
+REQUESTED
+Owner: 'Add a divider between A tradition worth keeping and How Home Base works.'
+
+WHAT CHANGED
+  M components/landing/landing-how.tsx  border-t border-landing-hairline on the section
+  M spec.md                             section table note and FR5
+
+WHY IT WAS MISSING
+Fallout from removing the "Why it matters" band. In the prototype that dark slab sat
+between these two sections and did the dividing. Both neighbours sit on paper, so cutting
+the slab left them running together with nothing but padding between them. This is the
+kind of gap that only shows up once the composition is seen whole, which is why it
+surfaced at review rather than while the section was being built.
+
+WHY A FULL-BLEED HAIRLINE
+It matches the footer's existing border-t treatment, so the page has one vocabulary for
+"a boundary between bands" rather than two. A container-inset rule would have competed
+with the inset rules already inside this section — the one above the four columns, and
+the short brass rule under the husbok heading.
+
+VERIFICATION PERFORMED
+  npm run build -> exit 0, Compiled successfully in 10.6s, 39/39 static pages.
+  node scripts/verify-landing-contrast.mjs -> ALL PASS. The hairline token was already
+    covered: 1.62:1 on paper in light, 1.55:1 in dark, against a 1.4:1 floor.
+  Computed style on the section, light theme:
+    border-top: 1px solid lab(79.978 0.802934 -2.90442)  -- the hairline token
+  Visual, both themes, against the production build on :3100: the rule reads as a quiet
+    boundary in light and in dark, and does not compete with the column rule below it.
