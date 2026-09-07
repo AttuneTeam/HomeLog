@@ -1,0 +1,52 @@
+Task: Give the FY divider a distinct warm background
+Track: rent_fy_grouping_20260907 — Phase 4 (refinement)
+Verification tier: 3 (presentational)
+
+WHAT CHANGED
+- components/financial-year-divider-row.tsx: fill changed from bg-background to
+  bg-landing-warm, with the reasoning recorded in the component doc comment.
+- app/globals.css: corrected the Landing surface comment, which asserted that
+  nothing outside components/landing/ referenced these tokens. That is no longer
+  true, and leaving it would have misled the next reader.
+
+WHY
+Requested after the track was first closed: the divider blended into the rows it
+separated, because bg-background is the same surface the rest of the table sits
+on. The warm paper token gives it its own band. Recorded as its own phase rather
+than folded into a completed one.
+
+WHY THIS TOKEN IS SAFE TO REUSE
+The landing palette ADDS tokens rather than redefining any dashboard surface, so
+referencing one cannot alter anything else. There is precedent: the login and
+signup left column already uses this colour. Critically, --landing-warm carries a
+purpose-built dark value (oklch(0.212 0.016 70)) alongside its light one
+(oklch(0.935 0.014 84.6), the prototype's #eee9df), so the divider does not need
+a dark-mode branch of its own.
+
+The band reads consistently in both themes because the token sits just BELOW the
+page ground in light and just ABOVE it in dark — the same relationship inversion
+the landing palette already uses for its own bands.
+
+VERIFICATION PERFORMED
+  $ npm run build
+    ✓ Compiled successfully in 9.7s — no type errors.
+  $ CI=true npm test
+    Test Files 18 passed (18) / Tests 275 passed (275)
+
+Contrast computed rather than eyeballed — oklch converted to linear sRGB and
+scored as WCAG relative luminance:
+
+                                    light      dark
+  label (foreground) on fill      16.35:1    16.92:1    passes AA and AAA
+  count + figures (muted) on fill  4.96:1     5.46:1    passes AA (4.5:1)
+  fill vs page ground              1.18:1     1.13:1    surface separation
+
+The last row is deliberately low: it is a surface distinction, not text, and the
+request was for the band to be 'a little different', with the hairlines carrying
+the rest of the separation. Both text roles clear AA on the new fill in both
+themes, which was the risk worth checking.
+
+VERIFICATION DEBT
+Visual confirmation of the new fill on the rendered page is outstanding, for the
+same reason as the rest of this track: the tab is auth-gated and this session
+could not authenticate.
