@@ -3,7 +3,7 @@
   "title": "Rent tab financial-year grouping",
   "description": "Group rental payments and operating expenses on a property's Rent tab into financial-year sections, using sticky subtotal dividers over one continuous list.",
   "type": "feature",
-  "status": "complete",
+  "status": "in_review",
   "created_at": "2026-09-07T00:00:00Z",
   "updated_at": "2026-09-07T00:00:00Z",
   "phases": 4,
@@ -29,5 +29,10 @@
     "branch": "feature/rent-fy-grouping",
     "visual_verification": "AC2/AC3/AC11 closed by the user; agent could not authenticate",
     "divider_fill": "--landing-warm, reused from the landing palette; additive token, has a dark value"
+  },
+  "pull_request": {
+    "number": 40,
+    "url": "https://github.com/AttuneTeam/HomeLog/pull/40",
+    "branch": "feature/rent-fy-grouping"
   }
 }
