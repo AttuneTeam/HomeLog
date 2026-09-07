@@ -139,8 +139,9 @@ Isolated in dedicated modules rather than spread through components:
 - `lib/finance-utils.ts` — loan and ROI mathematics.
 - `lib/tax-utils.ts` — ATO income tax brackets and Medicare levy.
 - `lib/stamp-duty.ts` — stamp duty across all eight Australian jurisdictions.
-- `lib/tax/` — financial-year bounds, classification resolution, rental income, apportionment,
-  loan interest, Division 43, the rental schedule, portfolio aggregation and the questionnaire.
+- `lib/tax/` — financial-year bounds and grouping, classification resolution, rental income,
+  apportionment, loan interest, Division 43, the rental schedule, portfolio aggregation and the
+  questionnaire.
   Pure and fully unit-tested; tax logic belongs here rather than in components, so it can be
   covered by tests and reused by both the on-screen report and the generated pack.
 

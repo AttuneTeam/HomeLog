@@ -95,9 +95,12 @@
   --sidebar-ring: oklch(0.55 0.04 85);
 
   /* ── Landing surface ─────────────────────────────────────────────────────
-     Palette for the public landing page only, transcribed from the design
-     prototype. Nothing outside components/landing/ references these, so they
-     cannot alter dashboard surfaces: they add tokens rather than redefine any.
+     Palette originating with the public landing page, transcribed from the
+     design prototype. These ADD tokens rather than redefine any, so referencing
+     one cannot alter a dashboard surface. Consumers outside components/landing/
+     are therefore allowed, and there are two: the login and signup left column,
+     and the financial-year divider row on the Rent tab. Anything reused this way
+     needs a dark value that holds up on dashboard ground, not only on paper.
 
      Light values are the prototype's own hex, converted to oklch to match this
      file's convention:

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { Fragment, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,6 +37,8 @@ import {
   removeRentalStatement,
   rentalStatementUrl,
 } from "@/app/actions/rental-statements";
+import { groupByFinancialYear } from "@/lib/tax/fy-grouping";
+import { FinancialYearDividerRow } from "@/components/financial-year-divider-row";
 import type { RentalPayment } from "@/lib/supabase/database.types";
 
 export type { RentalPayment };
@@ -96,11 +98,17 @@ function totalFees(payment: RentalPayment): number {
 interface RentalPaymentsSectionProps {
   propertyId: string;
   initialPayments: RentalPayment[];
+  /** 1-based month the user's financial year starts in. */
+  fyStartMonth: number;
+  /** Day of that month the user's financial year starts on. */
+  fyStartDay: number;
 }
 
 export function RentalPaymentsSection({
   propertyId,
   initialPayments,
+  fyStartMonth,
+  fyStartDay,
 }: RentalPaymentsSectionProps) {
   const [payments, setPayments] = useState<RentalPayment[]>(initialPayments);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -367,6 +375,27 @@ export function RentalPaymentsSection({
 
   const total = payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const totalFeesAll = payments.reduce((sum, p) => sum + totalFees(p), 0);
+
+  // Grouped by the date the rent was RECEIVED, which is the ATO cash basis and
+  // therefore the year the tax pack assigns it to. Derived from state rather
+  // than the server payload, so adding, editing or deleting a payment re-groups
+  // immediately — including when the change moves it into another year.
+  const paymentGroups = useMemo(
+    () =>
+      groupByFinancialYear(
+        payments,
+        (p) => p.payment_date,
+        fyStartMonth,
+        fyStartDay,
+      ).map((group) => ({
+        ...group,
+        // Gross rent. Fees and outgoings are deductions in their own right and
+        // never reduce this figure.
+        gross: group.items.reduce((sum, p) => sum + Number(p.amount), 0),
+        fees: group.items.reduce((sum, p) => sum + totalFees(p), 0),
+      })),
+    [payments, fyStartMonth, fyStartDay],
+  );
   const unconfirmed = payments.filter(
     (p) => hasFees(p) && p.fees_confirmed_at == null,
   ).length;
@@ -453,7 +482,14 @@ export function RentalPaymentsSection({
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        // Horizontal scrolling is confined to widths where this five-column
+        // table cannot fit. It is not applied at sm and above because
+        // overflow-x:auto forces the computed overflow-y to auto as well,
+        // making the wrapper a scroll container — a position:sticky row inside
+        // it then anchors to the wrapper rather than the viewport, and the
+        // wrapper never scrolls vertically, so the year dividers would never
+        // pin. Below sm the divider degrades to a plain, non-sticky row.
+        <div className="max-sm:overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
@@ -473,211 +509,232 @@ export function RentalPaymentsSection({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {payments.map((payment) => {
-                const fees = totalFees(payment);
-                const feesPresent = hasFees(payment);
-                const confirmed = payment.fees_confirmed_at != null;
-                const rec = reconcileStatement(payment);
-                const needsVerification =
-                  payment.notes?.includes(NEEDS_VERIFICATION) ?? false;
-                return (
-                  <tr key={payment.id}>
-                    <td className="px-1 py-1.5 align-top">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span>{payment.raw_subject ?? "Rent payment"}</span>
-                        {payment.source_email_id && (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                            title="Imported automatically from a forwarded agent email"
-                          >
-                            <Mail className="h-3 w-3" />
-                            Auto
-                          </span>
+              {paymentGroups.map((group) => (
+                <Fragment key={group.label}>
+                  <FinancialYearDividerRow
+                    label={group.label}
+                    count={`${group.items.length} payment${
+                      group.items.length === 1 ? "" : "s"
+                    }`}
+                    colSpan={5}
+                    figures={
+                      <>
+                        {group.fees > 0 && (
+                          <>{formatCurrency(group.fees)} fees · </>
                         )}
-                        {payment.statement_path && (
-                          <button
-                            type="button"
-                            onClick={() => openStatement(payment.statement_path!)}
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                            title="Open the statement"
-                          >
-                            <FileText className="h-3 w-3" />
-                            Statement
-                          </button>
-                        )}
-                        {needsVerification && (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400"
-                            title="This amount may be the net disbursed rather than gross rent"
-                          >
-                            <AlertTriangle className="h-3 w-3" />
-                            Unverified
-                          </span>
-                        )}
-                      </div>
-
-                      {feesPresent && (
-                        <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-                          <span>{formatCurrency(fees)} fees</span>
-                          {payment.other_outgoings != null && (
-                            <>
-                              <span>·</span>
+                        <span className="font-medium text-foreground">
+                          {formatCurrency(group.gross)}
+                        </span>
+                      </>
+                    }
+                  />
+                  {group.items.map((payment) => {
+                    const fees = totalFees(payment);
+                    const feesPresent = hasFees(payment);
+                    const confirmed = payment.fees_confirmed_at != null;
+                    const rec = reconcileStatement(payment);
+                    const needsVerification =
+                      payment.notes?.includes(NEEDS_VERIFICATION) ?? false;
+                    return (
+                      <tr key={payment.id}>
+                        <td className="px-1 py-1.5 align-top">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{payment.raw_subject ?? "Rent payment"}</span>
+                            {payment.source_email_id && (
                               <span
-                                title="Paid by the agent to a third party. Deducted via its own invoice, not here."
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+                                title="Imported automatically from a forwarded agent email"
                               >
-                                {formatCurrency(Number(payment.other_outgoings))}{" "}
-                                third party
+                                <Mail className="h-3 w-3" />
+                                Auto
                               </span>
-                            </>
-                          )}
-                          {payment.other_income != null && (
-                            <>
-                              <span>·</span>
-                              <span title={payment.other_income_note ?? undefined}>
-                                {formatCurrency(Number(payment.other_income))} other
-                                income
+                            )}
+                            {payment.statement_path && (
+                              <button
+                                type="button"
+                                onClick={() => openStatement(payment.statement_path!)}
+                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                title="Open the statement"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Statement
+                              </button>
+                            )}
+                            {needsVerification && (
+                              <span
+                                className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400"
+                                title="This amount may be the net disbursed rather than gross rent"
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                Unverified
                               </span>
-                            </>
-                          )}
-                          {payment.net_received != null && (
-                            <>
-                              <span>·</span>
-                              <span>
-                                {formatCurrency(Number(payment.net_received))} received
-                              </span>
-                            </>
-                          )}
-                          {rec.applicable && (
-                            <span
-                              className={
-                                rec.ties
-                                  ? "inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400"
-                                  : "inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"
-                              }
-                              title={
-                                rec.ties
-                                  ? "Gross rent less fees and outgoings matches the amount received"
-                                  : `Off by ${formatCurrency(Math.abs(rec.difference))}. A balance brought forward can cause this.`
-                              }
-                            >
-                              {rec.ties ? (
+                            )}
+                          </div>
+
+                          {feesPresent && (
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+                              <span>{formatCurrency(fees)} fees</span>
+                              {payment.other_outgoings != null && (
                                 <>
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Reconciles
-                                </>
-                              ) : (
-                                <>
-                                  <AlertTriangle className="h-3 w-3" />
-                                  Out by{" "}
-                                  {formatCurrency(Math.abs(rec.difference))}
+                                  <span>·</span>
+                                  <span
+                                    title="Paid by the agent to a third party. Deducted via its own invoice, not here."
+                                  >
+                                    {formatCurrency(Number(payment.other_outgoings))}{" "}
+                                    third party
+                                  </span>
                                 </>
                               )}
-                            </span>
+                              {payment.other_income != null && (
+                                <>
+                                  <span>·</span>
+                                  <span title={payment.other_income_note ?? undefined}>
+                                    {formatCurrency(Number(payment.other_income))} other
+                                    income
+                                  </span>
+                                </>
+                              )}
+                              {payment.net_received != null && (
+                                <>
+                                  <span>·</span>
+                                  <span>
+                                    {formatCurrency(Number(payment.net_received))} received
+                                  </span>
+                                </>
+                              )}
+                              {rec.applicable && (
+                                <span
+                                  className={
+                                    rec.ties
+                                      ? "inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400"
+                                      : "inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"
+                                  }
+                                  title={
+                                    rec.ties
+                                      ? "Gross rent less fees and outgoings matches the amount received"
+                                      : `Off by ${formatCurrency(Math.abs(rec.difference))}. A balance brought forward can cause this.`
+                                  }
+                                >
+                                  {rec.ties ? (
+                                    <>
+                                      <CheckCircle2 className="h-3 w-3" />
+                                      Reconciles
+                                    </>
+                                  ) : (
+                                    <>
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Out by{" "}
+                                      {formatCurrency(Math.abs(rec.difference))}
+                                    </>
+                                  )}
+                                </span>
+                              )}
+                              {confirmed ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Confirmed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Not confirmed
+                                </span>
+                              )}
+                            </div>
                           )}
-                          {confirmed ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Confirmed
-                            </span>
+                        </td>
+                        <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap align-top">
+                          {formatDate(payment.payment_date)}
+                        </td>
+                        <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap align-top">
+                          {payment.period_start || payment.period_end ? (
+                            <>
+                              {payment.period_start
+                                ? formatDate(payment.period_start)
+                                : "?"}
+                              {" → "}
+                              {payment.period_end ? formatDate(payment.period_end) : "?"}
+                            </>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
-                              <AlertTriangle className="h-3 w-3" />
-                              Not confirmed
-                            </span>
+                            "—"
                           )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap align-top">
-                      {formatDate(payment.payment_date)}
-                    </td>
-                    <td className="px-1 py-1.5 text-muted-foreground whitespace-nowrap align-top">
-                      {payment.period_start || payment.period_end ? (
-                        <>
-                          {payment.period_start
-                            ? formatDate(payment.period_start)
-                            : "?"}
-                          {" → "}
-                          {payment.period_end ? formatDate(payment.period_end) : "?"}
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap align-top">
-                      {formatCurrency(Number(payment.amount))}
-                    </td>
-                    {/* Actions stay on one row. The table scrolls horizontally
-                        when narrow, which is the wanted overflow behaviour —
-                        wrapping here stacked the buttons into a column. */}
-                    <td className="px-2 py-1.5 align-top whitespace-nowrap">
-                      <div className="flex items-center gap-1 justify-end">
-                        {feesPresent && !confirmed && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            disabled={confirmingId === payment.id}
-                            onClick={() => handleConfirm(payment)}
-                          >
-                            {confirmingId === payment.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              "Confirm fees"
+                        </td>
+                        <td className="px-1 py-1.5 tabular-nums text-right whitespace-nowrap align-top">
+                          {formatCurrency(Number(payment.amount))}
+                        </td>
+                        {/* Actions stay on one row. The table scrolls horizontally
+                            when narrow, which is the wanted overflow behaviour —
+                            wrapping here stacked the buttons into a column. */}
+                        <td className="px-2 py-1.5 align-top whitespace-nowrap">
+                          <div className="flex items-center gap-1 justify-end">
+                            {feesPresent && !confirmed && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="shrink-0"
+                                disabled={confirmingId === payment.id}
+                                onClick={() => handleConfirm(payment)}
+                              >
+                                {confirmingId === payment.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  "Confirm fees"
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-muted-foreground shrink-0"
-                          disabled={uploadingId === payment.id}
-                          title={
-                            payment.statement_path
-                              ? "Replace the statement"
-                              : "Attach the agent's statement"
-                          }
-                          onClick={() => pickStatement(payment.id)}
-                        >
-                          {uploadingId === payment.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Upload className="h-4 w-4" />
-                          )}
-                        </Button>
-                        {payment.statement_path && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-muted-foreground hover:text-destructive shrink-0"
-                            title="Remove the statement (keeps the payment)"
-                            onClick={() => handleRemoveStatement(payment)}
-                          >
-                            <FileX className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-muted-foreground shrink-0"
-                          onClick={() => openEdit(payment)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-muted-foreground hover:text-destructive shrink-0"
-                          disabled={deletingId === payment.id}
-                          onClick={() => setConfirmDelete(payment)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground shrink-0"
+                              disabled={uploadingId === payment.id}
+                              title={
+                                payment.statement_path
+                                  ? "Replace the statement"
+                                  : "Attach the agent's statement"
+                              }
+                              onClick={() => pickStatement(payment.id)}
+                            >
+                              {uploadingId === payment.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4" />
+                              )}
+                            </Button>
+                            {payment.statement_path && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-muted-foreground hover:text-destructive shrink-0"
+                                title="Remove the statement (keeps the payment)"
+                                onClick={() => handleRemoveStatement(payment)}
+                              >
+                                <FileX className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground shrink-0"
+                              onClick={() => openEdit(payment)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-destructive shrink-0"
+                              disabled={deletingId === payment.id}
+                              onClick={() => setConfirmDelete(payment)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </Fragment>
+              ))}
               <tr>
                 <td>
                   <span className="text-muted-foreground">Total</span>
