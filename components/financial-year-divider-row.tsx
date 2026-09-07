@@ -40,6 +40,14 @@ interface FinancialYearDividerRowProps {
  * That requires no ancestor between this cell and the viewport to be a scroll
  * container — `overflow-x: auto` alone is enough to create one, because the
  * other axis then computes to `auto` as well.
+ *
+ * The fill is the landing page's warm paper rather than `bg-background`, so the
+ * heading reads as a distinct band instead of blending into the rows it
+ * separates. That token is additive — the landing palette adds tokens rather
+ * than redefining dashboard surfaces — and it carries a purpose-built dark
+ * value, so it sits just below the page ground in light and just above it in
+ * dark, staying legible either way. It must stay opaque, or rows show through
+ * while scrolling.
  */
 export function FinancialYearDividerRow({
   label,
@@ -54,7 +62,7 @@ export function FinancialYearDividerRow({
         scope="colgroup"
         colSpan={colSpan}
         className={cn(
-          "sticky top-0 z-10 bg-background px-1 py-2 text-left font-medium",
+          "sticky top-0 z-10 bg-landing-warm px-1 py-2 text-left font-medium",
           "shadow-[0_1px_0_0_var(--border),0_-1px_0_0_var(--border)]",
           className,
         )}
