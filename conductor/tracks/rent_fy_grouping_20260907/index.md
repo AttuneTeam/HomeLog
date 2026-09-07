@@ -2,7 +2,7 @@
 
 **ID:** `rent_fy_grouping_20260907`
 **Type:** Feature
-**Status:** In progress — refinement
+**Status:** Complete
 
 Group rental payments and operating expenses on a property's Rent tab into financial-year
 sections. Today each is a flat, date-sorted list, so a property held for several years is one
