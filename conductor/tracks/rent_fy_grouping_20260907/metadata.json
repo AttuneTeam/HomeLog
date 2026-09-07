@@ -27,9 +27,8 @@
     "schema_changes": false,
     "rls_changes": false,
     "branch": "feature/rent-fy-grouping",
-    "visual_verification": "AC2/AC3/AC11 closed by the user; agent could not authenticate",
     "divider_fill": "--landing-warm, reused from the landing palette; additive token, has a dark value",
-    "outstanding": "AC2/AC3/AC11 visual verification never performed by the agent; recorded as debt in git notes and flagged in PR #40"
+    "outstanding": "AC2/AC3/AC11 (dividers rendering, pinning while scrolling, light/dark and mobile legibility) were never verified by the agent \u2014 the Rent tab is auth-gated and it could not authenticate. Confirmed at the phase checkpoints by the user, recorded as debt in git notes, and flagged for the reviewer in PR #40."
   },
   "pull_request": {
     "number": 40,
