@@ -23,6 +23,6 @@ index, which in turn links to its specification, plan and metadata.
 
 ---
 
-- [x] **Track: Rent tab financial-year grouping — group rental payments and operating expenses into financial-year sections with sticky subtotal dividers**
+- [~] **Track: Rent tab financial-year grouping — group rental payments and operating expenses into financial-year sections with sticky subtotal dividers**
 
   *Link: [./tracks/rent_fy_grouping_20260907/index.md](./tracks/rent_fy_grouping_20260907/index.md)*

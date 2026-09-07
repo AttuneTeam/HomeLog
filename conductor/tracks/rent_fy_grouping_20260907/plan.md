@@ -127,3 +127,20 @@ The profile read is Tier 2 (data flow); the table changes are Tier 3.
   - [ ] Run `npm run build` and `CI=true npm test`.
 
 - [x] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)** `d4d9b4b`
+
+---
+
+## Phase 4 — Refinements (Tier 3)
+
+Requested after the track was first closed, and recorded here rather than folded
+silently into a completed phase.
+
+- [~] **Task: Give the FY divider a distinct warm background**
+  - [~] Fill the divider with the landing page's warm paper token instead of
+        `bg-background`, so the heading reads as its own band rather than
+        blending into the rows it separates.
+  - [ ] Confirm the token is additive and does not redefine a dashboard surface.
+  - [ ] Check text contrast against the new fill in both themes.
+  - [ ] `npm run build` must pass.
+
+- [ ] **Task: Phase Verification & Checkpoint (Refer to `conductor/workflow.md`)**
